@@ -1,0 +1,14 @@
+# This file is part of the Data Cleaning Library (openclean).
+#
+# Copyright (C) 2018-2020 New York University.
+#
+# openclean is released under the Revised BSD License. See file LICENSE for
+# full license details.
+
+include LICENSE
+include *.rst
+recursive-include openclean *.py *.sql
+prune docs/_build
+recursive-include docs *.py
+recursive-include docs *.rst
+global-exclude *.py[co]

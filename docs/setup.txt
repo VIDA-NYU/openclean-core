@@ -1,0 +1,4 @@
+conda create -n openclean pip numpy scipy scikit-learn nltk
+conda activate openclean
+pip install -r requirements.txt
+pip install -e .

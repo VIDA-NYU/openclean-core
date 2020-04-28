@@ -1,0 +1,1 @@
+Constraints are callables that receive the row values (Series object) and output a Boolean value.
