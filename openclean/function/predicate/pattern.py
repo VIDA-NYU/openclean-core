@@ -12,7 +12,7 @@ regular expression.
 from openclean.function.base import Eval, is_var_func
 
 import openclean.function.predicate.base as base
-import openclean.function.value.regex as vfunc
+import openclean.function.value.pattern as vfunc
 
 
 class IsMatch(object):

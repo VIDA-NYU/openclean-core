@@ -37,7 +37,7 @@ class SklearnOutliers(AnomalyDetector):
         self.algorithm = algorithm
         self.features = StandardFeatures() if features is None else features
 
-    def predict(self, values):
+    def find(self, values):
         """Identify values in a given list of distinct values that satisfy the
         outlier condition. Starts by crating an embedding for the given values.
         Then uses the fit_predict() method of the estimator to get labels for
@@ -71,9 +71,10 @@ class SklearnOutliers(AnomalyDetector):
 
 # -- Functions for specific scikit-learn outlier detectors --------------------
 
-def dbscan(df, columns, features=None, eps=0.5, min_samples=5,
-        metric='minkowski', metric_params=None, algorithm='auto', leaf_size=30,
-        p=2, n_jobs=None):
+def dbscan(
+    df, columns, features=None, eps=0.5, min_samples=5, metric='minkowski',
+    metric_params=None, algorithm='auto', leaf_size=30, p=2, n_jobs=None
+):
     """Perform outlier detection using DBSCAN clustering. Returns values as
     outliers that are not added to any cluster. Supports all parameters of
     the DBSCAN implementation in scikit-learn (documentation copied below).
@@ -145,13 +146,14 @@ def dbscan(df, columns, features=None, eps=0.5, min_samples=5,
     # Run the scikit-learn outlier detection algoritm with DBSCAN as the
     # estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.predict(values=Stream(df=df, columns=columns))
+    return op.find(values=Stream(df=df, columns=columns))
 
 
-def isolation_forest(df, columns, features=None, n_estimators=100,
-        max_samples='auto', contamination='auto', max_features=1.,
-        bootstrap=False, n_jobs=None, random_state=None, verbose=0,
-        warm_start=False):
+def isolation_forest(
+    df, columns, features=None, n_estimators=100, max_samples='auto',
+    contamination='auto', max_features=1., bootstrap=False, n_jobs=None,
+    random_state=None, verbose=0, warm_start=False
+):
     """Perform outlier detection using the isolation forest outlier detection.
     Supports most parameters of the IsolationForest implementation in
     scikit-learn (documentation copied below).
@@ -229,12 +231,14 @@ def isolation_forest(df, columns, features=None, n_estimators=100,
     # Run the scikit-learn outlier detection algoritm with IsolationForest as
     # the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.predict(values=Stream(df=df, columns=columns))
+    return op.find(values=Stream(df=df, columns=columns))
 
 
-def local_outlier_factor(df, columns, features=None, n_neighbors=20,
-        algorithm='auto', leaf_size=30, metric='minkowski', p=2,
-        metric_params=None, contamination='auto', novelty=False, n_jobs=None):
+def local_outlier_factor(
+    df, columns, features=None, n_neighbors=20, algorithm='auto', leaf_size=30,
+    metric='minkowski', p=2, metric_params=None, contamination='auto',
+    novelty=False, n_jobs=None
+):
     """Perform outlier detection using Local Outlier Factor (LOF). Supports all
     parameters of the LocalOutlierFactor implementation in scikit-learn
     (documentation copied below).
@@ -334,12 +338,14 @@ def local_outlier_factor(df, columns, features=None, n_neighbors=20,
     # Run the scikit-learn outlier detection algoritm with LocalOutlierFactor
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.predict(values=Stream(df=df, columns=columns))
+    return op.find(values=Stream(df=df, columns=columns))
 
 
-def one_clas_svm(df, columns, features=None, kernel='rbf', degree=3,
-        gamma='scale', coef0=0.0, tol=1e-3, nu=0.5, shrinking=True,
-        cache_size=200, verbose=False, max_iter=-1):
+def one_class_svm(
+    df, columns, features=None, kernel='rbf', degree=3, gamma='scale',
+    coef0=0.0, tol=1e-3, nu=0.5, shrinking=True, cache_size=200, verbose=False,
+    max_iter=-1
+):
     """Perform outlier detection using Unsupervised Outlier Detection. Supports
     all parameters of the OneClassSVM implementation in scikit-learn
     (documentation copied below).
@@ -412,12 +418,13 @@ def one_clas_svm(df, columns, features=None, kernel='rbf', degree=3,
     # Run the scikit-learn outlier detection algoritm with OneClassSVM
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.predict(values=Stream(df=df, columns=columns))
+    return op.find(values=Stream(df=df, columns=columns))
 
 
-def robust_covariance(df, columns, features=None, store_precision=True,
-        assume_centered=False, support_fraction=None, contamination=0.1,
-        random_state=None):
+def robust_covariance(
+    df, columns, features=None, store_precision=True, assume_centered=False,
+    support_fraction=None, contamination=0.1, random_state=None
+):
     """Perform outlier detection using EllipticEnvelope for detecting outliers
     in a Gaussian distributed dataset. Supports all parameters of the
     EllipticEnvelope implementation in scikit-learn (documentation copied
@@ -471,4 +478,4 @@ def robust_covariance(df, columns, features=None, store_precision=True,
     # Run the scikit-learn outlier detection algoritm with EllipticEnvelope
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.predict(values=Stream(df=df, columns=columns))
+    return op.find(values=Stream(df=df, columns=columns))

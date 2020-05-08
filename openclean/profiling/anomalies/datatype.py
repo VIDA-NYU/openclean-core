@@ -13,8 +13,6 @@ from openclean.data.stream import Stream
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
-# -- Operator -----------------------------------------------------------------
-
 def datatype_outliers(df, columns, classifier, domain):
     """Identify values that do not match the expected data type. The expected
     data type for a (list of) column(s) is defined by the given domain. The
@@ -38,18 +36,52 @@ def datatype_outliers(df, columns, classifier, domain):
     -------
     list
     """
-    # Ensure that the domain is not a scalar value.
-    if type(domain) in [int, float, str]:
-        domain = set([domain])
-    # Create a predicate that uses the classifier to determine the data type
-    # of a value and checks whether that type belogs to the list of valid
-    # types or not.
+    op = DatatypeOutliers(classifier=classifier, domain=domain)
+    return op.find(values=set(Stream(df=df, columns=columns)))
 
-    def predicate(value):
-        """Returns true if the data type assigned to the value does not belong
-        to the domain of valid data types.
+
+class DatatypeOutliers(ConditionalOutliers):
+    """Identify values that do not match the expected data type for a list of
+    values (e.g., a column in a data frame). The expected data type is defined
+    by a set of data type labels. A classifier is used to identify the type of
+    values. Values that are assigned a type that are not included in the set of
+    expected type labels are considered outliers.
+    """
+    def __init__(self, classifier, domain):
+        """Initialize the classifier that is used to assign type labels to data
+        values and the domain of expected (valid) type labels.
+
+        Parameters
+        ----------
+        classifier: callable
+            Classifier that assigns data type class labels to column values.
+        domain: scalar or list
+            Valid data type value(s). Defines the types that are not considered
+            outliers.
         """
-        return classifier(value) not in domain
+        # Ensure that the domain is not a scalar value.
+        if type(domain) in [int, float, str]:
+            self.domain = set([domain])
+        else:
+            self.domain = domain
+        self.classifier = classifier
+        # Use a predicate that takes the given classifier to determine the data
+        # type of a value and then checks whether that type belogs to the list
+        # of valid types or not.
+        super(DatatypeOutliers, self).__init__(predicate=self.is_outlier)
 
-    op = ConditionalOutliers(predicate=predicate)
-    return op.predict(values=set(Stream(df=df, columns=columns)))
+    def is_outlier(self, value):
+        """Use classifier to get the data type for the given value. Return True
+        if the returned type label is not included in the set of valid type
+        labels.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        return self.classifier(value) not in self.domain

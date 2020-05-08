@@ -52,9 +52,6 @@ def update(df, columns, func):
     return Update(columns=columns, func=func).transform(df)
 
 
-def replace(df, columns, func):
-
-
 def swap(df, col1, col2):
     """Swap values in two columns of a data frame. Replaces values in column
     one with values in column 2 and vice versa for each row in a data frame.

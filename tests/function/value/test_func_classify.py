@@ -10,13 +10,13 @@
 import math
 import pytest
 
-from openclean.function.value.classifier import value_classifier
+from openclean.function.classifier import ValueClassifier
 from openclean.function.value.datatype import is_date, is_int, is_float, is_nan
 
 
 def test_datatype_classification():
     """Test data type classification of scalar values."""
-    f = value_classifier(
+    f = ValueClassifier(
         classifier=[is_date('%m/%d/%y'), is_int(), is_float(), is_nan()],
         labels=['date', 'int', 'float', 'nan'],
         default_label='str'
@@ -29,7 +29,7 @@ def test_datatype_classification():
     assert f(math.nan) == 'float'
     assert f('abc') == 'str'
     # Without type cast
-    f = value_classifier(
+    f = ValueClassifier(
         classifier=[
             is_date('%m/%d/%y'),
             is_int(False),
@@ -47,7 +47,7 @@ def test_datatype_classification():
     assert f(math.nan) == 'float'
     assert f('abc') == 'str'
     # -- Change truth values
-    f = value_classifier(
+    f = ValueClassifier(
         classifier=[is_float(), is_nan()],
         labels=['float', 'nan'],
         truth_values=[False, True],
@@ -61,7 +61,7 @@ def test_datatype_classification():
 def test_classifiaction_errors():
     """Test error cases for classification."""
     # Raise error if no predicate matches
-    f = value_classifier(
+    f = ValueClassifier(
         classifier=[is_int(), is_float()],
         labels=['int', 'float'],
         default_label='str',
@@ -72,6 +72,6 @@ def test_classifiaction_errors():
         f('abc')
     # Invalid arguments
     with pytest.raises(ValueError):
-        value_classifier(classifier=[is_int(), is_float()], labels=['int'])
+        ValueClassifier(classifier=[is_int(), is_float()], labels=['int'])
     with pytest.raises(ValueError):
-        value_classifier(classifier=is_int(), labels='i', truth_values=[1, 2])
+        ValueClassifier(classifier=is_int(), labels='i', truth_values=[1, 2])

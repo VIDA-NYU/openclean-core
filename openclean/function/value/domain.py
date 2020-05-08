@@ -74,7 +74,7 @@ class is_not_in(object):
             domain = to_set(domain)
         self.ignore_case = ignore_case
         if ignore_case:
-            self.valfunc = lower
+            self.valfunc = lower()
             self.domain = [self.valfunc(v) for v in domain]
         else:
             self.valfunc = scalar_pass_through

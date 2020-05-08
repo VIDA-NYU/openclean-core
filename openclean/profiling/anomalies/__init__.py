@@ -7,4 +7,4 @@
 
 """Collection of anomaly detection methods."""
 
-from openclean.profiling.anomalies.domain import domain_outlier  # noqa: F401
+from openclean.profiling.anomalies.domain import domain_outliers  # noqa: F401

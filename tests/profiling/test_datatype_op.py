@@ -7,7 +7,7 @@
 
 import pytest
 
-from openclean.function.classifier.base import ValueClassifier
+from openclean.function.classifier import ValueClassifier
 from openclean.data.stream import Stream
 from openclean.profiling import datatypes, distinct
 from openclean.function.predicate.scalar.type import IsFloat, IsInt

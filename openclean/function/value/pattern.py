@@ -111,4 +111,4 @@ class is_not_match(is_match):
         if self.fullmatch:
             return self.prog.fullmatch(value) is None
         else:
-            return self.prog.search(value) is None
+            return self.prog.search(value) is None        

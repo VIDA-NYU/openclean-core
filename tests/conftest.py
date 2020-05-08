@@ -13,9 +13,15 @@ from openclean.data.column import Column
 from openclean.data.load import dataset
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-AGENCY_FILE = os.path.join(DIR, './.files/anomalies.csv')
+AGENCY_FILE = os.path.join(DIR, './.files/agencies.csv')
 SCHOOLS_FILE = os.path.join(DIR, './.files/school_level_detail.csv')
 NYC311_FILE = os.path.join(DIR, './.files/311-descriptor.csv')
+
+
+@pytest.fixture
+def agencies():
+    """List of agency names with NYC borough and US State."""
+    return dataset(AGENCY_FILE)
 
 
 @pytest.fixture

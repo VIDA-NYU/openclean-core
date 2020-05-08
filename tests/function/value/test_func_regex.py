@@ -7,7 +7,7 @@
 
 """unit tests for the single-value regular expression match operator."""
 
-from openclean.function.value.regex import is_match, is_not_match
+from openclean.function.value.pattern import is_match, is_not_match
 
 
 def test_func_match():

@@ -17,7 +17,7 @@ class AnomalyDetector(metaclass=ABCMeta):
     identified as outliers.
     """
     @abstractmethod
-    def predict(self, values):
+    def find(self, values):
         """Identify values in a given stream of (distinct) values that are
         classified as outliers or anomalities. Returns a list of identified
         values.

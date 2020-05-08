@@ -10,7 +10,7 @@ data frames that have class labels assigned to their data rows.
 """
 
 
-class value_classifier(object):
+class ValueClassifier(object):
     """The value classifier evaluates a list of predicates or conditions on a
     given value (scalar or tuple). Each predicate is associated with a class
     label. The corresponding class label for the first predicate that is

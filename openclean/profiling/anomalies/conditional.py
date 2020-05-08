@@ -30,7 +30,7 @@ class ConditionalOutliers(AnomalyDetector):
         """
         self.predicate = predicate
 
-    def predict(self, values):
+    def find(self, values):
         """Identify values in a given list of distinct values that satisfy the
         outlier condition.
 

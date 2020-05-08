@@ -12,7 +12,7 @@ from openclean.function.value.domain import is_not_in
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
-def domain_outlier(df, columns, domain, ignore_case=False):
+def domain_outliers(df, columns, domain, ignore_case=False):
     """The domain outlier detector returns the list of values from a given data
     stream that do not occur in a ground truth domain.
 
@@ -32,6 +32,25 @@ def domain_outlier(df, columns, domain, ignore_case=False):
     -------
     list
     """
-    predicate = is_not_in(domain=domain, ignore_case=ignore_case)
-    op = ConditionalOutliers(predicate=predicate)
-    return op.predict(values=set(Stream(df=df, columns=columns)))
+    op = DomainOutliers(domain=domain, ignore_case=ignore_case)
+    return op.find(values=set(Stream(df=df, columns=columns)))
+
+
+class DomainOutliers(ConditionalOutliers):
+    """The domain outlier detector returns the list of values from a given data
+    stream that do not occur in a ground truth domain.
+    """
+    def __init__(self, domain, ignore_case=False):
+        """Initialize the ground truth domain.
+
+        Parameters
+        ----------
+        domain: pandas.DataFrame, pandas.Series, or object
+            Data frame or series, or any object that implements the
+            __contains__ method.
+        ignore_case: bool, optional
+            Ignore case for domain inclusion checking
+        """
+        super(DomainOutliers, self).__init__(
+            predicate=is_not_in(domain=domain, ignore_case=ignore_case)
+        )

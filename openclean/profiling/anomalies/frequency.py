@@ -9,8 +9,9 @@
 
 from openclean.data.metadata import Feature
 from openclean.data.stream import Stream
+from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.function.value.comp import get_threshold
 from openclean.function.value.normalize import divide_by_total
-from openclean.profiling.anomalies.threshold import threshold_filter
 
 
 def frequency_outliers(df, columns, threshold):
@@ -39,6 +40,48 @@ def frequency_outliers(df, columns, threshold):
     """
     # Create the predicate as a lookup over the normalized frequencies of
     # values in the given columns.
-    values = Stream(df=df, columns=columns)
+    values = list(Stream(df=df, columns=columns))
     lookup = Feature(values).normalize(divide_by_total)
-    return threshold_filter(values=lookup, threshold=threshold)
+    op = FrequencyOutliers(frequency=lookup, threshold=threshold)
+    return op.find(values=values)
+
+
+class FrequencyOutliers(ConditionalOutliers):
+    """Detect frequency outliers for values in a given list. A value is
+    considered an outlier if its relative frequency in the list satisfies the
+    given threshold predicate.
+    """
+    def __init__(self, frequency, threshold):
+        """Initialize the frequency function for list values and the threshold.
+
+        Parameters
+        ----------
+        frequency: callable
+            Function that returns the relative frequency of a given value.
+        threshold: callable
+            Function that accepts a float (i.e., the relative frequency) and that
+            returns a Boolean value. True indicates that the value (frequency)
+            satisfies the value outlier condition.
+        """
+        # If the threshold is an integer or float create a greater than
+        # threshold using the value (unless the value is 1 in which case we
+        # use eq).
+        self.threshold = get_threshold(threshold)
+        self.frequency = frequency
+        super(FrequencyOutliers, self).__init__(predicate=self.is_outlier)
+
+    def is_outlier(self, value):
+        """Test if the relative frequency of a given value satisfies the
+        outlier predicate. Returns True if the value is considered a frequency
+        outlier.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        return self.threshold(self.frequency(value))

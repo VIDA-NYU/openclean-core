@@ -7,7 +7,7 @@
 
 """Unit tests for regular expression match predicates for data frame rows."""
 
-from openclean.function.predicate.regex import IsMatch, IsNotMatch
+from openclean.function.predicate.pattern import IsMatch, IsNotMatch
 
 
 def test_predicate_regex(employees):

@@ -10,13 +10,13 @@ assignments for columns in a data frame.
 """
 
 from openclean.data.column import as_list, select_clause
-from openclean.function.value.classifier import value_classifier
+from openclean.function.classifier import ValueClassifier
 from openclean.function.value.datatype import is_int, is_float
 from openclean.profiling.classifier.base import classprofile
 
 
 """Default value classifier that distinguishes between int, float, and text."""
-DEFAULT_CLASSIFIER = value_classifier(
+DEFAULT_CLASSIFIER = ValueClassifier(
     classifier=[is_int(), is_float()],
     labels=['int', 'float'],
     default_label='text'
@@ -45,7 +45,7 @@ def datatypes(
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names. Allows
         to restrict the columns for which types are computed.
-    classifier: openclean.function.classifier.base.ValueClassifier, optional
+    classifier: openclean.function.classifier.ValueClassifier, optional
         Classifier that assigns data type class labels for scalar column
         values.
     picker: openclean.profiling.classifier.typepicker.TypePicker, optional
