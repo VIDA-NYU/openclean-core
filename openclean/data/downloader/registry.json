@@ -1,0 +1,9 @@
+[
+    {
+        "id": "restcountries",
+        "name": "restcountries.eu",
+        "description": "Get information about countries via a RESTful API",
+        "loaderModule": "openclean.data.downloader.restcountries",
+        "loaderClass": "RestcountriesDownloader"
+    }
+]

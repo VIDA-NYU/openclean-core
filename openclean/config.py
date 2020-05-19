@@ -10,15 +10,19 @@ are maintained in environment variables.
 """
 
 import os
+import pkg_resources as pkg
+
 
 """Environment variables that maintain configuration parameters."""
 # Directory for raw data files.
 ENV_DATA_DIR = 'OPENCLEAN_DATA_DIR'
 # Download directory
 ENV_MASTERDATA_DIR = 'OPENCLEAN_MASTERDATA_DIR'
+# Repository registry file
+ENV_REPOSITORY_REGISTRY = 'OPENCLEAN_REPOSITORY_REGISTRY'
 
 
-def DATA_DIR():
+def DATADIR():
     """Get directory where raw data files are maintained.
 
     Returns
@@ -28,17 +32,7 @@ def DATA_DIR():
     return get_variable(ENV_DATA_DIR, raise_error=True)
 
 
-def DOWNLOAD_DIR():
-    """Get target directory for master data downloads.
-
-    Returns
-    -------
-    string
-    """
-    return MASTERDATA_DIR()
-
-
-def MASTERDATA_DIR():
+def MASTERDATADIR():
     """Get directory where master data repositories are maintained.
 
     Returns
@@ -46,6 +40,24 @@ def MASTERDATA_DIR():
     string
     """
     return get_variable(ENV_MASTERDATA_DIR, raise_error=True)
+
+
+def REPOSITORY_REGISTRY():
+    """Get path to the repository registration file.
+
+    Returns
+    -------
+    string
+    """
+    # Use the value in the respective environment variable by default. If the
+    # variable is not set use the default repository registration that is part
+    # of the openclean package.
+    filename = get_variable(ENV_REPOSITORY_REGISTRY, raise_error=False)
+    if not filename:
+        pkg_name = __package__.split('.')[0]
+        resource_path = 'data/downloader/registry.json'
+        filename = pkg.resource_filename(pkg_name, resource_path)
+    return filename
 
 
 # -- Helper Methods -----------------------------------------------------------

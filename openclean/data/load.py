@@ -50,8 +50,9 @@ def load(filename):
     return dataset(filename)
 
 
-def load_restcountries_eu():
-    download_dir = config.MASTERDATA_DIR()
+def load_restcountries_eu(download_dir=None):
+    if download_dir is None:
+        download_dir = config.MASTERDATA_DIR()
     filename = os.path.join(download_dir, 'restcountries.eu.json')
     with open(filename, 'r') as f:
         doc = json.load(f)

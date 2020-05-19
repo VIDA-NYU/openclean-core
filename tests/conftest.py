@@ -10,18 +10,26 @@ import pandas as pd
 import pytest
 
 from openclean.data.column import Column
-from openclean.data.load import dataset
+from openclean.data.load import dataset, load_restcountries_eu
 
-DIR = os.path.dirname(os.path.realpath(__file__))
-AGENCY_FILE = os.path.join(DIR, './.files/agencies.csv')
-SCHOOLS_FILE = os.path.join(DIR, './.files/school_level_detail.csv')
-NYC311_FILE = os.path.join(DIR, './.files/311-descriptor.csv')
+
+DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
+AGENCY_FILE = os.path.join(DIR, 'agencies.csv')
+IDI_FILE = os.path.join(DIR, 'ICT-development-index.tsv.gz')
+NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
+SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
 
 
 @pytest.fixture
 def agencies():
     """List of agency names with NYC borough and US State."""
     return dataset(AGENCY_FILE)
+
+
+@pytest.fixture
+def countries():
+    """Get dataset with known countries from restcountries.eu web service."""
+    return load_restcountries_eu(download_dir=DIR)
 
 
 @pytest.fixture
@@ -56,6 +64,12 @@ def employees():
     ]
     columns = [Column(0, 'Name'), Column(1, 'Age'), Column(2, 'Salary')]
     return pd.DataFrame(data=data, columns=columns)
+
+
+@pytest.fixture
+def idi():
+    """Load the ITU ICT Development Index dataset."""
+    return dataset(IDI_FILE)
 
 
 @pytest.fixture

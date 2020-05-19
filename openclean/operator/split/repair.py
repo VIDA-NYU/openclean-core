@@ -60,7 +60,7 @@ def repair(df, columns, func, exceptions=None):
 
 class Repair(DataFrameSplitter):
     """Data frame splitter that updates values in data frame column(s) using
-    a given update function. The function is executes for each row and the
+    a given update function. The function is executed for each row and the
     resulting values replace the original cell values in the row for all listed
     columns (in their order of appearance in the columns list). Rows for which
     the update function fails are placed in a separate data frame that is

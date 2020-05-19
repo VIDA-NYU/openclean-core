@@ -5,7 +5,10 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Data frame transformation operator that updates values in columns of a data
+"""Transformation operator that returns a new data frame containing a mapping
+of original values in a data frame to values that are the result of applying an
+update function on the original values. The resulting data frame is considered
+a representation of the effect of applying an update function on a given data
 frame.
 """
 
@@ -47,13 +50,19 @@ def mapping(df, columns, func, names=None):
 # -- Operators ----------------------------------------------------------------
 
 class Mapping(DataFrameTransformer):
-    """Data frame transformer that updates values in data frame column(s) using
-    a given update function. The function is executes for each row and the
-    resulting values replace the original cell values in the row for all listed
-    columns (in their order of appearance in the columns list).
+    """Data frame transformer that generates a new data frame containing a
+    mapping of original values from columns in a given data frame that are
+    mapped to the results of applying a given update funtion. The result thus
+    represents the effect of applying an update function to a given data frame.
     """
     def __init__(self, columns, func, names=None):
-        """Initialize the list of updated columns and the update function.
+        """Initialize the list of updated columns, the update function, and the
+        optional list of names for the columns in the resulting data frame. If
+        the list of column names is not given, names for columns containing
+        original values will be named 'source' and columns containing results
+        of applying the update function will be named 'target'. If there are
+        multiple source or target columns the column names will have an index
+        appended (starting at 0).
 
         Parameters
         ----------
@@ -62,7 +71,7 @@ class Mapping(DataFrameTransformer):
         func: callable or openclean.function.base.EvalFunction
             Callable that accepts a data frame row as the only argument and
             outputs a (modified) (list of) value(s).
-        names: list(string)
+        names: list(string), default=None
             List of names for the columns of the resulting data frame.
 
         Raises
@@ -75,9 +84,10 @@ class Mapping(DataFrameTransformer):
         self.names = names
 
     def transform(self, df):
-        """Modify rows in the given data frame. Returns a modified data frame
-        where values have been updated by the results of evaluating the
-        associated row update function.
+        """Generate new data frame by applying the update function to rows in
+        the given data frame. The rows in the resulting data frame are composed
+        of the original column values and the resulting values returned by the
+        update function.
 
         Parameters
         ----------

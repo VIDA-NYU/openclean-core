@@ -27,7 +27,7 @@ def update(df, columns, func):
     function.
 
     The update function is executed for each data frame row. The number of
-    return values for the function must match the number of columns that are
+    values returned by the function must match the number of columns that are
     being modified. Returned values are used to update column values in the
     same order as columns are specified in the columns list.
 
@@ -54,7 +54,7 @@ def update(df, columns, func):
 
 def swap(df, col1, col2):
     """Swap values in two columns of a data frame. Replaces values in column
-    one with values in column 2 and vice versa for each row in a data frame.
+    one with values in column two and vice versa for each row in a data frame.
 
     Raises a ValueError if the column arguments are not of type int or string.
 
@@ -89,7 +89,7 @@ def swap(df, col1, col2):
 
 class Update(DataFrameTransformer):
     """Data frame transformer that updates values in data frame column(s) using
-    a given update function. The function is executes for each row and the
+    a given update function. The function is executed for each row and the
     resulting values replace the original cell values in the row for all listed
     columns (in their order of appearance in the columns list).
     """

@@ -69,9 +69,9 @@ def inscol(df, names, pos=None, values=None):
         Single value, list of constant values, callable that accepts a data
         frame row as the only argument and returns a (list of) value(s)
         matching the number of columns inserted or an evaluation function
-        that returns a matchin number of values.
-    pos: int, optional
-        Insert position for the new columns. If None the columns will be
+        that returns a matching number of values.
+    pos: int, default=None
+        Insert position for the new columns. If None, the columns will be
         appended.
 
     Returns
@@ -95,9 +95,9 @@ def insrow(df, pos=None, values=None):
     df: pandas.DataFrame
         Input data frame.
     pos: int, optional
-        Insert position for the new row(s). If None the rows will be appended.
+        Insert position for the new row(s). If None, the rows will be appended.
     values: list, optional
-        List or values (inserts one row) or list of lists (inserts multiple
+        List or values (to insert one row) or list of lists (to insert multiple
         rows).
 
     Returns

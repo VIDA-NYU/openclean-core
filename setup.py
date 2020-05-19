@@ -14,7 +14,8 @@ from setuptools import setup, find_packages
 
 
 install_requires = [
-    'pandas>=1.0.0'
+    'pandas>=1.0.0',
+    'jsonschema>=3.2.0'
 ]
 
 

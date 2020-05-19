@@ -95,27 +95,48 @@ class lookup(object):
         return self.mapping.get(key)
 
 
-class replace(lookup):
-    """Replace function that returns a pre-defined replacement value for input
-    values that are contained in a dictionary. For all other values the
-    original input value is returned. This is a shortcut for a lookup table
-    that returns self for missing values.
+class replace(object):
+    """Replace function for single argument. Returns pre-defined replacement
+    value for input values that satisfy a given condition.
     """
-    def __init__(self, mapping, as_string=False):
-        """Initialize the object properties.
+    def __init__(self, cond, values):
+        """Initialize the replacement condition and the replacement value.
 
         Parameters
         ----------
-        mapping: dict
-            Mapping of input values to their pre-defined targets
-        as_string: bool, optional
-            Convert all input values to string before lookup if True.
+        cond: callable or class
+            Function that is evaluated to identify values that are modified.
+        values: constant or callable or class
+            Constant return value for modified values or function that is used
+            to compute the modified value.
         """
-        super(replace, self).__init__(
-            mapping=mapping,
-            for_missing='self',
-            as_string=as_string
-        )
+        # Ensure that the condition is callable.
+        if isinstance(cond, type):
+            cond = cond()
+        elif not callable(cond):
+            cond = eq(cond)
+        self.cond = cond
+        # If values is a class object create an instance of that class.
+        if isinstance(values, type):
+            values = values()
+        self.values = values
+
+    def __call__(self, value):
+        """Return a modified value if the given argument satisfies the
+        replacement condition. Otherwise, the value is returned as is.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value in a data stream.
+
+        Returns
+        -------
+        list
+        """
+        if self.cond(value):
+            return self.values(value) if callable(self.values) else self.values
+        return value
 
 
 class varreplace(object):

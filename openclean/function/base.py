@@ -5,7 +5,10 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Base classes for value generating functions."""
+"""Base classes for value generating functions. Evaluation functions are
+applied to tuples (series) in a dataset (data frame). Functions are expected to
+return either a scalar value or a tuple of scalar values.
+"""
 
 from abc import ABCMeta, abstractmethod
 
@@ -17,8 +20,8 @@ from openclean.data.column import select_clause
 class EvalFunction(metaclass=ABCMeta):
     """Evaluation functions are used to compute results over rows (i.e., data
     series objects) in a data frame. Evaluation functions may be prepared in
-    that they compute statistincs or indices about the data frame proior to
-    being evaluated.
+    that they compute statistics or maintain column indices for the data frame
+    proior to being evaluated.
     """
     def __call__(self, values):
         """Make the function callable.
@@ -36,9 +39,9 @@ class EvalFunction(metaclass=ABCMeta):
 
     @abstractmethod
     def exec(self, values):
-        """Evaluate the function on the cell value of the given data frame row.
-        The result type is implementation dependent. The result could either be
-        a single scalar value or a tuple of scalar values.
+        """Evaluate the function on a given data frame row. The result type is
+        implementation dependent. The result could either be a single scalar
+        value or a tuple of scalar values.
 
         Parameters
         ----------
@@ -55,7 +58,7 @@ class EvalFunction(metaclass=ABCMeta):
     def prepare(self, df):
         """Prepare the evaluation function before the first call to the exec()
         method for the given data frame. This allows to compute statistics or
-        indices for the data frame.
+        column indices for the data frame.
 
         Parameters
         ----------
