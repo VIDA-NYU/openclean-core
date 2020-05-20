@@ -7,13 +7,9 @@
 
 import csv
 import gzip
-import json
-import os
 import pandas as pd
 
 from openclean.data.column import Column
-
-import openclean.config as config
 
 
 def dataset(filename):
@@ -41,30 +37,3 @@ def dataset(filename):
         columns=columns,
         index=range(len(data))
     )
-
-
-def load(filename):
-    if filename == 'restcountries.eu':
-        return load_restcountries_eu()
-    filename = os.path.join(config.DATA_DIR(), filename)
-    return dataset(filename)
-
-
-def load_restcountries_eu(download_dir=None):
-    if download_dir is None:
-        download_dir = config.MASTERDATA_DIR()
-    filename = os.path.join(download_dir, 'restcountries.eu.json')
-    with open(filename, 'r') as f:
-        doc = json.load(f)
-    data = list()
-    COLUMNS = [
-        'name',
-        'alpha2Code',
-        'alpha3Code',
-        'capital',
-        'region',
-        'subregion'
-    ]
-    for obj in doc:
-        data.append([obj[key] for key in COLUMNS])
-    return pd.DataFrame(data=data, columns=COLUMNS)

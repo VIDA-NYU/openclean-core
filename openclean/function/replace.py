@@ -14,6 +14,7 @@ from openclean.function.base import (
     Eval, EvalFunction, FullRowEval, is_var_func
 )
 from openclean.function.constant import Const
+from openclean.function.value.domain import is_in
 from openclean.function.value.replace import lookup, replace, varreplace
 
 
@@ -168,7 +169,7 @@ class Replace(object):
     """Evaluation function that replaces values in columns of data frame rows
     if the row values match a given condition.
     """
-    def __new__(cls, columns, cond, values):
+    def __new__(cls, columns, cond, values=None):
         """"Initialize the list of modified columns, the update condition, and
         the modification function.
 
@@ -182,6 +183,9 @@ class Replace(object):
             Function that is used to compute the modified values for rows that
             satisfy the replacement condition.
         """
+        if isinstance(cond, dict) and values is None:
+            values = lookup(cond, for_missing='self')
+            cond = is_in(cond)
         # Wrap the replace function into a variable replace if input values
         # come from more than one column.
         if is_var_func(columns):

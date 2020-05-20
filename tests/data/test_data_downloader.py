@@ -11,7 +11,7 @@ import pytest
 
 from jsonschema import ValidationError
 
-from openclean.data.downloader.dataset import (
+from openclean.data.downloader.base import (
     ColumnDescriptor, DatasetDescriptor
 )
 

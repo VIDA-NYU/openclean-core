@@ -9,6 +9,8 @@
 are maintained in environment variables.
 """
 
+from pathlib import Path
+
 import os
 import pkg_resources as pkg
 
@@ -29,7 +31,8 @@ def DATADIR():
     -------
     string
     """
-    return get_variable(ENV_DATA_DIR, raise_error=True)
+    default_value = os.path.join(str(Path.home()), '.openclean', 'data')
+    return get_variable(ENV_DATA_DIR, default_value=default_value)
 
 
 def MASTERDATADIR():
@@ -39,7 +42,8 @@ def MASTERDATADIR():
     -------
     string
     """
-    return get_variable(ENV_MASTERDATA_DIR, raise_error=True)
+    default_value = os.path.join(str(Path.home()), '.openclean', 'masterdata')
+    return get_variable(ENV_MASTERDATA_DIR, default_value=default_value)
 
 
 def REPOSITORY_REGISTRY():

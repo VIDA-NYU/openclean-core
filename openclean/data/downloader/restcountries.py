@@ -13,7 +13,7 @@ import pandas as pd
 import requests
 
 from openclean.data.downloader.base import RepositoryDownloader
-from openclean.data.downloader.dataset import DatasetDescriptor
+from openclean.data.downloader.base import DatasetDescriptor
 
 
 """Identifier for the countries dataset."""
@@ -28,42 +28,45 @@ class RestcountriesDownloader(RepositoryDownloader):
 
         Returns
         -------
-        list(openclean.data.downloader.dataset.DatasetDescriptor)
+        list(openclean.data.downloader.base.DatasetDescriptor)
         """
-        return [DatasetDescriptor({
-            'id': COUNTRIES,
-            'name': 'Countries of the World',
-            'description': (
-                'Information about all countries in the world provided by the '
-                'restcountries project'
-            ),
-            'columns': [
-                {
-                    'name': 'name',
-                    'description': 'Country name'
-                },
-                {
-                    'name': 'alpha2Code',
-                    'description': 'ISO 3166-1 2-letter country code'
-                },
-                {
-                    'name': 'alpha3Code',
-                    'description': 'ISO 3166-1 3-letter country code'
-                },
-                {
-                    'name': 'capital',
-                    'description': 'Capital city'
-                },
-                {
-                    'name': 'region',
-                    'description': 'Africa, Americas, Asia, Europe, or Oceania'
-                },
-                {
-                    'name': 'subregion',
-                    'description': 'Sub-region with the country region'
-                }
-            ]
-        })]
+        return [
+            DatasetDescriptor({
+                'id': COUNTRIES,
+                'name': 'Countries of the World',
+                'description': (
+                    'Information about all countries in the world provided by '
+                    'the restcountries project'
+                ),
+                'columns': [
+                    {
+                        'name': 'name',
+                        'description': 'Country name'
+                    },
+                    {
+                        'name': 'alpha2Code',
+                        'description': 'ISO 3166-1 2-letter country code'
+                    },
+                    {
+                        'name': 'alpha3Code',
+                        'description': 'ISO 3166-1 3-letter country code'
+                    },
+                    {
+                        'name': 'capital',
+                        'description': 'Capital city'
+                    },
+                    {
+                        'name': 'region',
+                        'description': 'World region'
+                    },
+                    {
+                        'name': 'subregion',
+                        'description': 'Sub-region with the country region'
+                    }
+                ],
+                'primaryKey': ['alpha3Code']
+            })
+        ]
 
     def download(self, datasets=None, properties=None):
         """Download the complete country listing provided by the restcountries
@@ -85,7 +88,12 @@ class RestcountriesDownloader(RepositoryDownloader):
 
         Returns
         -------
-        dict
+        list(
+            tuple(
+                openclean.data.downloader.base.DatasetDescriptor,
+                pandas.DataFrame
+            )
+        )
 
         Raises
         ------
@@ -115,4 +123,4 @@ class RestcountriesDownloader(RepositoryDownloader):
         ]
         for obj in doc:
             data.append([obj[key] for key in columns])
-        return {COUNTRIES: pd.DataFrame(data=data, columns=columns)}
+        return [(self.datasets()[0], pd.DataFrame(data=data, columns=columns))]

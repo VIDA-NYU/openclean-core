@@ -82,7 +82,12 @@ class RepositoryHandle(RepositoryDownloader):
 
         Returns
         -------
-        dict
+        list(
+            tuple(
+                openclean.data.downloader.base.DatasetDescriptor,
+                pandas.DataFrame
+            )
+        )
 
         Raises
         ------
