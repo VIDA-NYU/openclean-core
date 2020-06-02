@@ -9,142 +9,332 @@
 column).
 """
 
+from abc import abstractmethod
 
-class divide_by_total(object):
-    """Divide values in a list by the sum over all values."""
-    def __init__(self, values, raise_error=True):
-        """Compute sum over values in the given list.
+from openclean.function.value.base import ValueFunction, scalar_pass_through
+from openclean.function.value.datatype import is_numeric_type
+from openclean.function.value.filter import filter
+
+
+# -- Generic base class for normalization functions ---------------------------
+
+class NormalizeFunction(ValueFunction):
+    """Abstract base class form normalization functions. Implementing classes
+    need to implement the compute and prepare methods.
+    """
+    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+        """Initialize the raise error flag and the default value that determine
+        the behavior for non-numeric values.
+
+        Parameters
+        ----------
+        raise_error: bool, optional
+            Raise ValueError if the list contains values that are not integer
+            or float. If False, non-numeric values are ignored.
+        default_value: scalar, tuple, or callable, default=scalar_pass_through
+            Value (or function) that is returned (evaluated) for non-numeric
+            values if no error is raised. By default, a value is returned as
+            is.
+        """
+        self.raise_error = raise_error
+        self.default_value = default_value
+
+    def __call__(self, values):
+        """Make the object callable for lists of values. Applys the function to
+        each value in the given list and returns a modified list of values.
 
         Parameters
         ----------
         values: list
-            List of numeric values.
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        list
+        """
+        return self.apply(values)
+
+    @abstractmethod
+    def compute(self, value):
+        """Individual normalization function that is dependent on the
+        implementing sub-class. At this point it is assumed that the argument
+        value is numeric.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        float
+        """
+        raise NotImplementedError()
+
+    def eval(self, value):
+        """Normalize a given value by calling the compute function of the
+        implementing class.
+
+        If the given value is not a numeric value either a ValueError is raised
+        if the respective flag is True or the default value is returned.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        float
+        """
+        if not is_numeric_type(value):
+            # Depending on the raise_error flag we either raise an error for
+            # non-numeric values or return the default value (this may require
+            # to evaluate the default value function).
+            if self.raise_error:
+                raise ValueError('not a numeric value {}'.format(value))
+            if callable(self.default_value):
+                return self.default_value(value)
+            return self.default_value
+        # Divide the value by the _sum that was initialized in the prepare
+        # call. If the sum is zero or not defined we return 0.
+        return self.compute(value)
+
+
+# -- Divide by total sum ------------------------------------------------------
+
+def divide_by_total(
+    values, raise_error=True, default_value=scalar_pass_through
+):
+    """Divide values in a list by the sum over all values. Values that are
+    not numeric are either replaced with a given default value or an error
+    is raised if the raise error flag is True.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value from the list that was used to prepare the function.
+    raise_error: bool, optional
+        Raise ValueError if the list contains values that are not integer
+        or float. If False, non-numeric values are ignored.
+    default_value: scalar, tuple, or callable, default=scalar_pass_through
+        Value (or function) that is used (evaluated) as substitute for
+        non-numeric values if no error is raised. By default, a value is
+        returned as is.
+    """
+    norm = DivideByTotal(raise_error=raise_error, default_value=default_value)
+    return norm.apply(values)
+
+
+class DivideByTotal(NormalizeFunction):
+    """Divide values in a list by the sum over all values."""
+    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+        """Initialize the raise error flag and the default value that determine
+        the behavior for non-numeric values.
+
+        Parameters
+        ----------
         raise_error: bool, optional
             Raise ValueError if the list contains values that are not integer
             or float. If False, non-numeric values are ignored.
+        default_value: scalar, tuple, or callable, default=scalar_pass_through
+            Value (or function) that is used (evaluated) as substitute for
+            non-numeric values if no error is raised. By default, a value is
+            returned as is.
         """
-        self.total = 0
-        for v in values:
-            if type(v) not in [int, float]:
-                if raise_error:
-                    raise ValueError('not a numeric value {}'.format(v))
-            else:
-                self.total += v
-        self.total = float(self.total)
+        super(DivideByTotal, self).__init__(
+            raise_error=raise_error,
+            default_value=default_value
+        )
+        # The total sum of values in the list is unknown at construction time.
+        # The value will be calculated by the prepare method.
+        self._sum = None
 
-    def __call__(self, value):
+    def compute(self, value):
         """Divide given value by the pre-computed sum over all values in the
         list. If the sum was zero the result will be zero.
 
         If the given value is not a numeric value either a ValueError is raised
-        if the respective flag is True or the value is returned as is if the
-        flag is False.
+        if the respective flag is True or the default value is returned.
 
         Parameters
         ----------
-        value: number
-            Numeric value from the list that was used to initialize the object.
-        raise_error: bool, optional
-            Raise ValueError if the list contains values that are not integer
-            or float. If False, non-numeric values are ignored.
+        value: scalar
+            Scalar value from the list that was used to prepare the function.
 
         Returns
         -------
         float
         """
-        # At this point we assume that an error has been raised for non-numeric
-        # values when the object was instantiated. Here, we return the value
-        # 'as is' if it is not a numeric value.
-        if type(value) not in [int, float]:
-            return value
-        return float(value) / self.total if self.total > 0 else 0
+        # Divide the value by the _sum that was initialized in the prepare
+        # call. If the sum is zero or not defined we return 0.
+        return float(value) / self._sum if self._sum else 0
+
+    def prepare(self, values):
+        """Compute the total sum over all values in the givem list.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+        """
+        values = filter(values, is_numeric_type)
+        self._sum = float(sum(values))
 
 
-class max_abs_scale(object):
+# -- Divide by absolute maximum -----------------------------------------------
+
+def max_abs_scale(values, raise_error=True, default_value=scalar_pass_through):
+    """Divide values in a list by the absolute maximum over all values. Values
+    that are not numeric are either replaced with a given default value or an
+    error is raised if the raise error flag is True.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value from the list that was used to prepare the function.
+    raise_error: bool, optional
+        Raise ValueError if the list contains values that are not integer
+        or float. If False, non-numeric values are ignored.
+    default_value: scalar, tuple, or callable, default=scalar_pass_through
+        Value (or function) that is used (evaluated) as substitute for
+        non-numeric values if no error is raised. By default, a value is
+        returned as is.
+    """
+    norm = MaxAbsScale(raise_error=raise_error, default_value=default_value)
+    return norm.apply(values)
+
+
+class MaxAbsScale(NormalizeFunction):
     """Divided values in a list by the absolute maximum over all values."""
-    def __init__(self, values, raise_error=True):
-        """Compute maximum over values in the given list.
+    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+        """Initialize the raise error flag and the default value that determine
+        the behavior for non-numeric values.
 
         Parameters
         ----------
-        values: list
-            List of numeric values.
         raise_error: bool, optional
             Raise ValueError if the list contains values that are not integer
             or float. If False, non-numeric values are ignored.
+        default_value: scalar, tuple, or callable, default=scalar_pass_through
+            Value (or function) that is used (evaluated) as substitute for
+            non-numeric values if no error is raised. By default, a value is
+            returned as is.
         """
-        # Handle non-numeric values.
-        numbers = list()
-        for v in values:
-            if type(v) not in [int, float]:
-                if raise_error:
-                    raise ValueError('not a numeric value {}'.format(v))
-            else:
-                numbers.append(v)
-        self.maxval = float(max(numbers))
+        super(MaxAbsScale, self).__init__(
+            raise_error=raise_error,
+            default_value=default_value
+        )
+        # The maximum value in the list is unknown at construction time. The
+        # value will be calculated by the prepare method.
+        self._maximum = None
 
-    def __call__(self, value):
-        """Divide given value by the pre-computed maximum over all values in
-        the list. If the maximum was zero the result will be zero.
+    def compute(self, value):
+        """Divide given value by the pre-computed sum over all values in the
+        list. If the sum was zero the result will be zero.
+
+        If the given value is not a numeric value either a ValueError is raised
+        if the respective flag is True or the default value is returned.
 
         Parameters
         ----------
-        value: number
-            Numeric value from the list that was used to initialize the object.
+        value: scalar
+            Scalar value from the list that was used to prepare the function.
 
         Returns
         -------
         float
         """
-        # At this point we assume that an error has been raised for non-numeric
-        # values when the object was instantiated. Here, we return the value
-        # 'as is' if it is not a numeric value.
-        if type(value) not in [int, float]:
-            return value
-        return float(value) / self.maxval if self.maxval > 0 else 0
+        # Divide the value by the maximum that was initialized in the prepare
+        # call. If the maximum is zero or not defined we return 0.
+        return float(value) / self._maximum if self._maximum else 0
 
-
-class min_max_scale(object):
-    """Normalize values in a list using min-max feature scaling."""
-    def __init__(self, values, raise_error=True):
-        """Compute minimum and maximum over values in the given list.
+    def prepare(self, values):
+        """Compute the total sum over all values in the givem list.
 
         Parameters
         ----------
         values: list
-            List of numeric values.
+            List of scalar values or tuples of scalar values.
         """
-        # Handle non-numeric values.
-        numbers = list()
-        for v in values:
-            if type(v) not in [int, float]:
-                if raise_error:
-                    raise ValueError('not a numeric value {}'.format(v))
-            else:
-                numbers.append(v)
-        self.maxval = float(max(numbers))
-        self.minval = float(min(numbers))
+        values = filter(values, is_numeric_type)
+        self._maximum = float(max(values))
 
-    def __call__(self, value):
+
+# -- Min/Max scale ------------------------------------------------------------
+
+def min_max_scale(values, raise_error=True, default_value=scalar_pass_through):
+    """Normalize values in a list using min-max feature scaling. Values that
+    are not numeric are either replaced with a given default value or an
+    error is raised if the raise error flag is True.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value from the list that was used to prepare the function.
+    raise_error: bool, optional
+        Raise ValueError if the list contains values that are not integer
+        or float. If False, non-numeric values are ignored.
+    default_value: scalar, tuple, or callable, default=scalar_pass_through
+        Value (or function) that is used (evaluated) as substitute for
+        non-numeric values if no error is raised. By default, a value is
+        returned as is.
+    """
+    norm = MinMaxScale(raise_error=raise_error, default_value=default_value)
+    return norm.apply(values)
+
+
+class MinMaxScale(NormalizeFunction):
+    """Normalize values in a list using min-max feature scaling."""
+    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+        """Initialize the raise error flag and the default value that determine
+        the behavior for non-numeric values.
+
+        Parameters
+        ----------
+        raise_error: bool, optional
+            Raise ValueError if the list contains values that are not integer
+            or float. If False, non-numeric values are ignored.
+        default_value: scalar, tuple, or callable, default=scalar_pass_through
+            Value (or function) that is used (evaluated) as substitute for
+            non-numeric values if no error is raised. By default, a value is
+            returned as is.
+        """
+        super(MinMaxScale, self).__init__(
+            raise_error=raise_error,
+            default_value=default_value
+        )
+        # The minimum and maximum value in the list are unknown at construction
+        # time. The values will be calculated by the prepare method.
+        self._minimum = None
+        self._maximum = None
+
+    def compute(self, value):
         """Normalize value using min-max feature scaling. If the pre-computed
-        minimum and maximum for the value list was zero the result will be
+        minimum and maximum for the value list are equal the result will be
         zero.
 
         Parameters
         ----------
-        value: number
-            Numeric value from the list that was used to initialize the object.
+        value: scalar
+            Scalar value from the list that was used to prepare the function.
 
         Returns
         -------
         float
         """
-        # At this point we assume that an error has been raised for non-numeric
-        # values when the object was instantiated. Here, we return the value
-        # 'as is' if it is not a numeric value.
-        if type(value) not in [int, float]:
-            return value
-        if self.minval != self.maxval:
-            return (float(value) - self.minval) / (self.maxval - self.minval)
-        else:
+        if self._minimum == self._maximum:
             return 0
+        return (float(value) - self._minimum) / (self._maximum - self._minimum)
+
+    def prepare(self, values):
+        """Compute the total sum over all values in the givem list.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+        """
+        values = filter(values, is_numeric_type)
+        self._minimum = float(min(values))
+        self._maximum = float(max(values))

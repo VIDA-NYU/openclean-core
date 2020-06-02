@@ -13,7 +13,7 @@ in a given stream of scalar values or tuples of scalar values.
 from abc import ABCMeta, abstractmethod
 
 from openclean.data.metadata import FeatureVector
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 
 
 # -- Embedding function -------------------------------------------------------
@@ -42,7 +42,7 @@ def embedding(df, columns, features):
     openclean.data.metadata.FeatureVector
     """
     op = Embedding(features=features)
-    return op.exec(data=list(Stream(df=df, columns=columns)))
+    return op.exec(data=list(Sequence(df=df, columns=columns)))
 
 
 # -- Embedding classes --------------------------------------------------------

@@ -7,7 +7,7 @@
 
 """Domain outlier detector."""
 
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 from openclean.function.value.domain import is_not_in
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
@@ -33,7 +33,7 @@ def domain_outliers(df, columns, domain, ignore_case=False):
     list
     """
     op = DomainOutliers(domain=domain, ignore_case=ignore_case)
-    return op.find(values=set(Stream(df=df, columns=columns)))
+    return op.find(values=set(Sequence(df=df, columns=columns)))
 
 
 class DomainOutliers(ConditionalOutliers):

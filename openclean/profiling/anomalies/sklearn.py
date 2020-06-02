@@ -9,7 +9,7 @@
 clustering algorithms.
 """
 
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 from openclean.profiling.anomalies.base import AnomalyDetector
 from openclean.profiling.embedding.base import Embedding
 from openclean.profiling.embedding.feature import StandardFeatures
@@ -146,7 +146,7 @@ def dbscan(
     # Run the scikit-learn outlier detection algoritm with DBSCAN as the
     # estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Stream(df=df, columns=columns))
+    return op.find(values=Sequence(df=df, columns=columns))
 
 
 def isolation_forest(
@@ -231,7 +231,7 @@ def isolation_forest(
     # Run the scikit-learn outlier detection algoritm with IsolationForest as
     # the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Stream(df=df, columns=columns))
+    return op.find(values=Sequence(df=df, columns=columns))
 
 
 def local_outlier_factor(
@@ -338,7 +338,7 @@ def local_outlier_factor(
     # Run the scikit-learn outlier detection algoritm with LocalOutlierFactor
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Stream(df=df, columns=columns))
+    return op.find(values=Sequence(df=df, columns=columns))
 
 
 def one_class_svm(
@@ -418,7 +418,7 @@ def one_class_svm(
     # Run the scikit-learn outlier detection algoritm with OneClassSVM
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Stream(df=df, columns=columns))
+    return op.find(values=Sequence(df=df, columns=columns))
 
 
 def robust_covariance(
@@ -478,4 +478,4 @@ def robust_covariance(
     # Run the scikit-learn outlier detection algoritm with EllipticEnvelope
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Stream(df=df, columns=columns))
+    return op.find(values=Sequence(df=df, columns=columns))

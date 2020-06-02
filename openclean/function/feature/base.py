@@ -5,13 +5,13 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Factory for scalar feature functins."""
+"""Factory for scalar feature functions."""
 
 from abc import ABCMeta, abstractmethod
 
 
 class FeatureFunctionFactory(metaclass=ABCMeta):
-    """Feature functin factory allows to create feature functions that require
+    """Feature function factory allows to create feature functions that require
     to pre-compute statistics (e.g., min or max values) for a data stream
     before generating numeric feature for values in the stream.
     """

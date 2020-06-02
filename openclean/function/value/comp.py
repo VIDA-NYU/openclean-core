@@ -11,10 +11,12 @@
 
 from abc import ABCMeta, abstractmethod
 
+from openclean.function.value.base import PreparedFunction
+
 
 # -- Generic compare operator -------------------------------------------------
 
-class Comparison(metaclass=ABCMeta):
+class Comparison(PreparedFunction, metaclass=ABCMeta):
     """The generic comparison operator provides functionality to handle cases
     where values of incompatible data types are being compared. An errror will
     be raised for incompatible types if the raise_error flag is True. If the
@@ -35,7 +37,7 @@ class Comparison(metaclass=ABCMeta):
         self.comp_value = value
         self.raise_error = raise_error
 
-    def __call__(self, value):
+    def eval(self, value):
         """Evaluate the compare expression on the given value. If the type cast
         flag is set to True, an attempt is made to cast the input value to the
         type of the constant compare value. If type casting fails, the result
@@ -82,7 +84,7 @@ class Comparison(metaclass=ABCMeta):
 
 # -- Implementations for the standard value comparators -----------------------
 
-class eq(Comparison):
+class Eq(Comparison):
     """Simple comparator for single columns values that tests for equality with
     a given constant value.
     """
@@ -102,7 +104,7 @@ class eq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(eq, self).__init__(value=value, raise_error=raise_error)
+        super(Eq, self).__init__(value=value, raise_error=raise_error)
         self.ignore_case = ignore_case
 
     def comp(self, value):
@@ -124,7 +126,7 @@ class eq(Comparison):
             return value == self.comp_value
 
 
-class eq_ignore_case(eq):
+class EqIgnoreCase(Eq):
     """Shortcut for comparing single column values in a case-insenstive manner.
     """
     def __init__(self, value, raise_error=False):
@@ -139,10 +141,10 @@ class eq_ignore_case(eq):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(eq_ignore_case, self).__init__(value=value, ignore_case=True)
+        super(EqIgnoreCase, self).__init__(value=value, ignore_case=True)
 
 
-class geq(Comparison):
+class Geq(Comparison):
     """Simple comparator for single column values that tests whether a give
     value is greater or equal than a constant comparison value.
     """
@@ -158,7 +160,7 @@ class geq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(geq, self).__init__(value=value, raise_error=raise_error)
+        super(Geq, self).__init__(value=value, raise_error=raise_error)
 
     def comp(self, value):
         """Test whether a column value is greater or equal than a given compare
@@ -176,7 +178,7 @@ class geq(Comparison):
         return value >= self.comp_value
 
 
-class gt(Comparison):
+class Gt(Comparison):
     """Simple comparator for single column values that tests whether a given
     value is greater than a constant comparison value.
     """
@@ -192,7 +194,7 @@ class gt(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(gt, self).__init__(value=value, raise_error=raise_error)
+        super(Gt, self).__init__(value=value, raise_error=raise_error)
 
     def comp(self, value):
         """Test whether a column value is greater than a given compare value.
@@ -209,7 +211,7 @@ class gt(Comparison):
         return value > self.comp_value
 
 
-class leq(Comparison):
+class Leq(Comparison):
     """Simple comparator for single column values that tests whether a given
     value is less or equal than a constant comparison value.
     """
@@ -225,7 +227,7 @@ class leq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(leq, self).__init__(value=value, raise_error=raise_error)
+        super(Leq, self).__init__(value=value, raise_error=raise_error)
 
     def comp(self, value):
         """Test whether a column value is less or equal than a given compare
@@ -243,7 +245,7 @@ class leq(Comparison):
         return value <= self.comp_value
 
 
-class lt(Comparison):
+class Lt(Comparison):
     """Simple comparator for single column values that tests whether a given
     value is less than a constant comparison value.
     """
@@ -259,7 +261,7 @@ class lt(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(lt, self).__init__(value=value, raise_error=raise_error)
+        super(Lt, self).__init__(value=value, raise_error=raise_error)
 
     def comp(self, value):
         """Test whether a column value is less than a given compare value.
@@ -276,7 +278,7 @@ class lt(Comparison):
         return value < self.comp_value
 
 
-class neq(Comparison):
+class Neq(Comparison):
     """Simple comparator for single olumn values that tests for inequality with
     a constant comparison value.
     """
@@ -294,7 +296,7 @@ class neq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(neq, self).__init__(value=value, raise_error=raise_error)
+        super(Neq, self).__init__(value=value, raise_error=raise_error)
         self.ignore_case = ignore_case
 
     def comp(self, value):

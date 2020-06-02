@@ -7,7 +7,7 @@
 
 """Unit tests for the distinct value set profiling operator."""
 
-from openclean.profiling.distinct import distinct
+from openclean.profiling.feature.distinct import distinct, distinct_values
 
 
 def test_distinct_all_columns(schools):
@@ -37,3 +37,6 @@ def test_distinct_single_column(schools):
     assert boroughs['Q'] == 17
     assert boroughs['R'] == 5
     assert boroughs['X'] == 26
+    # Get only the list of distinct values
+    boroughs = sorted(distinct_values(schools, columns='borough'))
+    assert boroughs == ['K', 'M', 'Q', 'R', 'X']

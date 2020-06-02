@@ -7,43 +7,43 @@
 
 """unit tests for the single-value regular expression match operator."""
 
-from openclean.function.value.pattern import is_match, is_not_match
+from openclean.function.value.regex import IsMatch, IsNotMatch
 
 
 def test_func_match():
     """Test functionality of the match operator."""
     # -- IsMatch --------------------------------------------------------------
-    f = is_match(r'\d+')
+    f = IsMatch(r'\d+')
     assert f('123')
     assert f('123abc')
     assert f(123)
     assert not f('abc')
     # Full match
-    f = is_match(r'\d+', fullmatch=True)
+    f = IsMatch(r'\d+', fullmatch=True)
     assert f('123')
     assert not f('123abc')
     assert f(123)
     assert not f('abc')
     # Without type casting
-    f = is_match(r'\d+', as_string=False)
+    f = IsMatch(r'\d+', as_string=False)
     assert f('123')
     assert f('123abc')
     assert not f(123)
     assert not f('abc')
     # -- IsNotMatch -----------------------------------------------------------
-    f = is_not_match(r'\d+')
+    f = IsNotMatch(r'\d+')
     assert not f('123')
     assert not f('123abc')
     assert not f(123)
     assert f('abc')
     # Full match
-    f = is_not_match(r'\d+', fullmatch=True)
+    f = IsNotMatch(r'\d+', fullmatch=True)
     assert not f('123')
     assert f('123abc')
     assert not f(123)
     assert f('abc')
     # Without type casting
-    f = is_not_match(r'\d+', as_string=False)
+    f = IsNotMatch(r'\d+', as_string=False)
     assert not f('123')
     assert not f('123abc')
     assert f(123)

@@ -9,8 +9,8 @@
 
 from openclean.data.column import as_list
 from openclean.data.metadata import Feature
-from openclean.data.stream import Stream
-from openclean.profiling.base import DatastreamProfiler
+from openclean.data.sequence import Sequence
+from openclean.profiling.base import FeatureProfiler
 
 
 def distinct(df, columns=None):
@@ -34,20 +34,43 @@ def distinct(df, columns=None):
     # combinations over all columns in the data frame schema is computed.
     if columns is None:
         columns = as_list(df.columns)
-    return Distinct().apply(Stream(df=df, columns=columns))
+    return Distinct().exec(Sequence(df=df, columns=columns))
 
 
-class Distinct(DatastreamProfiler):
-    """Compute the set of distinct values from a data stream together with the
-    value frequency counts.
+def distinct_values(df, columns=None):
+    """Compute the list of distinct value combinations for a given list of
+    columns.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Input data frame.
+    columns: int or string or list(int or string), optional
+        List of column index or column name for columns for which distinct
+        value combinations are computed.
+
+    Returns
+    -------
+    list
     """
-    def apply(self, stream):
+    # If the list of columns is not given, the set of distinct value
+    # combinations over all columns in the data frame schema is computed.
+    if columns is None:
+        columns = as_list(df.columns)
+    return Distinct().values(Sequence(df=df, columns=columns))
+
+
+class Distinct(FeatureProfiler):
+    """Compute the set of distinct values in a given sequence together with
+    their value frequency counts.
+    """
+    def exec(self, values):
         """Compute distinct values and their frequency counts for elements in
-        the given stream of values.
+        the given sequence of scalar values or tuples of scalar values.
 
         Parameters
         ----------
-        stream: iterable
+        values: iterable
             Iterable of scalar values or tuples of scalar values.
 
         Returns
@@ -56,4 +79,4 @@ class Distinct(DatastreamProfiler):
         """
         # The metadata array is a sub-class of collection.Counter. It will
         # automatically create counts for the values in the iterator.
-        return Feature(stream)
+        return Feature(values)

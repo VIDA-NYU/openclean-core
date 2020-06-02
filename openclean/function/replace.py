@@ -193,3 +193,91 @@ class Replace(object):
         else:
             func = replace(cond=cond, values=values)
         return Eval(func=func, columns=columns)
+
+
+class replace(object):
+    """Replace function for single argument. Returns pre-defined replacement
+    value for input values that satisfy a given condition.
+    """
+    def __init__(self, cond, values):
+        """Initialize the replacement condition and the replacement value.
+
+        Parameters
+        ----------
+        cond: callable or class
+            Function that is evaluated to identify values that are modified.
+        values: constant or callable or class
+            Constant return value for modified values or function that is used
+            to compute the modified value.
+        """
+        # Ensure that the condition is callable.
+        if isinstance(cond, type):
+            cond = cond()
+        elif not callable(cond):
+            cond = eq(cond)
+        self.cond = cond
+        # If values is a class object create an instance of that class.
+        if isinstance(values, type):
+            values = values()
+        self.values = values
+
+    def __call__(self, value):
+        """Return a modified value if the given argument satisfies the
+        replacement condition. Otherwise, the value is returned as is.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value in a data stream.
+
+        Returns
+        -------
+        list
+        """
+        if self.cond(value):
+            return self.values(value) if callable(self.values) else self.values
+        return value
+
+
+class varreplace(object):
+    """Replace function for variable argument lists. Returns pre-defined
+    replacement value for input values that satisfy a given condition.
+    """
+    def __init__(self, cond, values):
+        """Initialize the replacement condition and the replacement values.
+
+        Parameters
+        ----------
+        cond: callable or class
+            Function that is evaluated to identify values that are modified.
+        values: constant or callable or class
+            Constant return value for modified values or function that is used
+            to compute the modified value.
+        """
+        # Ensure that the condition is callable.
+        if isinstance(cond, type):
+            cond = cond()
+        elif not callable(cond):
+            cond = eq(cond)
+        self.cond = cond
+        # If values is a clas object create an instance of that class.
+        if isinstance(values, type):
+            values = values()
+        self.values = values
+
+    def __call__(self, *args):
+        """Return a modified value if the given argument satisfies the
+        replacement condition. Otherwise, the value is returned as is.
+
+        Parameters
+        ----------
+        args: lists
+            Variable list of argument values.
+
+        Returns
+        -------
+        list
+        """
+        if self.cond(*args):
+            return self.values(*args) if callable(self.values) else self.values
+        return args

@@ -8,7 +8,7 @@
 import pytest
 
 from openclean.function.classifier import ValueClassifier
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 from openclean.profiling import datatypes, distinct
 from openclean.function.predicate.scalar.type import IsFloat, IsInt
 
@@ -36,7 +36,7 @@ def test_cardinality_profiler(employees, schools):
     assert types['str']['count'] == 5
     assert types['str']['total'] == 70
     # Use a value stream
-    types = datatypes(classifier=classifier, values=Stream(schools, 'grade'))
+    types = datatypes(classifier=classifier, values=Sequence(schools, 'grade'))
     assert types['int']['distinct'] == 8
     assert types['int']['total'] == 30
     assert types['str']['distinct'] == 5
@@ -52,6 +52,6 @@ def test_cardinality_profiler(employees, schools):
     with pytest.raises(ValueError):
         datatypes(schools, 'grade', classifier, values='count')
     with pytest.raises(ValueError):
-        datatypes(schools, classifier, values=Stream(schools, 'grade'))
+        datatypes(schools, classifier, values=Sequence(schools, 'grade'))
     with pytest.raises(ValueError):
         datatypes(schools, classifier, distinct_counts=dist_counts)

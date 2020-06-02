@@ -14,6 +14,29 @@ import pandas as pd
 from openclean.data.column import select_clause
 
 
+def get_value(row, colidx):
+    """Return the cell value(s) from a dat frame row for the columns with the
+    given indices. If the column index list contains only a single element
+    the result is the cell value of the respective column in the data frame
+    row. If the column index list contains multiple values the result is a
+    tuple containing the cell values from the respective columns.
+
+    Parameters
+    ----------
+    row: pandas.core.series.Series
+        Pandas data frame row object
+    colidx: list(int)
+        List of column indices.
+
+    Returns:
+    scalar or tuple
+    """
+    if len(colidx) == 1:
+        return row[colidx[0]]
+    else:
+        return tuple([row[col] for col in colidx])
+
+
 def to_lookup(df, key_columns=None, target_columns=None, override=True):
     """Create a lookup dictionary from a given data frame. Values in the key
     column(s) are mapped to corresponding values in the target column(s).
@@ -57,29 +80,6 @@ def to_lookup(df, key_columns=None, target_columns=None, override=True):
             raise ValueError('duplicate key {}'.format(key))
         lookup_dict[key] = get_value(values, colidx=targetcols)
     return lookup_dict
-
-
-def get_value(row, colidx):
-    """Return the cell value(s) from a dat frame row for the columns with the
-    given indices. If the column index list contains only a single element
-    the result is the cell value of the respective column in the data frame
-    row. If the column index list contains multiple values the result is a
-    tuple containing the cell values from the respective columns.
-
-    Parameters
-    ----------
-    row: pandas.core.series.Series
-        Pandas data frame row object
-    colidx: list(int)
-        List of column indices.
-
-    Returns:
-    scalar or tuple
-    """
-    if len(colidx) == 1:
-        return row[colidx[0]]
-    else:
-        return tuple([row[col] for col in colidx])
 
 
 def to_set(data):

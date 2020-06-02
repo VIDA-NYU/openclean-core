@@ -9,7 +9,7 @@
 data type for the column.
 """
 
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
@@ -37,7 +37,7 @@ def datatype_outliers(df, columns, classifier, domain):
     list
     """
     op = DatatypeOutliers(classifier=classifier, domain=domain)
-    return op.find(values=set(Stream(df=df, columns=columns)))
+    return op.find(values=set(Sequence(df=df, columns=columns)))
 
 
 class DatatypeOutliers(ConditionalOutliers):

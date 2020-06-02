@@ -15,42 +15,36 @@ from openclean.function.value.null import (
 def test_func_is_empty():
     """Test the is empty operator."""
     # -- IsEmpty --------------------------------------------------------------
-    f = is_empty()
-    assert f(None)
-    assert f('')
-    assert not f('  ')
-    assert not f(1)
+    assert is_empty(None)
+    assert is_empty('')
+    assert not is_empty('  ')
+    assert not is_empty(1)
     # Ignore whitespace
-    f = is_empty(ignore_whitespace=True)
-    assert f(None)
-    assert f('')
-    assert f('  ')
-    assert not f(1)
+    assert is_empty(None, ignore_whitespace=True)
+    assert is_empty('', ignore_whitespace=True)
+    assert is_empty('  ', ignore_whitespace=True)
+    assert not is_empty(1, ignore_whitespace=True)
     # -- IsNotEmpty -----------------------------------------------------------
-    f = is_not_empty()
-    assert not f(None)
-    assert not f('')
-    assert f('  ')
-    assert f(1)
+    assert not is_not_empty(None)
+    assert not is_not_empty('')
+    assert is_not_empty('  ')
+    assert is_not_empty(1)
     # Ignore whitespace
-    f = is_not_empty(ignore_whitespace=True)
-    assert not f(None)
-    assert not f('')
-    assert not f('  ')
-    assert f(1)
+    assert not is_not_empty(None, ignore_whitespace=True)
+    assert not is_not_empty('', ignore_whitespace=True)
+    assert not is_not_empty('  ', ignore_whitespace=True)
+    assert is_not_empty(1, ignore_whitespace=True)
 
 
 def test_func_is_none():
     """Test the is none operator."""
     # -- IsNone ---------------------------------------------------------------
-    f = is_none()
-    assert f(None)
-    assert not f('')
-    assert not f('  ')
-    assert not f(1)
+    assert is_none(None)
+    assert not is_none('')
+    assert not is_none('  ')
+    assert not is_none(1)
     # -- IsNotNone ------------------------------------------------------------
-    f = is_not_none()
-    assert not f(None)
-    assert f('')
-    assert f('  ')
-    assert f(1)
+    assert not is_not_none(None)
+    assert is_not_none('')
+    assert is_not_none('  ')
+    assert is_not_none(1)

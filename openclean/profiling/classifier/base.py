@@ -10,7 +10,7 @@ stream on data values.
 """
 
 from openclean.data.metadata import FeatureDict, Feature
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 
 
 # -- Class profiling ----------------------------------------------------------
@@ -39,7 +39,7 @@ def classprofile(df, columns, classifier):
     """
     values = dict()
     types = FeatureDict()
-    for value in Stream(df=df, columns=columns):
+    for value in Sequence(df=df, columns=columns):
         if value not in values:
             label = classifier(value)
             types[label] = {'distinct': 1, 'total': 1}
@@ -74,7 +74,7 @@ def classify(df, columns, classifier, distinct=False):
     -------
     openclean.data.metadata.Feature
     """
-    values = Stream(df=df, columns=columns)
+    values = Sequence(df=df, columns=columns)
     if distinct:
         values = set(values)
     return classify_distinct(values=values, classifier=classifier)

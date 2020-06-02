@@ -8,7 +8,7 @@
 """Operators for frequency outlier detection."""
 
 from openclean.data.metadata import Feature
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 from openclean.function.value.comp import get_threshold
 from openclean.function.value.normalize import divide_by_total
@@ -40,7 +40,7 @@ def frequency_outliers(df, columns, threshold):
     """
     # Create the predicate as a lookup over the normalized frequencies of
     # values in the given columns.
-    values = list(Stream(df=df, columns=columns))
+    values = list(Sequence(df=df, columns=columns))
     lookup = Feature(values).normalize(divide_by_total)
     op = FrequencyOutliers(frequency=lookup, threshold=threshold)
     return op.find(values=values)
