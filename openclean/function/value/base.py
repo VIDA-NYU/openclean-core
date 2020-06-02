@@ -88,6 +88,10 @@ class ValueFunction(ListFunction, metaclass=ABCMeta):
         ----------
         values: list
             List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        openclean.function.value.base.ValueFunction
         """
         raise NotImplementedError()
 
@@ -121,7 +125,7 @@ class PreparedFunction(ValueFunction):
         values: list
             List of scalar values or tuples of scalar values.
         """
-        pass
+        return self
 
 
 class CallableWrapper(PreparedFunction):

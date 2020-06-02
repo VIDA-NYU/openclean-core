@@ -7,13 +7,13 @@
 
 """Unit tests for embedding generators."""
 
-from openclean.profiling.embedding.base import embedding
-from openclean.profiling.embedding.feature import StandardFeatures
+from openclean.embedding.base import embedding
+from openclean.embedding.feature.default import StandardEmbedding
 
 
 def test_standard_feature_embedding(nyc311):
     """Test generating feature vectors for column values using the default
     feature vector generator for scalar values.
     """
-    vec = embedding(nyc311, 'street', StandardFeatures())
+    vec = embedding(nyc311, 'street', StandardEmbedding())
     assert vec.data.shape == (258, 7)

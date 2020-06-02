@@ -58,20 +58,6 @@ class StringFunction(ValueFunction):
         self.as_string = as_string
         self.raise_error = raise_error
 
-    def __call__(self, value):
-        """Make the function callable for individual values.
-
-        Parameters
-        ----------
-        value: scalar or tuple
-            Value from the list that was used to prepare the function.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.eval(value)
-
     def eval(self, value):
         """Execute the string function on the given argument. If the argument
         is not of type string one of three behaviors will occur: (i) a
@@ -105,6 +91,8 @@ class StringFunction(ValueFunction):
         else:
             return value
 
+    __call__ = eval
+
     def prepare(self, values):
         """Optional step to prepare the function for a given list of values.
         This step is only relevant for a potential consumer.
@@ -116,6 +104,7 @@ class StringFunction(ValueFunction):
         """
         if self.consumer is not None:
             self.consumer.prepare(values)
+        return self
 
     def transform(self, value):
         """Apply the string function on a single scalar value. Raises a

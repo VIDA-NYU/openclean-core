@@ -39,21 +39,6 @@ class NormalizeFunction(ValueFunction):
         self.raise_error = raise_error
         self.default_value = default_value
 
-    def __call__(self, values):
-        """Make the object callable for lists of values. Applys the function to
-        each value in the given list and returns a modified list of values.
-
-        Parameters
-        ----------
-        values: list
-            List of scalar values or tuples of scalar values.
-
-        Returns
-        -------
-        list
-        """
-        return self.apply(values)
-
     @abstractmethod
     def compute(self, value):
         """Individual normalization function that is dependent on the
@@ -99,6 +84,8 @@ class NormalizeFunction(ValueFunction):
         # Divide the value by the _sum that was initialized in the prepare
         # call. If the sum is zero or not defined we return 0.
         return self.compute(value)
+
+    __call__ = eval
 
 
 # -- Divide by total sum ------------------------------------------------------
@@ -180,6 +167,7 @@ class DivideByTotal(NormalizeFunction):
         """
         values = filter(values, is_numeric_type)
         self._sum = float(sum(values))
+        return self
 
 
 # -- Divide by absolute maximum -----------------------------------------------
@@ -259,6 +247,7 @@ class MaxAbsScale(NormalizeFunction):
         """
         values = filter(values, is_numeric_type)
         self._maximum = float(max(values))
+        return self
 
 
 # -- Min/Max scale ------------------------------------------------------------
@@ -338,3 +327,4 @@ class MinMaxScale(NormalizeFunction):
         values = filter(values, is_numeric_type)
         self._minimum = float(min(values))
         self._maximum = float(max(values))
+        return self

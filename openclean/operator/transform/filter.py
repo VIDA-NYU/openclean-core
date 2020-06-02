@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Functions and classes that implement the filter operator in openclean."""
+"""Functions and classes that implement the filter operators in openclean."""
 
 from openclean.function.base import EvalFunction
 from openclean.operator.base import DataFrameTransformer
@@ -13,11 +13,15 @@ from openclean.operator.base import DataFrameTransformer
 
 # -- Functions ----------------------------------------------------------------
 
-def filter(df, predicate):
+def filter(df, columns=None, predicates=None, truth_value=True):
     """Filter function for data frames. Returns a data frame that only contains
-    the rows of the input data frame for which the given predicate evaluates
+    the rows of the input data frame for which the given predicate(s) evaluates
     to True.
 
+    This function operates in two modes. If a list of columns is given the
+    predicates are expected to be ValueFunctions. If no columns are specified
+    the predicates are expected to be a single EvalFunction that operate ...
+    
     Parameters
     ----------
     df: pandas.DataFrame

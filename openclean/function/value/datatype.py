@@ -17,6 +17,8 @@ from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 
+from openclean.function.value.classifier import ClassLabel
+
 
 # -- Type cast function -------------------------------------------------------
 
@@ -133,7 +135,7 @@ def to_float(value, default_value=None, raise_error=False):
 
 # -- Type check functions -----------------------------------------------------
 
-def is_datetime(value, formats=None):
+def is_datetime(value, typecast=True, formats=None):
     """Test if a given string value can be converted into a datetime object for
     a given data format. The function accepts a single date format or a list of
     formates. If no format is given, ISO format is assumed as the default.
@@ -142,6 +144,8 @@ def is_datetime(value, formats=None):
     ----------
     value: scalar
         Scalar value that is tested for being a date.
+    typecast: bool, default=True
+        Attempt to parse string values as dates if True.
     formats: string or list(string)
         Date format string using Python strptime() format directives. This
         can be a list of date formats.
@@ -150,9 +154,10 @@ def is_datetime(value, formats=None):
     -------
     bool
     """
-    # Ensure that the value is of type string to avoid TypeError.
-    if not isinstance(value, str):
-        value = str(value)
+    if isinstance(value, datetime):
+        return True
+    elif not typecast or not isinstance(value, str):
+        return False
     # Try to convert the given string to a datatime object with the format
     # that was specified at object instantiation. This will raise an
     # exception if the value does not match the datetime format string.
@@ -302,3 +307,65 @@ def is_numeric_type(value):
     bool
     """
     return is_numeric(value, typecast=False)
+
+
+# -- Default data type classifiers --------------------------------------------
+
+class Datetime(ClassLabel):
+    """Class label assigner for datetime values."""
+    def __init__(self, label='datetime', typecast=True, formats=None):
+        """Initialize the class label and set the type cast flag.
+
+        Parameters
+        ----------
+        label: string, default='float'
+            Label that is returned for values that satisfy the predicate.
+        typecast: bool, default=True
+            Parse string values as dates if True.
+        formats: string or list(string)
+            Date format string using Python strptime() format directives. This
+            can be a list of date formats.
+        """
+
+        def predicate(value):
+            return is_datetime(value, typecast=typecast, formats=formats)
+
+        super(Datetime, self).__init__(predicate=predicate, label=label)
+
+
+class Float(ClassLabel):
+    """Class label assigner for float values."""
+    def __init__(self, label='float', typecast=True):
+        """Initialize the class label and set the type cast flag.
+
+        Parameters
+        ----------
+        label: string, default='float'
+            Label that is returned for values that satisfy the predicate.
+        typecast: bool, default=True
+            Cast string values to float if True.
+        """
+
+        def predicate(value):
+            return is_float(value, typecast=typecast)
+
+        super(Float, self).__init__(predicate=predicate, label=label)
+
+
+class Int(ClassLabel):
+    """Class label assigner for integer values."""
+    def __init__(self, label='int', typecast=True):
+        """Initialize the class label and set the type cast flag.
+
+        Parameters
+        ----------
+        label: string, default='int'
+            Label that is returned for values that satisfy the predicate.
+        typecast: bool, default=True
+            Cast string values to integer if True.
+        """
+
+        def predicate(value):
+            return is_int(value, typecast=typecast)
+
+        super(Int, self).__init__(predicate=predicate, label=label)

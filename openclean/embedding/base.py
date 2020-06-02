@@ -42,7 +42,7 @@ def embedding(df, columns, features):
     openclean.data.metadata.FeatureVector
     """
     op = Embedding(features=features)
-    return op.exec(data=list(Sequence(df=df, columns=columns)))
+    return op.exec(values=Sequence(df=df, columns=columns))
 
 
 # -- Embedding classes --------------------------------------------------------
@@ -63,7 +63,7 @@ class Embedding(object):
         """
         self.features = features
 
-    def exec(self, data):
+    def exec(self, values):
         """Return an array that contains a feature vector for each distinct
         value in the given input data list. The vector is computed using a list
         of value feature functions. The resulting array has one column per
@@ -71,7 +71,7 @@ class Embedding(object):
 
         Parameters
         ----------
-        data: list
+        values: list
             List of scalar values or tuples.
 
         Returns
@@ -81,10 +81,10 @@ class Embedding(object):
         # Prepare the associated feature generator. Make sure to use the full
         # list of values when pre-computing statistics. This may return a
         # modified feature vector generator.
-        features = self.features.prepare(data)
+        features = self.features.prepare(values)
         vec = FeatureVector()
         # Use the distinct set of values to generate vector embeddings.
-        for value in set(data):
+        for value in values:
             vec.add(value, features.embed(value))
         return vec
 
@@ -109,18 +109,17 @@ class ValueEmbedder(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def prepare(self, data):
+    def prepare(self, values):
         """Passes the list of values to the vector generator pre-compute any
-        statistics (e.g., min-max values) that are required. Returns a
-        (modified) instance of the feature generator.
+        statistics (e.g., min-max values) that are required.
 
         Parameters
         ----------
-        data: iterable
+        values: iterable
             List of data values.
 
         Returns
         -------
-        openclean.profiling.embedding.base.ValueEmbedder
+        openclean.embedding.base.ValueEmbedder
         """
         raise NotImplementedError()
