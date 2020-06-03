@@ -93,6 +93,16 @@ class StringFunction(ValueFunction):
 
     __call__ = eval
 
+    def is_prepared(self):
+        """Returns False if the optional consumer requires preparation.
+        Otherwise, no preparation is required.
+
+        Returns
+        -------
+        bool
+        """
+        return self.consumer.is_prepared() if self.consumer else True
+
     def prepare(self, values):
         """Optional step to prepare the function for a given list of values.
         This step is only relevant for a potential consumer.
@@ -103,7 +113,8 @@ class StringFunction(ValueFunction):
             List of scalar values or tuples of scalar values.
         """
         if self.consumer is not None:
-            self.consumer.prepare(values)
+            if not self.consumer.is_prepared():
+                self.consumer.prepare(values)
         return self
 
     def transform(self, value):

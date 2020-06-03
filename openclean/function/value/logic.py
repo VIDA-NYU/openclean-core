@@ -65,6 +65,19 @@ class LogicFunction(ValueFunction):
         """
         return self.eval(value)
 
+    def is_prepared(self):
+        """Returns False if any of the predicates requires preparation.
+        Otherwise, no preparation is required.
+
+        Returns
+        -------
+        bool
+        """
+        for f in self.predicates:
+            if not f.is_prepared():
+                return False
+        return True
+
     def prepare(self, values):
         """The prepare step passes the values on to the predicates.
 

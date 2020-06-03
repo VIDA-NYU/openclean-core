@@ -73,6 +73,15 @@ class ClassLabel(ValueFunction):
 
     __call__ = eval
 
+    def is_prepared(self):
+        """Checks if the wrapped predicate requires preparation.
+
+        Returns
+        -------
+        bool
+        """
+        return self.predicate.is_prepared()
+
     def prepare(self, values):
         """Call the prepare method of the associated predicate.
 
@@ -81,7 +90,8 @@ class ClassLabel(ValueFunction):
         values: list
             List of scalar values or tuples of scalar values.
         """
-        self.predicate.prepare(values)
+        if not self.predicate.is_prepared():
+            self.predicate.prepare(values)
         return self
 
 
@@ -118,7 +128,11 @@ class ValueClassifier(ValueFunction):
         ------
         ValueError
         """
-        self.classifiers = args
+        self.classifiers = list()
+        for f in args:
+            if not isinstance(f, ValueFunction):
+                f = CallableWrapper(f)
+            self.classifiers.append(f)
         self.none_label = kwargs.get('none_label')
         self.default_label = kwargs.get('default_label')
         self.raise_error = kwargs.get('raise_error', False)
@@ -157,6 +171,18 @@ class ValueClassifier(ValueFunction):
 
     __call__ = eval
 
+    def is_prepared(self):
+        """Returns False if any of the wrapped classifiers needs preparation.
+
+        Returns
+        -------
+        bool
+        """
+        for classifier in self.classifiers:
+            if not classifier.is_prepared():
+                return False
+        return True
+
     def prepare(self, values):
         """Call the prepare method of the associated classifiers.
 
@@ -166,5 +192,6 @@ class ValueClassifier(ValueFunction):
             List of scalar values or tuples of scalar values.
         """
         for classifier in self.classifiers:
-            classifier.prepare(values)
+            if not classifier.is_prepared():
+                classifier.prepare(values)
         return self

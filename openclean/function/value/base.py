@@ -79,6 +79,18 @@ class ValueFunction(ListFunction, metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
+    def is_prepared(self):
+        """Returns True if the prepare method is ignored by an implementation
+        of this function. Containing classes will only call the prepare method
+        for those value functions that are not prepared.
+
+        Returns
+        -------
+        bool
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def prepare(self, values):
         """Optional step to prepare the function for a given list of values.
         This step allows to compute statistics over the list of values for
@@ -116,6 +128,15 @@ class PreparedFunction(ValueFunction):
         scalar or tuple
         """
         return self.eval(value)
+
+    def is_prepared(self):
+        """Instances of this class do not need to be further prepared.
+
+        Returns
+        -------
+        bool
+        """
+        return True
 
     def prepare(self, values):
         """The prepare step is ignored for a wrapped callable.

@@ -13,6 +13,8 @@ return either a scalar value or a tuple of scalar values.
 from abc import ABCMeta, abstractmethod
 
 from openclean.data.column import select_clause
+from openclean.data.sequence import Sequence
+from openclean.function.value.base import CallableWrapper, ValueFunction
 
 
 # -- Evaluation Functions -----------------------------------------------------
@@ -101,19 +103,37 @@ class Eval(object):
         # If no columns are are given the function is evaluated on the full
         # data frame row.
         if columns is None:
-            return FullRowEval(func=func)
+            if isinstance(func, ValueFunction):
+                return FullRowValueEval(func=func)
+            else:
+                return FullRowEval(func=func)
         # Return different instances of the eval function depending on whether
         # the function is applied on no column, one column or multiple columns.
         if isinstance(columns, list):
+            for c in columns:
+                if not (isinstance(c, int) or isinstance(c, str)):
+                    raise ValueError('invalid column {}'.format(c))
             # Even if columns is a list it may only contain a single element.
             if len(columns) == 1:
-                return SingleColumnEval(func=func, columns=columns[0])
+                if isinstance(func, ValueFunction):
+                    return SingleColumnValueEval(func=func, columns=columns[0])
+                else:
+                    return SingleColumnEval(func=func, columns=columns[0])
             elif len(columns) > 1:
-                return MultiColumnEval(func=func, columns=columns)
+                if isinstance(func, ValueFunction):
+                    return MultiColumnValueEval(func=func, columns=columns)
+                else:
+                    return MultiColumnEval(func=func, columns=columns)
             else:
-                return FullRowEval(func=func)
+                if isinstance(func, ValueFunction):
+                    return FullRowValueEval(func=func)
+                else:
+                    return FullRowEval(func=func)
         else:
-            return SingleColumnEval(func=func, columns=columns)
+            if isinstance(func, ValueFunction):
+                return SingleColumnValueEval(func=func, columns=columns)
+            else:
+                return SingleColumnEval(func=func, columns=columns)
 
 
 class FullRowEval(EvalFunction):
@@ -127,7 +147,8 @@ class FullRowEval(EvalFunction):
         Parameters
         ----------
         func: callable
-            Callable that is evaluated on a cell value from a data frame row.
+            Callable that is evaluated on the list of cell values from a data
+            frame row.
 
         Raises
         ------
@@ -168,6 +189,63 @@ class FullRowEval(EvalFunction):
         # Prepare the callable if it is a prepared function.
         if isinstance(self.func, EvalFunction):
             self.func.prepare(df)
+        return self
+
+
+class FullRowValueEval(EvalFunction):
+    """Eval function that evaluates a value function on all values in a data
+    frame row.
+    """
+    def __init__(self, func):
+        """Initialize the value function. Raises a ValueError if the function
+        argument is not a callable or an instance of ValueFunction.
+
+        Parameters
+        ----------
+        func: (openclean.function.value.base.ValueFunction or callable)
+            Callable or value function that is evaluated on the list of cell
+            values from a data frame row.
+
+        Raises
+        ------
+        ValueError
+        """
+        # Ensure that the function is of type ValueFunction. Raises ValueError
+        # if the function is not callable.
+        if not isinstance(func, ValueFunction):
+            func = CallableWrapper(func)
+        self.func = func
+
+    def eval(self, values):
+        """Evaluate the function on the given data frame row.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.func(tuple([values]))
+
+    def prepare(self, df):
+        """If the evaluation function is a prepared callable the respective
+        prepare() method is called.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.base.EvalFunction
+        """
+        # Prepare the callable if it is a prepared function.
+        if not self.funcis_prepared():
+            self.func.prepare(Sequence(df=df, columns=[df.columns]))
         return self
 
 
@@ -237,6 +315,75 @@ class MultiColumnEval(EvalFunction):
         return self
 
 
+class MultiColumnValueEval(EvalFunction):
+    """Eval function that applies a value function on a set of columns (values)
+    in a data frame row.
+    """
+    def __init__(self, func, columns):
+        """Initialize the function and columns. Raises a ValueError if the
+        given function is not a callable or of type ValueFunction.
+
+        Parameters
+        ----------
+        func: (openclean.function.value.base.ValueFunction or callable)
+            Callable or value function that is evaluated on a list of cell
+            values from a data frame row.
+        columns: list(int or string)
+            List of column index positions or column names.
+
+        Raises
+        ------
+        ValueError
+        """
+        # Ensure that the function is of type ValueFunction. Raises ValueError
+        # if the function is not callable.
+        if not isinstance(func, ValueFunction):
+            func = CallableWrapper(func)
+        self.func = func
+        self.columns = columns
+        # The list of column indices is initially None. the list will be
+        # initialized by the prepare method.
+        self.colidxs = None
+
+    def eval(self, values):
+        """Evaluate the callable on the given data frame row. Passes only the
+        cell values from those columns that were specified when the object was
+        instantiated.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        # The value function will expect a single argument. Make sure to create
+        # a tuple containing the column values.
+        return self.func(tuple([values[c] for c in self.colidxs]))
+
+    def prepare(self, df):
+        """Initialize the corresponding list of column indices for the columns
+        that were specified at object instantiation. If the evaluation function
+        is a prepared callable the respective prepare() method is called.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.base.EvalFunction
+        """
+        _, self.colidxs = select_clause(df=df, columns=self.columns)
+        # Prepare the value function if it is not a prepared function.
+        if not self.func.is_prepared():
+            self.func.prepare(Sequence(df=df, columns=self.columns))
+        return self
+
+
 class SingleColumnEval(EvalFunction):
     """Eval function that evaluates a callable on a single column in a data
     frame row.
@@ -294,11 +441,78 @@ class SingleColumnEval(EvalFunction):
         -------
         openclean.function.base.EvalFunction
         """
-        _, colidxs = select_clause(df=df, columns=[self.columns])
+        _, colidxs = select_clause(df=df, columns=self.columns)
         self.colidx = colidxs[0]
         # Prepare the callable if it is a prepared function.
         if isinstance(self.func, EvalFunction):
             self.func.prepare(df)
+        return self
+
+
+class SingleColumnValueEval(EvalFunction):
+    """Eval function that evaluates a value function on a single column in a
+    data frame row.
+    """
+    def __init__(self, func, columns):
+        """Initialize the callable and the source column. Raises a ValueError
+        if the function argument is not a callable.
+
+        Parameters
+        ----------
+        func: (openclean.function.value.base.ValueFunction or callable)
+            Callable or value function that is evaluated on a list of cell
+            values from a data frame row.
+        columns: int or string
+            Single column index or name.
+
+        Raises
+        ------
+        ValueError
+        """
+        # Ensure that the function is of type ValueFunction. Raises ValueError
+        # if the function is not callable.
+        if not isinstance(func, ValueFunction):
+            func = CallableWrapper(func)
+        self.func = func
+        self.columns = columns
+        # The column index is initially None. The value will be initialized by
+        # the prepare method.
+        self.colidx = None
+
+    def eval(self, values):
+        """Evaluate the function on the cell value in the source column of the
+        given data frame row.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.func(values[self.colidx])
+
+    def prepare(self, df):
+        """Initialize the index of the source column in the schema of the given
+        data frame. If the evaluation function is a prepared callable the
+        respective prepare() method is called.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.base.EvalFunction
+        """
+        _, colidxs = select_clause(df=df, columns=[self.columns])
+        self.colidx = colidxs[0]
+        # Prepare the value function if it is not a prepared function.
+        if not self.func.is_prepared():
+            self.func.prepare(Sequence(df=df, columns=self.columns))
         return self
 
 
@@ -396,8 +610,8 @@ def is_var_func(columns=None):
     ----------
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-        These are the columns on which the function will be evalauated.
-        If not specified the function is evalauated on the list of values
+        These are the columns on which the function will be evaluated.
+        If not specified the function is evaluated on the list of values
         in the data frame row (i.e., a data series object).
 
     Returns

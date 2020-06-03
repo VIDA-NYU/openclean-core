@@ -66,7 +66,7 @@ class Col(object):
                         default_value=default_value,
                         raise_error=raise_error
                     )
-                    
+
         return Eval(func=func, columns=columns)
 
 

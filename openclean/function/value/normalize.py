@@ -85,6 +85,15 @@ class NormalizeFunction(ValueFunction):
         # call. If the sum is zero or not defined we return 0.
         return self.compute(value)
 
+    def is_prepared(self):
+        """Subclasses are expected to require preparation.
+
+        Returns
+        -------
+        bool
+        """
+        return False
+
     __call__ = eval
 
 

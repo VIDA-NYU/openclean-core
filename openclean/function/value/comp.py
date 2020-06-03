@@ -96,6 +96,15 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
 
     __call__ = eval
 
+    def is_prepared(self):
+        """Returns False if either of the expressions needs preparation.
+
+        Returns
+        -------
+        bool
+        """
+        return self.left_value.is_prepared() and self.right_value.is_prepared()
+
     def prepare(self, values):
         """Prepare the value functions for the left hand side and right hand
         side value of the comparison.
@@ -109,8 +118,10 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
         -------
         openclean.function.value.base.ValueFunction
         """
-        self.left_value.prepate(values)
-        self.right_value.prepare(values)
+        if not self.left_value.is_prepared():
+            self.left_value.prepate(values)
+        if not self.right_value.is_prepared():
+            self.right_value.prepare(values)
         return self
 
 
