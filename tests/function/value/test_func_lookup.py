@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the mapping and replace functions."""
+"""Unit tests for the lookup functions."""
 
 import pytest
 

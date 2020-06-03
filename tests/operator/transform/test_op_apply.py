@@ -7,7 +7,6 @@
 
 """Unit tests for the apply operator."""
 
-import math
 import numpy as np
 
 from openclean.function.value.cond import Replace
