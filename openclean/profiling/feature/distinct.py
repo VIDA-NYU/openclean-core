@@ -37,29 +37,6 @@ def distinct(df, columns=None):
     return Distinct().exec(Sequence(df=df, columns=columns))
 
 
-def distinct_values(df, columns=None):
-    """Compute the list of distinct value combinations for a given list of
-    columns.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    columns: int or string or list(int or string), optional
-        List of column index or column name for columns for which distinct
-        value combinations are computed.
-
-    Returns
-    -------
-    list
-    """
-    # If the list of columns is not given, the set of distinct value
-    # combinations over all columns in the data frame schema is computed.
-    if columns is None:
-        columns = as_list(df.columns)
-    return Distinct().values(Sequence(df=df, columns=columns))
-
-
 class Distinct(FeatureProfiler):
     """Compute the set of distinct values in a given sequence together with
     their value frequency counts.

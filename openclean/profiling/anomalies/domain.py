@@ -8,7 +8,7 @@
 """Domain outlier detector."""
 
 from openclean.data.sequence import Sequence
-from openclean.function.value.domain import is_not_in
+from openclean.function.value.domain import IsNotInDomain
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
@@ -52,5 +52,5 @@ class DomainOutliers(ConditionalOutliers):
             Ignore case for domain inclusion checking
         """
         super(DomainOutliers, self).__init__(
-            predicate=is_not_in(domain=domain, ignore_case=ignore_case)
+            predicate=IsNotInDomain(domain=domain, ignore_case=ignore_case)
         )

@@ -11,8 +11,8 @@ clustering algorithms.
 
 from openclean.data.sequence import Sequence
 from openclean.profiling.anomalies.base import AnomalyDetector
-from openclean.profiling.embedding.base import Embedding
-from openclean.profiling.embedding.feature import StandardFeatures
+from openclean.embedding.base import Embedding
+from openclean.embedding.feature.default import StandardEmbedding
 
 
 class SklearnOutliers(AnomalyDetector):
@@ -35,7 +35,7 @@ class SklearnOutliers(AnomalyDetector):
             Feature vector generator for values in a data stream.
         """
         self.algorithm = algorithm
-        self.features = StandardFeatures() if features is None else features
+        self.features = StandardEmbedding() if features is None else features
 
     def find(self, values):
         """Identify values in a given list of distinct values that satisfy the

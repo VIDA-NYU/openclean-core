@@ -10,17 +10,15 @@
 from openclean.profiling.anomalies.datatype import (
     datatype_outliers, DatatypeOutliers
 )
-
-from openclean.function.classifier import ValueClassifier
-from openclean.function.value.datatype import is_float, is_int
-from openclean.function.value.domain import is_in
+from openclean.function.value.classifier import ClassLabel, ValueClassifier
+from openclean.function.value.datatype import Float, Int
+from openclean.function.value.domain import IsInDomain
 
 
 def test_datatype_outliers_in_list():
     """Test finding data type outliers in a list of values."""
     classifier = ValueClassifier(
-        classifier=[is_in(domain=list('ABCDE'))],
-        labels=['grade'],
+        ClassLabel(IsInDomain(domain=list('ABCDE')), label='grade'),
         default_label='unknown'
     )
     op = DatatypeOutliers(classifier=classifier, domain=['grade'])
@@ -33,8 +31,8 @@ def test_datatype_outliers_in_data_frame(schools):
     column.
     """
     classifier = ValueClassifier(
-        classifier=[is_int(), is_float()],
-        labels=['number', 'number'],
+        Int(label='number'),
+        Float(label='number'),
         default_label='str'
     )
     outliers = datatype_outliers(

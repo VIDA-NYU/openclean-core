@@ -69,8 +69,8 @@ class Filter(ListFunction):
         list
         """
         result = list()
-        self.predicate.prepare(values)
+        f = self.predicate.prepare(values)
         for v in values:
-            if self.predicate(v) == self.truth_value:
+            if f.eval(v) == self.truth_value:
                 result.append(v)
         return result

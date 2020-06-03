@@ -10,11 +10,9 @@ general are considered values that do not match a (list of) pattern(s) that
 the values in a list (e.g., data frame column) are expected to satisfy.
 """
 
-from openclean.function.value.base import eval_all
-from openclean.function.value.pattern import is_match, is_not_match
-from openclean.function.value.tautology import tautology
+from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.distinct import distinct
+from openclean.profiling.feature.distinct import distinct
 
 
 def regex_outliers(df, columns, patterns, fullmatch=True):
@@ -64,11 +62,65 @@ class RegExOutliers(ConditionalOutliers):
         if len(patterns) == 0:
             # An empty pattern list means that no value is being considered as
             # an outlier.
-            predicate = tautology(return_value=False)
+            predicate = always_false
         elif len(patterns) == 1:
-            predicate = is_not_match(pattern=patterns[0], fullmatch=fullmatch)
+            predicate = IsNotMatch(pattern=patterns[0], fullmatch=fullmatch)
         else:
             # If a list of patterns is given a value i
-            ops = [is_match(pattern=p, fullmatch=fullmatch) for p in patterns]
+            ops = [IsMatch(pattern=p, fullmatch=fullmatch) for p in patterns]
             predicate = eval_all(predicates=ops, truth_value=False)
         super(RegExOutliers, self).__init__(predicate=predicate)
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def always_false(*args):
+    """Predicate that always evaluates to False.
+
+    Parameters
+    ----------
+    args: any
+        Variable list of arguments.
+
+    Returns
+    -------
+    bool
+    """
+    return False
+
+
+class eval_all(object):
+    """Logic operator that evaluates a list of predicates and returns True only
+    if all predicates return a defined result value.
+    """
+    def __init__(self, predicates, truth_value=True):
+        """Initialize the list of predicates and the expected result value.
+
+        Parameters
+        ----------
+        predicates: list(callable)
+            List of callables that are evaluated on a given value.
+        truth_value: scalar, default=True
+            Expected result value for predicate evaluation to be considered
+            satisfied.
+        """
+        self.predicates = predicates
+        self.truth_value = truth_value
+
+    def __call__(self, value):
+        """Evaluate all predicates on the given value. Returns True only if all
+        predicates evaluate to the defined result value.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value that is compared against the constant compare value.
+
+        Returns
+        -------
+        bool
+        """
+        for f in self.predicates:
+            if f.eval(value) != self.truth_value:
+                return False
+        return True

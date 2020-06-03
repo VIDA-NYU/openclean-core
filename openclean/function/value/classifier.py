@@ -196,7 +196,7 @@ class ValueClassifier(ValueFunction):
         values: list
             List of scalar values or tuples of scalar values.
         """
-        if self.is_prepared():
+        if not self.is_prepared():
             args = []
             for classifier in self.classifiers:
                 args.append(classifier.prepare(values))
