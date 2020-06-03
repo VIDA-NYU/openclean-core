@@ -212,3 +212,26 @@ def scalar_pass_through(value):
     scalar
     """
     return value
+
+
+def to_valuefunc(value):
+    """Return a value function that represents the given argument. If the
+    argument is not a value function, either of the following is expected:
+    (i) a callable that will be wrapped in a CallableWrapper, or (2) a constant
+    value that will be wrapped in a ConstantValue.
+
+    Parameters
+    ----------
+    value: scalar, callable, or openclean.function.value.base.ValueFunction
+        Argument that is being represented as a value function.
+
+    Returns
+    -------
+    openclean.function.value.base.ValueFunction
+    """
+    if not isinstance(value, ValueFunction):
+        if callable(value):
+            value = CallableWrapper(value)
+        else:
+            value = ConstantValue(value)
+    return value

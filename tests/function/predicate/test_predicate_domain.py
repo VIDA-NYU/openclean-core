@@ -15,27 +15,27 @@ def test_predicate_domain(employees):
     # -- IsIn -----------------------------------------------------------------
     f = IsIn(domain=['Alice', 'Bob'], columns='Name')
     f.prepare(employees)
-    assert f.exec(employees.iloc[0])
-    assert f.exec(employees.iloc[1])
-    assert not f.exec(employees.iloc[2])
+    assert f.eval(employees.iloc[0])
+    assert f.eval(employees.iloc[1])
+    assert not f.eval(employees.iloc[2])
     # Tuple lookup over multiple columns
     f = IsIn(domain=[('Alice', '23'), ('Bob', 32.0)], columns=['Name', 'Age'])
     f.prepare(employees)
-    assert not f.exec(employees.iloc[0])
-    assert f.exec(employees.iloc[1])
-    assert not f.exec(employees.iloc[2])
+    assert not f.eval(employees.iloc[0])
+    assert f.eval(employees.iloc[1])
+    assert not f.eval(employees.iloc[2])
     # -- IsNotIn --------------------------------------------------------------
     f = IsNotIn(domain=['Alice', 'Bob'], columns='Name')
     f.prepare(employees)
-    assert not f.exec(employees.iloc[0])
-    assert not f.exec(employees.iloc[1])
-    assert f.exec(employees.iloc[2])
+    assert not f.eval(employees.iloc[0])
+    assert not f.eval(employees.iloc[1])
+    assert f.eval(employees.iloc[2])
     # Tuple lookup over multiple columns
     f = IsNotIn(
         domain=[('Alice', '23'), ('Bob', 32.0)],
         columns=['Name', 'Age']
     )
     f.prepare(employees)
-    assert f.exec(employees.iloc[0])
-    assert not f.exec(employees.iloc[1])
-    assert f.exec(employees.iloc[2])
+    assert f.eval(employees.iloc[0])
+    assert not f.eval(employees.iloc[1])
+    assert f.eval(employees.iloc[2])

@@ -7,7 +7,7 @@
 
 """Unit tests for regular expression match predicates for data frame rows."""
 
-from openclean.function.predicate.pattern import IsMatch, IsNotMatch
+from openclean.function.predicate.regex import IsMatch, IsNotMatch
 
 
 def test_predicate_regex(employees):
@@ -15,26 +15,26 @@ def test_predicate_regex(employees):
     # -- IsMatch --------------------------------------------------------------
     f = IsMatch(pattern='A', columns='Name')
     f.prepare(employees)
-    assert f.exec(employees.iloc[0])
-    assert not f.exec(employees.iloc[1])
-    assert not f.exec(employees.iloc[2])
+    assert f.eval(employees.iloc[0])
+    assert not f.eval(employees.iloc[1])
+    assert not f.eval(employees.iloc[2])
     # Full match
     f = IsMatch(pattern='A', fullmatch=True, columns='Name')
     f.prepare(employees)
-    assert not f.exec(employees.iloc[0])
-    assert not f.exec(employees.iloc[1])
+    assert not f.eval(employees.iloc[0])
+    assert not f.eval(employees.iloc[1])
     # -- IsNotMatch -----------------------------------------------------------
     f = IsNotMatch(pattern='A', columns='Name')
     f.prepare(employees)
-    assert not f.exec(employees.iloc[0])
-    assert f.exec(employees.iloc[1])
-    assert f.exec(employees.iloc[2])
+    assert not f.eval(employees.iloc[0])
+    assert f.eval(employees.iloc[1])
+    assert f.eval(employees.iloc[2])
     # Full match
     f = IsNotMatch(pattern='A', fullmatch=True, columns='Name')
     f.prepare(employees)
-    assert f.exec(employees.iloc[0])
-    assert f.exec(employees.iloc[1])
+    assert f.eval(employees.iloc[0])
+    assert f.eval(employees.iloc[1])
     f = IsNotMatch(pattern='A.+', fullmatch=True, columns='Name')
     f.prepare(employees)
-    assert not f.exec(employees.iloc[0])
-    assert f.exec(employees.iloc[1])
+    assert not f.eval(employees.iloc[0])
+    assert f.eval(employees.iloc[1])

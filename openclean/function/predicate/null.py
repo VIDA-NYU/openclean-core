@@ -12,7 +12,7 @@ value is defined as empty if it is None or the empty string.
 from openclean.function.base import Eval, is_var_func
 
 import openclean.function.predicate.base as base
-import openclean.function.value.null as vfunc
+from openclean.function.value.null import is_empty, is_not_empty
 
 
 class IsEmpty(object):
@@ -40,7 +40,9 @@ class IsEmpty(object):
         ignore_whitespace: bool, optional
             Trim non-None values if the flag is set to True.
         """
-        func = vfunc.is_empty(ignore_whitespace)
+        def func(value):
+            return is_empty(value, ignore_whitespace=ignore_whitespace)
+
         if is_var_func(columns):
             if for_all:
                 func = base.All(predicate=func)
@@ -75,7 +77,9 @@ class IsNotEmpty(object):
         ignore_whitespace: bool, optional
             Trim non-None values if the flag is set to True.
         """
-        func = vfunc.is_not_empty(ignore_whitespace)
+        def func(value):
+            return is_not_empty(value, ignore_whitespace=ignore_whitespace)
+
         if is_var_func(columns):
             if for_all:
                 func = base.All(func)

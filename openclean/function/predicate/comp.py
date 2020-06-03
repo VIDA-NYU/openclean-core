@@ -5,56 +5,53 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-from openclean.function.base import Eval, EvalFunction
-from openclean.function.column import Col
+from abc import abstractmethod, ABCMeta
 
-import openclean.function.value.comp as vfunc
+from openclean.function.base import EvalFunction
+from openclean.function.constant import Const
 
 
 # -- Generic compare operator -------------------------------------------------
 
-class ExpressionComparator(EvalFunction):
-    """Generic comparator for comparing column values against a value
-    expression. Since scalar compare operators are wrappers around a constant
-    value, a new scalar compare operator has to be instantiated for each data
-    frame row after the value expresssion has been evaluated.
-    """
-    def __init__(self, lhs_columns, rhs_expression, factory):
+class ExpressionComparator(EvalFunction, metaclass=ABCMeta):
+    """Generic comparator for comparing two column value expressions."""
+    def __init__(self, lhs_expression, rhs_expression, raise_error=False):
         """Initialize the column(s) (lhs) whose values are compared against the
         given value expression (rhs). For both arguments a evaluation function
         is expected.
 
         Parameters
         ----------
-        lhs_columns: openclean.function.base.EvalFunction
-            Single column or list of column index positions or column names.
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
         rhs_expression: openclean.function.base.EvalFunction
-            Value expression agains which column values are compared
-        factory: callable
-            Factory function to create an instance of the comparator for the
-            result of evaluating the value expression.
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, optional
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
         """
-        self.lhs_columns = lhs_columns
-        self.rhs_expression = rhs_expression
-        self.factory = factory
+        self.lhs_expression = to_eval(lhs_expression)
+        self.rhs_expression = to_eval(rhs_expression)
+        self.raise_error = raise_error
 
-    def prepare(self, df):
-        """Prepare both evaluation functions (lhs and rhs).
+    @abstractmethod
+    def comp(self, left_values, right_values):
+        """Implementation-specific compare function for two values.
 
         Parameters
         ----------
-        df: pandas.DataFrame
-            Input data frame.
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
 
         Returns
         -------
-        openclean.function.base.EvalFunction
+        bool
         """
-        self.lhs_columns.prepare(df)
-        self.rhs_expression.prepare(df)
-        return self
+        raise NotImplementedError()
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the compare expression on the given data frame row.
         Evaluates the value expression first to get a (scalar) value. That
         value is then used to create an instance of the compare operator using
@@ -69,261 +66,367 @@ class ExpressionComparator(EvalFunction):
         -------
         bool
         """
-        # Evaluate the right hand side function to get the 'constant' value
-        # against which the values in the left hand side columns are compared.
-        # The value is used to create an instance of the comparator.
-        comp = self.factory(self.rhs_expression(values))
-        # Evaluate the generated compare operator on the value returned by the
-        # left hand side of the operator.
-        return comp(self.lhs_columns(values))
+        # Evaluate the left hand side and right hand side function to get the
+        # values that are passed to the compare function.
+        # Call compare method of the implementing subclass. If a TypeError
+        # occurs due to incompatible data types the result is False unless the
+        # raise type error flag is True.
+        try:
+            return self.comp(
+                left_values=self.lhs_expression(values),
+                right_values=self.rhs_expression(values)
+            )
+        except TypeError as ex:
+            if self.raise_error:
+                raise ex
+            else:
+                return False
+        except AttributeError:
+            return False
+
+    def prepare(self, df):
+        """Prepare both evaluation functions (lhs and rhs).
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.base.EvalFunction
+        """
+        self.lhs_expression.prepare(df)
+        self.rhs_expression.prepare(df)
+        return self
 
 
 # -- Implementations for the standard value comparators -----------------------
 
-class Eq(object):
+class Eq(ExpressionComparator):
     """Simple comparator for single columns values that tests for equality with
     a given value (expression).
     """
-    def __new__(cls, columns, value, ignore_case=False, raise_error=False):
+    def __init__(
+        self, lhs_expression, rhs_expression, ignore_case=False,
+        raise_error=False
+    ):
         """Create an instance of a single column equality predicate. The type
         of the returned object depends on whether the given value is a constant
         or a callable (value expression).
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
-        ignore_case: bool, optional
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        ignore_case: bool, default=False
             Ignore case in comparison if set to True.
-        raise_error: bool, optional
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        if isinstance(value, EvalFunction):
-            # Define a factory for scalar equality comparators. The factory is
-            # called with the result of the evaluated expression.
-            def _comp_factory(val):
-                return vfunc.eq(
-                    value=val,
-                    ignore_case=ignore_case,
-                    raise_error=raise_error
-                )
-            return ExpressionComparator(
-                lhs_columns=Col(columns),
-                rhs_expression=value,
-                factory=_comp_factory
-            )
-        else:
-            eq = vfunc.eq(
-                value=value,
-                ignore_case=ignore_case,
-                raise_error=raise_error
-            )
-            return Eval(func=eq, columns=columns)
+        super(Eq, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
+            raise_error=raise_error
+        )
+        self.ignore_case = ignore_case
+
+    def comp(self, left_values, right_values):
+        """Compare two values and return True if they are equal.
+
+        Parameters
+        ----------
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        if self.ignore_case:
+            if isinstance(left_values, tuple):
+                left_values = tuple([v.lower() for v in left_values])
+            else:
+                left_values = left_values.lower()
+            if isinstance(right_values, tuple):
+                right_values = tuple([v.lower() for v in right_values])
+            else:
+                right_values = right_values.lower()
+        return left_values == right_values
 
 
-class EqIgnoreCase(object):
+class EqIgnoreCase(Eq):
     """Shortcut for comparing single column values in a case-insenstive manner.
     """
-    def __new__(cls, columns, value, raise_error=False):
+    def __init__(self, lhs_expression, rhs_expression, raise_error=False):
         """Create an instance of the equality comparator with the ignore case
         flag set to True.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
         raise_error: bool, optional
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        return Eq(
-            columns=columns,
-            value=value,
+        super(EqIgnoreCase, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
             ignore_case=True,
             raise_error=raise_error
         )
 
 
-class Geq(object):
+class Geq(ExpressionComparator):
     """Simple comparator for single column values that tests if a column value
     is greater or equal than a given constant value or a value expression.
     """
-    def __new__(cls, columns, value, raise_error=False):
+    def __init__(self, lhs_expression, rhs_expression, raise_error=False):
         """Create an instance of the greater than comparator. The type of the
         returned object depends on whether the given value is a constant or a
         callable (value expression).
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
-        raise_error: bool, optional
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        if isinstance(value, EvalFunction):
-            # Define a factory for scalar comparators. The factory is
-            # called with the result of the evaluated expression.
-            def _comp_factory(val):
-                return vfunc.geq(value=val, raise_error=raise_error)
-            return ExpressionComparator(
-                lhs_columns=Col(columns),
-                rhs_expression=value,
-                factory=_comp_factory
-            )
-        else:
-            geq = vfunc.geq(value=value, raise_error=raise_error)
-            return Eval(func=geq, columns=columns)
+        super(Geq, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
+            raise_error=raise_error
+        )
+
+    def comp(self, left_values, right_values):
+        """Return True if the left value is greater or equal than the right
+        value.
+
+        Parameters
+        ----------
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return left_values >= right_values
 
 
-class Gt(object):
+class Gt(ExpressionComparator):
     """Simple comparator for single column values that tests if a column value
     is greater than a given constant value or a value expression.
     """
-    def __new__(cls, columns, value, raise_error=False):
+    def __init__(self, lhs_expression, rhs_expression, raise_error=False):
         """Create an instance of the greater than comparator. The type of the
         returned object depends on whether the given value is a constant or a
         callable (value expression).
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
-        raise_error: bool, optional
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        if isinstance(value, EvalFunction):
-            # Define a factory for scalar comparators. The factory is
-            # called with the result of the evaluated expression.
-            def _comp_factory(val):
-                return vfunc.gt(value=val, raise_error=raise_error)
-            return ExpressionComparator(
-                lhs_columns=Col(columns),
-                rhs_expression=value,
-                factory=_comp_factory
-            )
-        else:
-            gt = vfunc.gt(value=value, raise_error=raise_error)
-            return Eval(func=gt, columns=columns)
+        super(Gt, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
+            raise_error=raise_error
+        )
+
+    def comp(self, left_values, right_values):
+        """Return True if the left value is greater than the right value.
+
+        Parameters
+        ----------
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return left_values > right_values
 
 
-class Leq(object):
+class Leq(ExpressionComparator):
     """Simple comparator for single column values that tests if a column value
     is less or equal than a given constant value or a value expression.
     """
-    def __new__(cls, columns, value, raise_error=False):
+    def __init__(self, lhs_expression, rhs_expression, raise_error=False):
         """Create an instance of the less or equal comparator. The type of the
         returned object depends on whether the given value is a constant or a
         callable (value expression).
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
-        raise_error: bool, optional
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        if isinstance(value, EvalFunction):
-            # Define a factory for scalar comparators. The factory is
-            # called with the result of the evaluated expression.
-            def _comp_factory(val):
-                return vfunc.leq(value=val, raise_error=raise_error)
-            return ExpressionComparator(
-                lhs_columns=Col(columns),
-                rhs_expression=value,
-                factory=_comp_factory
-            )
-        else:
-            leq = vfunc.leq(value=value, raise_error=raise_error)
-            return Eval(func=leq, columns=columns)
+        super(Leq, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
+            raise_error=raise_error
+        )
+
+    def comp(self, left_values, right_values):
+        """Return True if the left value is lower or equal that the right
+        value.
+
+        Parameters
+        ----------
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return left_values <= right_values
 
 
-class Lt(object):
+class Lt(ExpressionComparator):
     """Simple comparator for single column values that tests if a column value
     is less than a given constant value or a value expression.
     """
-    def __new__(cls, columns, value, raise_error=False):
+    def __init__(self, lhs_expression, rhs_expression, raise_error=False):
         """Create an instance of the less than comparator. The type of the
         returned object depends on whether the given value is a constant or a
         callable (value expression).
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
-        raise_error: bool, optional
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        if isinstance(value, EvalFunction):
-            # Define a factory for scalar comparators. The factory is
-            # called with the result of the evaluated expression.
-            def _comp_factory(val):
-                return vfunc.lt(value=val, raise_error=raise_error)
-            return ExpressionComparator(
-                lhs_columns=Col(columns),
-                rhs_expression=value,
-                factory=_comp_factory
-            )
-        else:
-            lt = vfunc.lt(value=value, raise_error=raise_error)
-            return Eval(func=lt, columns=columns)
+        super(Lt, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
+            raise_error=raise_error
+        )
+
+    def comp(self, left_values, right_values):
+        """Return True if the left value is lower than the right value.
+
+        Parameters
+        ----------
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return left_values < right_values
 
 
-class Neq(object):
+class Neq(ExpressionComparator):
     """Simple comparator for single column values that tests if a column value
     is not equal to a given constant value or a value expression.
     """
-    def __new__(cls, columns, value, ignore_case=False, raise_error=False):
+    def __init__(
+        self, lhs_expression, rhs_expression, ignore_case=False,
+        raise_error=False
+    ):
         """Create an instance of the not equal comparator. The type of the
         returned object depends on whether the given value is a constant or a
         callable (value expression).
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        value: scalar or openclean.function.base.EvalFunction
-            Value expression agains which column values are compared.
-        ignore_case: bool, optional
+        lhs_expression: openclean.function.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs_expression: openclean.function.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        ignore_case: bool, default=False
             Ignore case in comparison if set to True.
-        raise_error: bool, optional
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        if isinstance(value, EvalFunction):
-            # Define a factory for scalar comparators. The factory is
-            # called with the result of the evaluated expression.
-            def _comp_factory(val):
-                return vfunc.neq(
-                    value=val,
-                    ignore_case=ignore_case,
-                    raise_error=raise_error
-                )
-            return ExpressionComparator(
-                lhs_columns=Col(columns),
-                rhs_expression=value,
-                factory=_comp_factory
-            )
-        else:
-            neq = vfunc.neq(
-                value=value,
-                ignore_case=ignore_case,
-                raise_error=raise_error
-            )
-            return Eval(func=neq, columns=columns)
+        super(Neq, self).__init__(
+            lhs_expression=lhs_expression,
+            rhs_expression=rhs_expression,
+            raise_error=raise_error
+        )
+        self.ignore_case = ignore_case
+
+    def comp(self, left_values, right_values):
+        """Compare two values and return True if they are not equal.
+
+        Parameters
+        ----------
+        left_values: scalar or tuple
+            Left value of the comparison.
+        right_values: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        if self.ignore_case:
+            if isinstance(left_values, tuple):
+                left_values = tuple([v.lower() for v in left_values])
+            else:
+                left_values = left_values.lower()
+            if isinstance(right_values, tuple):
+                right_values = tuple([v.lower() for v in right_values])
+            else:
+                right_values = right_values.lower()
+        return left_values != right_values
+
+
+# -- Helper Functions ---------------------------------------------------------
+
+def to_eval(value):
+    """Ensure that the value is an evaluation function. If the given argument
+    is not an evaluation function the value is wrapped as a constant value.
+
+    Parameters
+    ----------
+    value: openclean.function.base.EvalFunction or scalar
+        Value that is represented as an evaluation function.
+
+    Returns
+    -------
+    openclean.function.base.EvalFunction
+    """
+    if not isinstance(value, EvalFunction):
+        value = Const(value)
+    return value

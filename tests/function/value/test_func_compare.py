@@ -80,6 +80,18 @@ def test_compare_greater():
     assert f(10)
     assert f(11)
     assert not f('abc')
+    # Compare results of two functions
+
+    def digits(value):
+        return sum(c.isdigit() for c in str(value))
+
+    def letters(value):
+        return sum(c.isalpha() for c in str(value))
+
+    f = Gt(digits, letters)
+    assert not f('ABC12')
+    assert not f('ABC123')
+    assert f('ABC1234')
     # Type error
     f = Geq(10, raise_error=True)
     assert f(11)

@@ -9,13 +9,15 @@
 
 from collections import Counter
 
-from openclean.function.predicate.datatype import IsDate, IsInt, IsFloat, IsNaN
+from openclean.function.predicate.datatype import (
+    IsDatetime, IsInt, IsFloat, IsNaN
+)
 
 
 def test_predicate_datatype(employees):
     """Test data type detection predicates."""
     predicates = [
-        IsDate(format='%m/%d/%y', columns='Name'),
+        IsDatetime(formats='%m/%d/%y', columns='Name'),
         IsInt('Salary'),
         IsFloat('Salary'),
         IsNaN('Age')
@@ -25,7 +27,7 @@ def test_predicate_datatype(employees):
     counts = Counter()
     for rowid, values in employees.iterrows():
         for i in range(len(predicates)):
-            if predicates[i].exec(values):
+            if predicates[i].eval(values):
                 counts[i] += 1
     assert counts[0] == 0
     assert counts[1] == 3

@@ -24,7 +24,7 @@ class Const(EvalFunction):
         """
         self.value = value
 
-    def exec(self, values):
+    def eval(self, values):
         """Execute method for the evaluation function. Returns the defined
         constant value.
 

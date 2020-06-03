@@ -84,7 +84,7 @@ class Embedding(object):
         features = self.features.prepare(values)
         vec = FeatureVector()
         # Use the distinct set of values to generate vector embeddings.
-        for value in values:
+        for value in set(values):
             vec.add(value, features.embed(value))
         return vec
 

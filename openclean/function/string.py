@@ -7,9 +7,10 @@
 
 """Collection of evaluation functions that operate on string values."""
 
-from openclean.function.base import Apply, EvalFunction, SingleColumnEval
-
-import openclean.function.value.string as sfunc
+from openclean.function.base import Apply, EvalFunction
+from openclean.function.value.string import Capitalize as capitalize
+from openclean.function.value.string import Lower as lower
+from openclean.function.value.string import Upper as upper
 
 
 class Capitalize(object):
@@ -28,7 +29,7 @@ class Capitalize(object):
         """
         return Apply(
             columns=columns,
-            func=sfunc.capitalize(as_string=as_string, raise_error=raise_error)
+            func=capitalize(as_string=as_string, raise_error=raise_error)
         )
 
 
@@ -55,7 +56,7 @@ class Format(EvalFunction):
         self.template = template
         self.func = values
 
-    def exec(self, values):
+    def eval(self, values):
         """Extract values for the format template from the given data frame
         row. Use the str.format method to get the formated string for the
         extracted values.
@@ -112,51 +113,7 @@ class Lower(object):
         """
         return Apply(
             columns=columns,
-            func=sfunc.lower(as_string=as_string, raise_error=raise_error)
-        )
-
-
-class Split(SingleColumnEval):
-    """Split value in a data frame column based on a given separator. Allows to
-    validate the number of returned tokens and raise a ValueError if the number
-    of tokens does not match the expected number of tokens.
-    """
-    def __init__(
-        self, columns, sep=None, validate=None, as_string=False,
-        raise_error=False
-    ):
-        """Initialize the the source column and the separation delimiter.
-        Raises a ValueError if more than one column is specified.
-
-        Parameters
-        ----------
-        columns: int or string
-            Single column index or name.
-        sep: string, optional
-            Delimiter string.
-        validate: int or callable, optional
-            Validate the number of generated tokens against the given count or
-            predicate. Raises ValueError if the validation fails.
-        as_string: bool, optional
-            Use string representation for non-string values.
-        raise_error: bool, optional
-            Raise TypeError for non-string arguments.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise an error if more than one column is specified.
-        if not type(columns) in [int, str]:
-            raise ValueError('invalid column {}'.format(columns))
-        super(Split, self).__init__(
-            columns=columns,
-            func=sfunc.split(
-                sep=sep,
-                validate=validate,
-                as_string=as_string,
-                raise_error=raise_error
-            )
+            func=lower(as_string=as_string, raise_error=raise_error)
         )
 
 
@@ -176,5 +133,5 @@ class Upper(object):
         """
         return Apply(
             columns=columns,
-            func=sfunc.upper(as_string=as_string, raise_error=raise_error)
+            func=upper(as_string=as_string, raise_error=raise_error)
         )

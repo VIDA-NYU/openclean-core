@@ -81,7 +81,7 @@ class And(LogicOperator):
         """
         super(And, self).__init__(*args)
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the predicates. Returns True if all predicates in the
         conjunction evaluate to True.
 
@@ -95,7 +95,7 @@ class And(LogicOperator):
         bool
         """
         for f in self.predicates:
-            if not f.exec(values):
+            if not f.eval(values):
                 return False
         return True
 
@@ -117,7 +117,7 @@ class Not(LogicOperator):
         if len(self.predicates) != 1:
             raise ValueError('invalid arguments')
 
-    def exec(self, values):
+    def eval(self, values):
         """Return the negated result from evaluating the associated predicate
         on the given data frame row.
 
@@ -146,7 +146,7 @@ class Or(LogicOperator):
         """
         super(Or, self).__init__(*args)
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the predicates. Returns True if at least one of the
         predicates in the disjunction evaluates to True.
 
@@ -160,6 +160,6 @@ class Or(LogicOperator):
         bool
         """
         for f in self.predicates:
-            if f.exec(values):
+            if f.eval(values):
                 return True
         return False

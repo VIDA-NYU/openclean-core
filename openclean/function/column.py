@@ -43,23 +43,30 @@ class Col(object):
             if as_type is None:
                 func = var_pass_through
             else:
-                func = VarApply(
-                    cast(
+
+                def typecast(value):
+                    return cast(
+                        value=value,
                         func=as_type,
                         default_value=default_value,
                         raise_error=raise_error
                     )
-                )
+
+                func = VarApply(typecast)
         else:
             # -- Function that accepts a single argument
             if as_type is None:
                 func = scalar_pass_through
             else:
-                func = cast(
-                    func=as_type,
-                    default_value=default_value,
-                    raise_error=raise_error
-                )
+
+                def func(value):
+                    return cast(
+                        value=value,
+                        func=as_type,
+                        default_value=default_value,
+                        raise_error=raise_error
+                    )
+                    
         return Eval(func=func, columns=columns)
 
 

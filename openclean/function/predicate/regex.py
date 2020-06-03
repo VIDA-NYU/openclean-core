@@ -10,9 +10,10 @@ regular expression.
 """
 
 from openclean.function.base import Eval, is_var_func
+from openclean.function.value.regex import IsMatch as is_match
+from openclean.function.value.regex import IsNotMatch as is_not_match
 
 import openclean.function.predicate.base as base
-import openclean.function.value.pattern as vfunc
 
 
 class IsMatch(object):
@@ -45,7 +46,7 @@ class IsMatch(object):
             argument value. If Ture, all values have to evaluate to True.
             Otherwise, at least one value has to evaluate to True.
         """
-        func = vfunc.is_match(
+        func = is_match(
             pattern=pattern,
             fullmatch=fullmatch,
             as_string=as_string
@@ -85,7 +86,7 @@ class IsNotMatch(object):
             argument value. If Ture, all values have to evaluate to True.
             Otherwise, at least one value has to evaluate to True.
         """
-        func = vfunc.is_not_match(
+        func = is_not_match(
             pattern=pattern,
             fullmatch=fullmatch,
             as_string=as_string

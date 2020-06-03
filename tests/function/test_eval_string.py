@@ -10,24 +10,34 @@
 import pandas as pd
 
 from openclean.function.column import Col
-from openclean.function.string import Format, Split
+from openclean.function.string import Capitalize, Format, Lower, Upper
 
 
 def test_format_column_values():
     """Test re-formating values from one or more columns in a data frame."""
     df = pd.DataFrame(
         data=[
-            ['A.lice', '23'],
-            ['B.ob', '33']
+            ['A.lice', 23],
+            ['B.ob', 33]
         ],
         columns=['A', 'B']
     )
-    f = Format('{}{}', Split('A', '.')).prepare(df)
+
+    def split(value):
+        return value[0].split('.')
+
+    f = Format('{}{}', split).prepare(df)
     assert f.exec(df.iloc[0]) == 'Alice'
     assert f.exec(df.iloc[1]) == 'Bob'
     f = Format('{}-{}', Col(['A', 'B'])).prepare(df)
     assert f.exec(df.iloc[0]) == 'A.lice-23'
     assert f.exec(df.iloc[1]) == 'B.ob-33'
-    f = Format('Age {}', Col('B')).prepare(df)
-    assert f.exec(df.iloc[0]) == 'Age 23'
-    assert f.exec(df.iloc[1]) == 'Age 33'
+    f = Capitalize('A').prepare(df)
+    assert f.exec(df.iloc[0]) == 'A.lice'
+    assert f.exec(df.iloc[1]) == 'B.ob'
+    f = Lower('A').prepare(df)
+    assert f.exec(df.iloc[0]) == 'a.lice'
+    assert f.exec(df.iloc[1]) == 'b.ob'
+    f = Upper('B', as_string=True).prepare(df)
+    assert f.exec(df.iloc[0]) == '23'
+    assert f.exec(df.iloc[1]) == '33'

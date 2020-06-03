@@ -129,7 +129,7 @@ class IfThenReplace(EvalFunction):
         self.values = values
         self.pass_through = pass_through
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the function on the given data frame row.
 
         Parameters

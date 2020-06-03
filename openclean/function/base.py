@@ -35,10 +35,10 @@ class EvalFunction(metaclass=ABCMeta):
         -------
         scalar or tuple
         """
-        return self.exec(values)
+        return self.eval(values)
 
     @abstractmethod
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the function on a given data frame row. The result type is
         implementation dependent. The result could either be a single scalar
         value or a tuple of scalar values.
@@ -56,7 +56,7 @@ class EvalFunction(metaclass=ABCMeta):
 
     @abstractmethod
     def prepare(self, df):
-        """Prepare the evaluation function before the first call to the exec()
+        """Prepare the evaluation function before the first call to the eval()
         method for the given data frame. This allows to compute statistics or
         column indices for the data frame.
 
@@ -138,7 +138,7 @@ class FullRowEval(EvalFunction):
             raise ValueError('not a callable')
         self.func = func
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the function on the given data frame row.
 
         Parameters
@@ -199,7 +199,7 @@ class MultiColumnEval(EvalFunction):
         # initialized by the prepare method.
         self.colidxs = None
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the callable on the given data frame row. Passes only the
         cell values from those columns that were specified when the object was
         instantiated.
@@ -265,7 +265,7 @@ class SingleColumnEval(EvalFunction):
         # the prepare method.
         self.colidx = None
 
-    def exec(self, values):
+    def eval(self, values):
         """Evaluate the function on the cell value in the source column of the
         given data frame row.
 

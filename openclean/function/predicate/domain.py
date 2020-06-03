@@ -11,8 +11,7 @@ import pandas as pd
 
 from openclean.data.transform import to_set
 from openclean.function.base import Eval, is_var_func
-
-import openclean.function.value.domain as vfunc
+from openclean.function.value.domain import IsInDomain, IsNotInDomain
 
 
 # -- Callable classes for containment checks for lists of values --------------
@@ -98,7 +97,7 @@ class IsIn(object):
         if is_var_func(columns):
             predicate = ContainsTuple(domain)
         else:
-            predicate = vfunc.is_in(domain)
+            predicate = IsInDomain(domain)
         return Eval(func=predicate, columns=columns)
 
 
@@ -124,5 +123,5 @@ class IsNotIn(object):
         if is_var_func(columns):
             predicate = NotContainsTuple(domain)
         else:
-            predicate = vfunc.is_not_in(domain)
+            predicate = IsNotInDomain(domain)
         return Eval(func=predicate, columns=columns)

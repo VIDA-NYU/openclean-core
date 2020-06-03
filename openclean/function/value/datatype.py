@@ -135,7 +135,7 @@ def to_float(value, default_value=None, raise_error=False):
 
 # -- Type check functions -----------------------------------------------------
 
-def is_datetime(value, typecast=True, formats=None):
+def is_datetime(value, formats=None, typecast=True):
     """Test if a given string value can be converted into a datetime object for
     a given data format. The function accepts a single date format or a list of
     formates. If no format is given, ISO format is assumed as the default.
@@ -144,11 +144,11 @@ def is_datetime(value, typecast=True, formats=None):
     ----------
     value: scalar
         Scalar value that is tested for being a date.
-    typecast: bool, default=True
-        Attempt to parse string values as dates if True.
     formats: string or list(string)
         Date format string using Python strptime() format directives. This
         can be a list of date formats.
+    typecast: bool, default=True
+        Attempt to parse string values as dates if True.
 
     Returns
     -------
@@ -313,22 +313,22 @@ def is_numeric_type(value):
 
 class Datetime(ClassLabel):
     """Class label assigner for datetime values."""
-    def __init__(self, label='datetime', typecast=True, formats=None):
+    def __init__(self, label='datetime', formats=None, typecast=True):
         """Initialize the class label and set the type cast flag.
 
         Parameters
         ----------
         label: string, default='float'
             Label that is returned for values that satisfy the predicate.
-        typecast: bool, default=True
-            Parse string values as dates if True.
         formats: string or list(string)
             Date format string using Python strptime() format directives. This
             can be a list of date formats.
+        typecast: bool, default=True
+            Parse string values as dates if True.
         """
 
         def predicate(value):
-            return is_datetime(value, typecast=typecast, formats=formats)
+            return is_datetime(value, formats=formats, typecast=typecast)
 
         super(Datetime, self).__init__(predicate=predicate, label=label)
 
