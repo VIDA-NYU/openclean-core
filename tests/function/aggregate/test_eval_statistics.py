@@ -9,7 +9,7 @@
 
 import pandas as pd
 
-from openclean.function.statistics import Max, Mean, Min
+from openclean.function.aggregate.column import Max, Mean, Min
 
 
 def test_statistics_functions():
@@ -22,7 +22,7 @@ def test_statistics_functions():
     results = [set(), set(), set()]
     for _, values in df.iterrows():
         for i in range(3):
-            results[i].add(funcs[i].exec(values))
+            results[i].add(funcs[i].eval(values))
     for r in results:
         assert len(r) == 1
     assert list(results[0])[0] == 2

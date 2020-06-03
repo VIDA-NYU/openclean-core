@@ -32,7 +32,7 @@ class ColumnStats(EvalFunction):
         # The statistics value will be initialized by the prepare() method.
         self.value = None
 
-    def exec(self, values):
+    def eval(self, values):
         """The execute method for the evaluation functon returns the computed
         statistic value for each row in the data frame.
 

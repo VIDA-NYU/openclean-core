@@ -13,7 +13,7 @@ import pandas as pd
 
 from openclean.function.column import Col
 from openclean.function.constant import Const
-from openclean.function.lists import Greatest, Least
+from openclean.function.aggregate.row import Greatest, Least
 
 
 def test_scalar_list_functions():
@@ -36,8 +36,8 @@ def test_scalar_list_functions():
     least.prepare(df)
     greatest.prepare(df)
     for i in range(3):
-        assert least.exec(df.iloc[i]) == LEAST[i]
-        assert greatest.exec(df.iloc[i]) == GREATES[i]
+        assert least.eval(df.iloc[i]) == LEAST[i]
+        assert greatest.eval(df.iloc[i]) == GREATES[i]
 
 
 def test_tuple_list_functions():
@@ -60,5 +60,5 @@ def test_tuple_list_functions():
     least.prepare(df)
     greatest.prepare(df)
     for i in range(3):
-        assert least.exec(df.iloc[i]) == LEAST[i]
-        assert greatest.exec(df.iloc[i]) == GREATES[i]
+        assert least.eval(df.iloc[i]) == LEAST[i]
+        assert greatest.eval(df.iloc[i]) == GREATES[i]

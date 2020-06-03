@@ -27,17 +27,17 @@ def test_format_column_values():
         return value[0].split('.')
 
     f = Format('{}{}', split).prepare(df)
-    assert f.exec(df.iloc[0]) == 'Alice'
-    assert f.exec(df.iloc[1]) == 'Bob'
+    assert f.eval(df.iloc[0]) == 'Alice'
+    assert f.eval(df.iloc[1]) == 'Bob'
     f = Format('{}-{}', Col(['A', 'B'])).prepare(df)
-    assert f.exec(df.iloc[0]) == 'A.lice-23'
-    assert f.exec(df.iloc[1]) == 'B.ob-33'
+    assert f.eval(df.iloc[0]) == 'A.lice-23'
+    assert f.eval(df.iloc[1]) == 'B.ob-33'
     f = Capitalize('A').prepare(df)
-    assert f.exec(df.iloc[0]) == 'A.lice'
-    assert f.exec(df.iloc[1]) == 'B.ob'
+    assert f.eval(df.iloc[0]) == 'A.lice'
+    assert f.eval(df.iloc[1]) == 'B.ob'
     f = Lower('A').prepare(df)
-    assert f.exec(df.iloc[0]) == 'a.lice'
-    assert f.exec(df.iloc[1]) == 'b.ob'
+    assert f.eval(df.iloc[0]) == 'a.lice'
+    assert f.eval(df.iloc[1]) == 'b.ob'
     f = Upper('B', as_string=True).prepare(df)
-    assert f.exec(df.iloc[0]) == '23'
-    assert f.exec(df.iloc[1]) == '33'
+    assert f.eval(df.iloc[0]) == '23'
+    assert f.eval(df.iloc[1]) == '33'
