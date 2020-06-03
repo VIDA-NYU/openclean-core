@@ -10,8 +10,7 @@
 import pytest
 
 from openclean.data.column import Column
-from openclean.function.replace import Lookup
-from openclean.function.string import Split
+from openclean.function.value.lookup import Lookup
 from openclean.operator.split.repair import repair
 
 
@@ -27,7 +26,7 @@ def test_repair_operator(nyc311):
         'QUEENS': 'QN',
         'STATEN ISLAND': 'SI'
     }
-    f = Lookup('borough', mapping, raise_error=True)
+    f = Lookup(mapping, raise_error=True)
     df_succ, df_fail = repair(nyc311, 'borough', f)
     assert df_succ.shape == nyc311.shape
     assert df_fail.shape == (0, len(nyc311.columns))
@@ -38,7 +37,7 @@ def test_repair_operator(nyc311):
         'MANHATTAN': 'MN',
         'QUEENS': 'QN'
     }
-    f = Lookup('borough', mapping, raise_error=True)
+    f = Lookup(mapping, raise_error=True)
     df_succ, df_fail = repair(nyc311, 'borough', f)
     assert df_succ.shape == (nyc311.shape[0] - 20, len(nyc311.columns))
     assert df_fail.shape == (20, len(nyc311.columns))
@@ -48,13 +47,8 @@ def test_repair_operator(nyc311):
     for col in df_fail.columns:
         assert isinstance(col, Column)
     # Key error is raised if not caught.
-    with pytest.raises(KeyError):
-        repair(nyc311, 'borough', f, exceptions=ValueError)
-    repair(nyc311, 'borough', f, exceptions=(KeyError, ValueError))
+    with pytest.raises(ValueError):
+        repair(nyc311, 'borough', f, exceptions=TypeError)
+    repair(nyc311, 'borough', f, exceptions=ValueError)
     assert df_succ.shape == (nyc311.shape[0] - 20, len(nyc311.columns))
     assert df_fail.shape == (20, len(nyc311.columns))
-    # Use split to update only some rows.
-    f = Split('descriptor', sep=',', validate=3)
-    df_succ, df_fail = repair(nyc311, ['descriptor', 'city', 'street'], f)
-    assert df_succ.shape == (38, len(nyc311.columns))
-    assert df_fail.shape == (nyc311.shape[0] - 38, len(nyc311.columns))

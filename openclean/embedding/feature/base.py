@@ -67,6 +67,7 @@ class FeatureEmbedding(ValueEmbedder):
         values: list
             List of data values.
         """
+        prepared_features = list()
         for f in self.features:
-            f.prepare(values)
-        return self
+            prepared_features.append(f.prepare(values))
+        return FeatureEmbedding(prepared_features)

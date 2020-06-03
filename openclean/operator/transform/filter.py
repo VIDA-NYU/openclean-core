@@ -89,34 +89,7 @@ def filter(df, columns=None, predicate=None, negated=False):
     ------
     ValueError
     """
-    # If columns is a callable or eval function and predicate is None we
-    # flip the columns and predicate values.
-    if predicate is None and columns is not None:
-        if isinstance(columns, EvalFunction) or callable(predicate):
-            predicate = columns
-            columns = None
-    # Raise a ValueError if no predicate is given.
-    if predicate is None:
-        raise ValueError('missing predicate')
-    # If one or more columns are specified, the predicate is expected to be
-    # a ValueFunction. If it is a callable the function will be wrapped. A
-    # dictionary will be converted to a dommain lookup. All other values are
-    # treated as constants.
-    if columns is not None:
-        # Ensure that columns is a list.
-        if not isinstance(columns, list):
-            columns = [columns]
-        # Convert predicate to an evaluatin function.
-        if isinstance(predicate, ValueFunction):
-            predicate = Eval(func=predicate, columns=columns)
-        elif callable(predicate):
-            predicate = Eval(func=CallableWrapper(predicate), columns=columns)
-        elif isinstance(predicate, dict):
-            predicate = IsIn(columns=columns, domain=predicate)
-        else:
-            predicate = Eq(Col(columns), Const(predicate))
-    elif not isinstance(predicate, EvalFunction):
-        predicate = Eval(func=predicate, columns=columns)
+    predicate = get_predicate(columns=columns, predicate=predicate)
     return Filter(predicate=predicate, negated=negated).transform(df)
 
 
@@ -170,3 +143,65 @@ class Filter(DataFrameTransformer):
         # Return data frame containing only those rows for which the predicate
         # was satisfied.
         return df[smap]
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def get_predicate(columns=None, predicate=None):
+    """Helper method used by conditional operators that evaluate a predicate on
+    data frame rows.
+
+    Parameters
+    ----------
+    columns: int, string, or list(int or string), optional
+        Single column or list of column index positions or column names.
+    predicate: (
+            openclean.function.base.EvalFunction,
+            openclean.function.base.value.ValueFunction,
+            callable,
+            dictionary,
+            or scalar
+        )
+        Evaluation function or callable that accepts a data frame row as the
+        only argument (if columns is None). ValueFunction or callable if one
+        or more columns are specified. If columns are given the function also
+        accepts a dictionary or scalar value as argument. These will be wrapped
+        accordingly.
+
+    Returns
+    -------
+    openclean.function.base.EvalFunction
+
+    Raises
+    ------
+    ValueError
+    """
+    # If columns is a callable or eval function and predicate is None we
+    # flip the columns and predicate values.
+    if predicate is None and columns is not None:
+        if isinstance(columns, EvalFunction) or callable(predicate):
+            predicate = columns
+            columns = None
+    # Raise a ValueError if no predicate is given.
+    if predicate is None:
+        raise ValueError('missing predicate')
+    # If one or more columns are specified, the predicate is expected to be
+    # a ValueFunction. If it is a callable the function will be wrapped. A
+    # dictionary will be converted to a dommain lookup. All other values are
+    # treated as constants.
+    if columns is not None:
+        # Ensure that columns is a list.
+        if not isinstance(columns, list):
+            columns = [columns]
+        # Convert predicate to an evaluatin function.
+        if isinstance(predicate, ValueFunction):
+            predicate = Eval(func=predicate, columns=columns)
+        elif callable(predicate):
+            predicate = Eval(func=CallableWrapper(predicate), columns=columns)
+        elif isinstance(predicate, dict):
+            predicate = IsIn(columns=columns, domain=predicate)
+        else:
+            predicate = Eq(Col(columns), Const(predicate))
+    elif not isinstance(predicate, EvalFunction):
+        predicate = Eval(func=predicate, columns=columns)
+    return predicate

@@ -594,6 +594,7 @@ class VarApply(object):
 
 # -- Helper functions ---------------------------------------------------------
 
+
 def is_var_func(columns=None):
     """Helper function that returns True if the given column argument will
     result in an evaluation function that operates on a variable number of

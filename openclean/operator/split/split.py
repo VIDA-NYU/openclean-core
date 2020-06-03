@@ -9,11 +9,12 @@
 
 from openclean.function.base import EvalFunction
 from openclean.operator.base import DataFrameSplitter
+from openclean.operator.transform.filter import get_predicate
 
 
 # -- Functions ----------------------------------------------------------------
 
-def split(df, predicate):
+def split(df, columns=None, predicate=None):
     """Split function for data frames. Evaluates a Boolean predicate on the
     rows of a given data frame. The output comprises two data frames. The
     first data frame contains the rows for which the predicate was satisfied
@@ -23,13 +24,26 @@ def split(df, predicate):
     ----------
     df: pandas.DataFrame
         Input data frame.
-    predicate: callable
-        Callable that accepts a data frame row as the only argument.
+    columns: int, string, or list(int or string), optional
+        Single column or list of column index positions or column names.
+    predicate: (
+            openclean.function.base.EvalFunction,
+            openclean.function.base.value.ValueFunction,
+            callable,
+            dictionary,
+            or scalar
+        )
+        Evaluation function or callable that accepts a data frame row as the
+        only argument (if columns is None). ValueFunction or callable if one
+        or more columns are specified. If columns are given the function also
+        accepts a dictionary or scalar value as argument. These will be wrapped
+        accordingly.
 
     Returns
     -------
     pandas.DataFrame, pandas.DataFrame
     """
+    predicate = get_predicate(columns=columns, predicate=predicate)
     return Split(predicate=predicate).split(df)
 
 
@@ -76,7 +90,7 @@ class Split(DataFrameSplitter):
         fmap = [False] * len(df.index)
         index = 0
         for rowid, values in df.iterrows():
-            if self.predicate(values):
+            if self.predicate.eval(values):
                 tmap[index] = True
             else:
                 fmap[index] = True

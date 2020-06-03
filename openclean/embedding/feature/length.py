@@ -17,11 +17,17 @@ class NormalizedLength(ValueFunction):
     """Value function that computes a normalized length for the string
     representation of values in a given list.
     """
-    def __init__(self):
+    def __init__(self, normalizer=None):
         """Initialize the object variables. All variables are initialiy set to
         None. The values will be initialized by the prepare method.
+
+        Parameters
+        ----------
+        normalizer: openclean.function.value.normalize.MinMaxScale,
+                default=None
+            Normalization function.
         """
-        self.normalizer = None
+        self.normalizer = normalizer
 
     def eval(self, value):
         """Return the normalized frequency for the given value.
@@ -37,6 +43,16 @@ class NormalizedLength(ValueFunction):
         """
         return self.normalizer.eval(len(str(value)))
 
+    def is_prepared(self):
+        """The object still requires preparation if the normalization function
+        is still None.
+
+        Returns
+        -------
+        bool
+        """
+        return self.normalizer is not None
+
     def prepare(self, values):
         """Compute the frequency for each value to be used as the feature
         function. Then initialize the normalization function using the list
@@ -49,8 +65,7 @@ class NormalizedLength(ValueFunction):
 
         Returns
         -------
-        callable
+        openclean.embedding.feature.length.NormalizedLength
         """
         lengths = [len(str(v)) for v in values]
-        self.normalizer = MinMaxScale().prepare(lengths)
-        return self
+        return NormalizedLength(normalizer=MinMaxScale().prepare(lengths))

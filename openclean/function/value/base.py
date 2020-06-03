@@ -56,8 +56,8 @@ class ValueFunction(ListFunction, metaclass=ABCMeta):
         -------
         list
         """
-        self.prepare(values)
-        return [self.eval(v) for v in values]
+        f = self.prepare(values)
+        return [f.eval(v) for v in values]
 
     @abstractmethod
     def eval(self, value):
