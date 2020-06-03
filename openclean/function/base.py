@@ -110,9 +110,6 @@ class Eval(object):
         # Return different instances of the eval function depending on whether
         # the function is applied on no column, one column or multiple columns.
         if isinstance(columns, list):
-            for c in columns:
-                if not (isinstance(c, int) or isinstance(c, str)):
-                    raise ValueError('invalid column {}'.format(c))
             # Even if columns is a list it may only contain a single element.
             if len(columns) == 1:
                 if isinstance(func, ValueFunction):

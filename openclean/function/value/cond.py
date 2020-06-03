@@ -103,12 +103,12 @@ class IfThenElse(ValueFunction):
         -------
         openclean.function.value.base.ValueFunction
         """
-        if not self.predicate.is_prepared():
-            self.predicate.prepate(values)
-        if not self.if_expression.is_prepared():
-            self.if_expression.prepare(values)
-        if not self.else_expression.is_prepared():
-            self.else_expression.prepare(values)
+        if self.is_prepared():
+            return IfThenElse(
+                predicate=self.predicate.prepate(values),
+                if_expression=self.if_expression.prepare(values),
+                else_expression=self.else_expression.prepare(values)
+            )
         return self
 
 

@@ -91,7 +91,12 @@ class ClassLabel(ValueFunction):
             List of scalar values or tuples of scalar values.
         """
         if not self.predicate.is_prepared():
-            self.predicate.prepare(values)
+            return ClassLabel(
+                predicate=self.predicate.prepare(values),
+                label=self.label,
+                truth_value=self.truth_value,
+                none_label=self.none_label
+            )
         return self
 
 
@@ -191,7 +196,15 @@ class ValueClassifier(ValueFunction):
         values: list
             List of scalar values or tuples of scalar values.
         """
-        for classifier in self.classifiers:
-            if not classifier.is_prepared():
-                classifier.prepare(values)
+        if self.is_prepared():
+            args = []
+            for classifier in self.classifiers:
+                args.append(classifier.prepare(values))
+            args = tuple(args)
+            kwargs = {
+                'none_label': self.none_label,
+                'default_label': self.default_label,
+                'raise_error': self.raise_error
+            }
+            return ValueClassifier(*args, **kwargs)
         return self

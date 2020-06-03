@@ -21,7 +21,7 @@ def test_if_the_else():
 
 def test_if_then_synonyms():
     """Test the synonym functions for if-then statements."""
-    f = IfThenElse(Eq(2), 4)
+    f = IfThen(Eq(2), 4)
     assert f(2) == 4
     assert f(3) == 3
     assert f(4) == 4

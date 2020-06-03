@@ -86,8 +86,9 @@ class LogicFunction(ValueFunction):
         values: list
             List of scalar values or tuples of scalar values.
         """
-        for f in self.predicates:
-            f.prepare(values)
+        if self.is_prepared():
+            args = tuple([f.prepare(values) for f in self.predicates])
+            return LogicFunction(*args)
         return self
 
 

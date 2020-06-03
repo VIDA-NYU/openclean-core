@@ -85,15 +85,6 @@ class NormalizeFunction(ValueFunction):
         # call. If the sum is zero or not defined we return 0.
         return self.compute(value)
 
-    def is_prepared(self):
-        """Subclasses are expected to require preparation.
-
-        Returns
-        -------
-        bool
-        """
-        return False
-
     __call__ = eval
 
 
@@ -124,7 +115,9 @@ def divide_by_total(
 
 class DivideByTotal(NormalizeFunction):
     """Divide values in a list by the sum over all values."""
-    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+    def __init__(
+        self, raise_error=True, default_value=scalar_pass_through, sum=None
+    ):
         """Initialize the raise error flag and the default value that determine
         the behavior for non-numeric values.
 
@@ -137,14 +130,15 @@ class DivideByTotal(NormalizeFunction):
             Value (or function) that is used (evaluated) as substitute for
             non-numeric values if no error is raised. By default, a value is
             returned as is.
+        sum: float or int, defualt=None
+            Pre-computed sum of values. If not set this should be computed by
+            the prepare function.
         """
         super(DivideByTotal, self).__init__(
             raise_error=raise_error,
             default_value=default_value
         )
-        # The total sum of values in the list is unknown at construction time.
-        # The value will be calculated by the prepare method.
-        self._sum = None
+        self.sum = sum
 
     def compute(self, value):
         """Divide given value by the pre-computed sum over all values in the
@@ -164,10 +158,19 @@ class DivideByTotal(NormalizeFunction):
         """
         # Divide the value by the _sum that was initialized in the prepare
         # call. If the sum is zero or not defined we return 0.
-        return float(value) / self._sum if self._sum else 0
+        return float(value) / self.sum if self.sum else 0
+
+    def is_prepared(self):
+        """The function requires preparation if the sum is not set..
+
+        Returns
+        -------
+        bool
+        """
+        return self.sum is not None
 
     def prepare(self, values):
-        """Compute the total sum over all values in the givem list.
+        """Compute the total sum over all values in the given list.
 
         Parameters
         ----------
@@ -175,8 +178,11 @@ class DivideByTotal(NormalizeFunction):
             List of scalar values or tuples of scalar values.
         """
         values = filter(values, is_numeric_type)
-        self._sum = float(sum(values))
-        return self
+        return DivideByTotal(
+            raise_error=self.raise_error,
+            default_value=self.default_value,
+            sum=float(sum(values))
+        )
 
 
 # -- Divide by absolute maximum -----------------------------------------------
@@ -204,7 +210,9 @@ def max_abs_scale(values, raise_error=True, default_value=scalar_pass_through):
 
 class MaxAbsScale(NormalizeFunction):
     """Divided values in a list by the absolute maximum over all values."""
-    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+    def __init__(
+        self, raise_error=True, default_value=scalar_pass_through, maximum=None
+    ):
         """Initialize the raise error flag and the default value that determine
         the behavior for non-numeric values.
 
@@ -217,6 +225,9 @@ class MaxAbsScale(NormalizeFunction):
             Value (or function) that is used (evaluated) as substitute for
             non-numeric values if no error is raised. By default, a value is
             returned as is.
+        maximum: float or int, defualt=None
+            Pre-computed maximum of values. If not set this should be computed
+            by the prepare function.
         """
         super(MaxAbsScale, self).__init__(
             raise_error=raise_error,
@@ -224,7 +235,7 @@ class MaxAbsScale(NormalizeFunction):
         )
         # The maximum value in the list is unknown at construction time. The
         # value will be calculated by the prepare method.
-        self._maximum = None
+        self.maximum = maximum
 
     def compute(self, value):
         """Divide given value by the pre-computed sum over all values in the
@@ -244,10 +255,19 @@ class MaxAbsScale(NormalizeFunction):
         """
         # Divide the value by the maximum that was initialized in the prepare
         # call. If the maximum is zero or not defined we return 0.
-        return float(value) / self._maximum if self._maximum else 0
+        return float(value) / self.maximum if self.maximum else 0
+
+    def is_prepared(self):
+        """The function requires preparation if the sum is not set..
+
+        Returns
+        -------
+        bool
+        """
+        return self.maximum is not None
 
     def prepare(self, values):
-        """Compute the total sum over all values in the givem list.
+        """Compute the maximum value over all values in the given list.
 
         Parameters
         ----------
@@ -255,8 +275,11 @@ class MaxAbsScale(NormalizeFunction):
             List of scalar values or tuples of scalar values.
         """
         values = filter(values, is_numeric_type)
-        self._maximum = float(max(values))
-        return self
+        return MaxAbsScale(
+            raise_error=self.raise_error,
+            default_value=self.default_value,
+            maximum=float(max(values))
+        )
 
 
 # -- Min/Max scale ------------------------------------------------------------
@@ -284,7 +307,10 @@ def min_max_scale(values, raise_error=True, default_value=scalar_pass_through):
 
 class MinMaxScale(NormalizeFunction):
     """Normalize values in a list using min-max feature scaling."""
-    def __init__(self, raise_error=True, default_value=scalar_pass_through):
+    def __init__(
+        self, raise_error=True, default_value=scalar_pass_through,
+        minimum=None, maximum=None
+    ):
         """Initialize the raise error flag and the default value that determine
         the behavior for non-numeric values.
 
@@ -297,6 +323,12 @@ class MinMaxScale(NormalizeFunction):
             Value (or function) that is used (evaluated) as substitute for
             non-numeric values if no error is raised. By default, a value is
             returned as is.
+        minumum: float or int, defualt=None
+            Pre-computed minimum of values. If not set this should be computed
+            by the prepare function.
+        maximum: float or int, defualt=None
+            Pre-computed maximum of values. If not set this should be computed
+            by the prepare function.
         """
         super(MinMaxScale, self).__init__(
             raise_error=raise_error,
@@ -304,8 +336,8 @@ class MinMaxScale(NormalizeFunction):
         )
         # The minimum and maximum value in the list are unknown at construction
         # time. The values will be calculated by the prepare method.
-        self._minimum = None
-        self._maximum = None
+        self.minimum = minimum
+        self.maximum = maximum
 
     def compute(self, value):
         """Normalize value using min-max feature scaling. If the pre-computed
@@ -321,9 +353,18 @@ class MinMaxScale(NormalizeFunction):
         -------
         float
         """
-        if self._minimum == self._maximum:
+        if self.minimum == self.maximum:
             return 0
-        return (float(value) - self._minimum) / (self._maximum - self._minimum)
+        return (float(value) - self.minimum) / (self.maximum - self.minimum)
+
+    def is_prepared(self):
+        """The function requires preparation if the sum is not set..
+
+        Returns
+        -------
+        bool
+        """
+        return self.minimum is not None and self.maximum is not None
 
     def prepare(self, values):
         """Compute the total sum over all values in the givem list.
@@ -334,6 +375,9 @@ class MinMaxScale(NormalizeFunction):
             List of scalar values or tuples of scalar values.
         """
         values = filter(values, is_numeric_type)
-        self._minimum = float(min(values))
-        self._maximum = float(max(values))
-        return self
+        return MinMaxScale(
+            raise_error=self.raise_error,
+            default_value=self.default_value,
+            minimum=float(min(values)),
+            maximum=float(max(values))
+        )

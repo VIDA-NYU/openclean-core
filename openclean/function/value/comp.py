@@ -118,10 +118,13 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
         -------
         openclean.function.value.base.ValueFunction
         """
-        if not self.left_value.is_prepared():
-            self.left_value.prepate(values)
-        if not self.right_value.is_prepared():
-            self.right_value.prepare(values)
+        if self.is_prepared():
+            args = tuple([
+                self.left_value.prepate(values),
+                self.right_value.prepare(values)
+            ])
+            kwargs = {'raise_error': self.raise_error}
+            return Comparison(*args, **kwargs)
         return self
 
 

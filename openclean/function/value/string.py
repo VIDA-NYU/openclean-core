@@ -113,8 +113,12 @@ class StringFunction(ValueFunction):
             List of scalar values or tuples of scalar values.
         """
         if self.consumer is not None:
-            if not self.consumer.is_prepared():
-                self.consumer.prepare(values)
+            return StringFunction(
+                func=self.func,
+                consumer=self.consumer.prepare(values),
+                as_string=self.as_string,
+                raise_error=self.raise_error
+            )
         return self
 
     def transform(self, value):

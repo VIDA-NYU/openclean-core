@@ -15,8 +15,8 @@ from openclean.data.column import as_list, select_clause
 from openclean.function.base import Eval, EvalFunction
 from openclean.function.column import Col
 from openclean.function.constant import Const
-from openclean.function.replace import IfThenReplace
-from openclean.function.value.replace import lookup
+from openclean.function.value.base import ValueFunction, scalar_pass_through
+from openclean.function.value.lookup import Lookup
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -179,13 +179,18 @@ def get_update_function(func, columns):
     -------
     openclean.function.base.EvalFunction
     """
-    if isinstance(func, dict):
-        func = Eval(columns=columns, func=lookup(func, for_missing='self'))
-    elif not callable(func):
-        func = Const(func)
-    elif not isinstance(func, EvalFunction):
-        func = Eval(columns=columns, func=func)
-    elif isinstance(func, IfThenReplace):
-        if func.pass_through is None:
-            func.pass_through = Col(columns)
+    if not isinstance(func, EvalFunction):
+        if isinstance(func, dict):
+            func = Eval(
+                columns=columns,
+                func=Lookup(
+                    mapping=func,
+                    raise_error=False,
+                    default_value=scalar_pass_through
+                )
+            )
+        elif isinstance(func, ValueFunction) or callable(func):
+            func = Eval(columns=columns, func=func)
+        else:
+            func = Const(func)
     return func
