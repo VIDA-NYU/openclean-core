@@ -13,6 +13,7 @@ the values in a list (e.g., data frame column) are expected to satisfy.
 from openclean.function.list.distinct import distinct
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.profiling.helpers import always_false, eval_all
 
 
 def regex_outliers(df, columns, patterns, fullmatch=True):
@@ -70,57 +71,3 @@ class RegExOutliers(ConditionalOutliers):
             ops = [IsMatch(pattern=p, fullmatch=fullmatch) for p in patterns]
             predicate = eval_all(predicates=ops, truth_value=False)
         super(RegExOutliers, self).__init__(predicate=predicate)
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def always_false(*args):
-    """Predicate that always evaluates to False.
-
-    Parameters
-    ----------
-    args: any
-        Variable list of arguments.
-
-    Returns
-    -------
-    bool
-    """
-    return False
-
-
-class eval_all(object):
-    """Logic operator that evaluates a list of predicates and returns True only
-    if all predicates return a defined result value.
-    """
-    def __init__(self, predicates, truth_value=True):
-        """Initialize the list of predicates and the expected result value.
-
-        Parameters
-        ----------
-        predicates: list(callable)
-            List of callables that are evaluated on a given value.
-        truth_value: scalar, default=True
-            Expected result value for predicate evaluation to be considered
-            satisfied.
-        """
-        self.predicates = predicates
-        self.truth_value = truth_value
-
-    def __call__(self, value):
-        """Evaluate all predicates on the given value. Returns True only if all
-        predicates evaluate to the defined result value.
-
-        Parameters
-        ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
-
-        Returns
-        -------
-        bool
-        """
-        for f in self.predicates:
-            if f.eval(value) != self.truth_value:
-                return False
-        return True

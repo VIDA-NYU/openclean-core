@@ -5,6 +5,8 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
+"""Unit tests for data type profiling."""
+
 import pytest
 
 from openclean.function.value.classifier import ValueClassifier

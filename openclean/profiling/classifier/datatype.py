@@ -23,8 +23,15 @@ from openclean.function.list.base import DictionaryFunction
 DATATYPES = ValueClassifier(Datetime(), Int(), Float(), default_label='text')
 
 
+"""Enumarate accepted values for the datatype features argument."""
+BOTH = 'both'
+DISTINCT = 'distinct'
+TOTAL = 'total'
+FEATURES = [BOTH, DISTINCT, TOTAL]
+
+
 def datatypes(
-    df, columns=None, classifier=None, normalizer=None, features='distinct',
+    df, columns=None, classifier=None, normalizer=None, features=DISTINCT,
     labels=None
 ):
     """Compute list of raw data types and their counts for each distinct value
@@ -50,8 +57,8 @@ def datatypes(
     df: pandas.DataFramee
         Input data frame.
     columns: int, string, or list(int or string), default=None
-        Single column or list of column index positions or column names. Allows
-        to restrict the columns for which types are computed.
+        Single column or list of column index positions or column names.
+        Defines the list of value (pairs) for which types are computed.
     classifier: openclean.function.value.classifier.ValueClassifier
             , default=None
         Classifier that assigns data type class labels for scalar column
@@ -84,7 +91,7 @@ def datatypes(
 class Datatypes(DictionaryFunction):
     """Compute data type frequency counts for values in a given list."""
     def __init__(
-        self, classifier=None, normalizer=None, features='distinct',
+        self, classifier=None, normalizer=None, features=DISTINCT,
         labels=None
     ):
         """Initialize the associated classifier and optional normalizer.
@@ -119,11 +126,11 @@ class Datatypes(DictionaryFunction):
         ValueError
         """
         # Ensure that a valid features value is given.
-        if features not in ['distinct', 'total', 'both']:
+        if features not in FEATURES:
             raise ValueError('invalid features {}'.format(features))
         # Ensure that two labels are given if features is 'both'
-        self.labels = labels if labels is not None else ('distinct', 'total')
-        if features == 'both' and len(self.labels) != 2:
+        self.labels = labels if labels is not None else (DISTINCT, TOTAL)
+        if features == BOTH and len(self.labels) != 2:
             raise ValueError('invalid labels list {}'.format(self.labels))
         # Use default classifier if no classifier is given.
         self.classifier = classifier if classifier is not None else DATATYPES
@@ -179,33 +186,33 @@ class Datatypes(DictionaryFunction):
         """
         if label is not None:
             values = extract(values, label)
-        if self.features == 'both':
+        if self.features == BOTH:
             counts = dict()
             for value, count in values.items():
                 type_label = self.classifier.eval(value)
                 if type_label in counts:
                     c = counts[type_label]
-                    c['distinct'] += 1
-                    c['total'] += count
+                    c[DISTINCT] += 1
+                    c[TOTAL] += count
                 else:
-                    counts[type_label] = {'distinct': 1, 'total': count}
+                    counts[type_label] = {DISTINCT: 1, TOTAL: count}
             if self.normalizer is not None:
                 # Normalize the results if a normalizer is given.
                 counts = merge(
                     normalize(
-                        extract(counts, 'distinct'),
+                        extract(counts, DISTINCT),
                         normalizer=self.normalizer
                     ),
                     normalize(
-                        extract(counts, 'total'),
+                        extract(counts, TOTAL),
                         normalizer=self.normalizer
                     ),
                     labels=self.labels
                 )
         else:
-            if self.features == 'distinct':
+            if self.features == DISTINCT:
                 counts = Counter([self.classifier.eval(v) for v in values])
-            elif self.features == 'total':
+            elif self.features == TOTAL:
                 counts = Counter()
                 for value, count in values.items():
                     counts[self.classifier.eval(value)] += count
