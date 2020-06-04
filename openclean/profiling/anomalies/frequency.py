@@ -7,11 +7,10 @@
 
 """Operators for frequency outlier detection."""
 
-from openclean.data.sequence import Sequence
+from openclean.function.list.distinct import distinct
 from openclean.function.value.comp import Eq, Gt
 from openclean.function.value.normalize import DivideByTotal
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.feature.distinct import distinct
 
 
 def frequency_outliers(df, columns, threshold):
@@ -40,10 +39,9 @@ def frequency_outliers(df, columns, threshold):
     """
     # Create the predicate as a lookup over the normalized frequencies of
     # values in the given columns.
-    values = distinct(df=df, columns=columns)
-    frequencies = values.normalize(DivideByTotal().prepare(values.values()))
+    values = distinct(df=df, columns=columns, normalizer=DivideByTotal())
     op = FrequencyOutliers(
-        frequency=frequencies,
+        frequency=values,
         threshold=threshold
     )
     return op.find(values=values)
@@ -59,8 +57,8 @@ class FrequencyOutliers(ConditionalOutliers):
 
         Parameters
         ----------
-        frequency: callable
-            Function that allows to lookup the relative frequency of a given
+        frequency: dict
+            Dictionary that allows to lookup the relative frequency of a given
             value.
         threshold: callable
             Function that accepts a float (i.e., the relative frequency) and
@@ -88,7 +86,7 @@ class FrequencyOutliers(ConditionalOutliers):
         -------
         bool
         """
-        return self.threshold(self.frequency(value))
+        return self.threshold(self.frequency.get(value))
 
 
 # -- Helper methods -----------------------------------------------------------

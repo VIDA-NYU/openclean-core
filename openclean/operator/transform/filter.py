@@ -7,11 +7,11 @@
 
 """Functions and classes that implement the filter operators in openclean."""
 
-from openclean.function.base import Eval, EvalFunction
-from openclean.function.column import Col
-from openclean.function.constant import Const
-from openclean.function.predicate.comp import Eq
-from openclean.function.predicate.domain import IsIn
+from openclean.function.eval.base import Eval, EvalFunction
+from openclean.function.eval.column import Col
+from openclean.function.eval.constant import Const
+from openclean.function.eval.predicate.comp import Eq
+from openclean.function.eval.predicate.domain import IsIn
 from openclean.function.value.base import CallableWrapper, ValueFunction
 from openclean.operator.base import DataFrameTransformer
 
@@ -33,8 +33,8 @@ def delete(df, columns=None, predicate=None):
     df: pandas.DataFrame
         Input data frame.
     predicate: (
-            openclean.function.base.EvalFunction,
-            openclean.function.base.value.ValueFunction,
+            openclean.function.eval.base.EvalFunction,
+            openclean.function.eval.base.value.ValueFunction,
             callable,
             dictionary,
             or scalar
@@ -67,8 +67,8 @@ def filter(df, columns=None, predicate=None, negated=False):
     df: pandas.DataFrame
         Input data frame.
     predicate: (
-            openclean.function.base.EvalFunction,
-            openclean.function.base.value.ValueFunction,
+            openclean.function.eval.base.EvalFunction,
+            openclean.function.eval.base.value.ValueFunction,
             callable,
             dictionary,
             or scalar
@@ -105,7 +105,7 @@ class Filter(DataFrameTransformer):
 
         Parameters
         ----------
-        predicate: openclean.function.base.EvalFunction or callable
+        predicate: openclean.function.eval.base.EvalFunction or callable
             Evaluation function or callable that accepts a data frame row as
             the only argument.
         negated: bool, default=False
@@ -156,8 +156,8 @@ def get_predicate(columns=None, predicate=None):
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
     predicate: (
-            openclean.function.base.EvalFunction,
-            openclean.function.base.value.ValueFunction,
+            openclean.function.eval.base.EvalFunction,
+            openclean.function.eval.base.value.ValueFunction,
             callable,
             dictionary,
             or scalar
@@ -170,7 +170,7 @@ def get_predicate(columns=None, predicate=None):
 
     Returns
     -------
-    openclean.function.base.EvalFunction
+    openclean.function.eval.base.EvalFunction
 
     Raises
     ------

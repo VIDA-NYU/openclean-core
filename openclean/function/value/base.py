@@ -9,33 +9,12 @@
 
 from abc import ABCMeta, abstractmethod
 
+from openclean.function.list.base import DictionaryFunction, ListFunction
+
 
 # -- Abstract base class for value functions ----------------------------------
 
-class ListFunction(metaclass=ABCMeta):
-    """Interface for functions that transform a given list of values."""
-    @abstractmethod
-    def apply(self, values):
-        """Apply a function to each value in a given list. Returns a list of
-        values that are the result of evaluating an assicuated value function
-        for the respective input values.
-
-        Should call the prepare method of an associated value function before
-        executing the eval method on each individual value in the given list.
-
-        Parameters
-        ----------
-        values: list
-            List of scalar values or tuples of scalar values.
-
-        Returns
-        -------
-        list
-        """
-        raise NotImplementedError()
-
-
-class ValueFunction(ListFunction, metaclass=ABCMeta):
+class ValueFunction(DictionaryFunction, ListFunction, metaclass=ABCMeta):
     """The abstract class for value functions defines the interface for methods
     that need to be implemented for preparing and evaluating the function.
     """
@@ -89,6 +68,28 @@ class ValueFunction(ListFunction, metaclass=ABCMeta):
         bool
         """
         raise NotImplementedError()
+
+    def map(self, values):
+        """The map function takes a list of values and outputs a dictionary.
+        The keys in the returned dictionary are the distinct values in the
+        input list. The values that are associated with the keys are the result
+        of applying the eval function of this class on the key value.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        dict
+        """
+        f = self.prepare(values)
+        result = dict()
+        for v in values:
+            if v not in result:
+                result[v] = f.eval(v)
+        return result
 
     @abstractmethod
     def prepare(self, values):

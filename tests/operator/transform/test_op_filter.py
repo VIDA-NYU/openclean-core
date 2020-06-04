@@ -8,8 +8,8 @@
 """Unit tests for filter operator."""
 
 from openclean.data.sequence import Sequence
-from openclean.function.column import Col
-from openclean.function.predicate.comp import Eq, Gt
+from openclean.function.eval.column import Col
+from openclean.function.eval.predicate.comp import Eq, Gt
 from openclean.function.value.comp import Gt as gt
 from openclean.function.value.domain import IsInDomain
 from openclean.operator.transform.filter import delete, filter

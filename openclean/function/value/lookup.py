@@ -66,7 +66,7 @@ class Lookup(PreparedFunction):
             # value is unknown. Otherwise, return the defined target value or
             # the default value (for missing keys).
             if self.raise_error:
-                raise ValueError('unknown value {}'.format(value))
+                raise KeyError('unknown value {}'.format(value))
             if callable(self.default_value):
                 return self.default_value(value)
             return self.default_value

@@ -7,7 +7,7 @@
 
 """Functions and classes that implement the split operator in openclean."""
 
-from openclean.function.base import EvalFunction
+from openclean.function.eval.base import EvalFunction
 from openclean.operator.base import DataFrameSplitter
 from openclean.operator.transform.filter import get_predicate
 
@@ -27,8 +27,8 @@ def split(df, columns=None, predicate=None):
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
     predicate: (
-            openclean.function.base.EvalFunction,
-            openclean.function.base.value.ValueFunction,
+            openclean.function.eval.base.EvalFunction,
+            openclean.function.eval.base.value.ValueFunction,
             callable,
             dictionary,
             or scalar

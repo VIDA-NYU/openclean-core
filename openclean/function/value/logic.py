@@ -23,7 +23,7 @@ class LogicFunction(ValueFunction):
 
         Parameters
         ----------
-        args: callable, openclean.function.base.value.ValueFunction, or list
+        args: callable, openclean.function.eval.base.value.ValueFunction, or list
             Single callable or value function, or a list of callables or
             value functions.
 
@@ -103,7 +103,7 @@ class And(LogicFunction):
 
         Parameters
         ----------
-        args: callable, openclean.function.base.value.ValueFunction, or list
+        args: callable, openclean.function.eval.base.value.ValueFunction, or list
             Single callable or value function, or a list of callables or
             value functions.
 
@@ -140,7 +140,7 @@ class Not(LogicFunction):
 
         Parameters
         ----------
-        args: callable, openclean.function.base.value.ValueFunction, or list
+        args: callable, openclean.function.eval.base.value.ValueFunction, or list
             Single callable or value function, or a list of callables or
             value functions.
         """
@@ -172,7 +172,7 @@ class Or(LogicFunction):
 
         Parameters
         ----------
-        args: callable, openclean.function.base.value.ValueFunction, or list
+        args: callable, openclean.function.eval.base.value.ValueFunction, or list
             Single callable or value function, or a list of callables or
             value functions.
         """

@@ -10,9 +10,9 @@ general are considered values that do not match a (list of) pattern(s) that
 the values in a list (e.g., data frame column) are expected to satisfy.
 """
 
+from openclean.function.list.distinct import distinct
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.feature.distinct import distinct
 
 
 def regex_outliers(df, columns, patterns, fullmatch=True):

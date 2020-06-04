@@ -29,7 +29,7 @@ def apply(df, columns, func):
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.base.ApplyFactory
+    func: callable or openclean.function.eval.base.ApplyFactory
         Callable that accepts a single value or a fatory that creates such a
         callable.
 
@@ -57,7 +57,7 @@ class Apply(DataFrameTransformer):
             Input data frame.
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
-        func: (openclean.function.base.ValueFunction, or callable)
+        func: (openclean.function.eval.base.ValueFunction, or callable)
             Callable or value function that accepts a single value.
         """
         # Ensure that columns is a list.

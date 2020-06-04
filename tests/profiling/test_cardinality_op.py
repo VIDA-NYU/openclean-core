@@ -14,7 +14,7 @@ import pytest
 
 from openclean.data.load import dataset
 from openclean.profiling import counts, DistinctValues
-from openclean.function.predicate.scalar.comp import Eq, Gt
+from openclean.function.eval.predicate.scalar.comp import Eq, Gt
 
 
 DIR = os.path.dirname(os.path.realpath(__file__))

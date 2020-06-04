@@ -11,7 +11,7 @@ list). This module contains a factory pattern for creating iterators over a
 single column or a set of columns in a pandas data frame.
 """
 
-from openclean.data.column import select_clause
+from openclean.data.column import as_list, select_clause
 
 
 class Sequence(object):
@@ -42,6 +42,10 @@ class Sequence(object):
         -----
         ValueError
         """
+        # If the list of columns is not given, the set of values over all
+        # columns in the data frame schema is used.
+        if columns is None:
+            columns = as_list(df.columns)
         # Ensure that columns is a list.
         columns = columns if isinstance(columns, list) else [columns]
         # Get list of index positions for referenced columns.

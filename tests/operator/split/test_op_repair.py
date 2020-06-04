@@ -47,8 +47,8 @@ def test_repair_operator(nyc311):
     for col in df_fail.columns:
         assert isinstance(col, Column)
     # Key error is raised if not caught.
-    with pytest.raises(ValueError):
-        repair(nyc311, 'borough', f, exceptions=TypeError)
-    repair(nyc311, 'borough', f, exceptions=ValueError)
+    with pytest.raises(KeyError):
+        repair(nyc311, 'borough', f, exceptions=ValueError)
+    repair(nyc311, 'borough', f, exceptions=KeyError)
     assert df_succ.shape == (nyc311.shape[0] - 20, len(nyc311.columns))
     assert df_fail.shape == (20, len(nyc311.columns))

@@ -34,7 +34,7 @@ def repair(df, columns, func, exceptions=None):
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.base.EvalFunction
+    func: callable or openclean.function.eval.base.EvalFunction
         Callable that accepts a data frame row as the only argument and outputs
         a (modified) list of value(s).
     exceptions: Error or list(Error)
@@ -72,7 +72,7 @@ class Repair(DataFrameSplitter):
         ----------
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
-        func: callable or openclean.function.base.EvalFunction
+        func: callable or openclean.function.eval.base.EvalFunction
             Callable that accepts a data frame row as the only argument and
             outputs a (modified) (list of) value(s).
         exceptions: Error or list(Error)

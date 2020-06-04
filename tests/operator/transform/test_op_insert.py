@@ -11,8 +11,8 @@ import math
 import pytest
 
 from openclean.data.column import Column
-from openclean.function.column import Col
-from openclean.function.string import Upper
+from openclean.function.eval.column import Col
+from openclean.function.eval.string import Upper
 
 from openclean.operator.transform.insert import inscol, insrow
 

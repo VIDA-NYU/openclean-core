@@ -30,7 +30,7 @@ def test_lookup_table():
     # Error for missing keys
     f = Lookup({'A': 1, 'B': 2, 'C': 3}, default_value=-1, raise_error=True)
     assert f('A') == 1
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         f('D')
     # Convert values to string
     f = Lookup({'1': 'one', '2': 'two'})

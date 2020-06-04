@@ -8,8 +8,8 @@
 """Unit tests for the split operator."""
 
 from openclean.data.column import Column
-from openclean.function.column import Col
-from openclean.function.predicate.comp import Eq
+from openclean.function.eval.column import Col
+from openclean.function.eval.predicate.comp import Eq
 from openclean.operator.split.split import split
 
 
