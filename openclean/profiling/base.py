@@ -70,14 +70,14 @@ class Profiler(ProfilingFunction):
         for f in profilers:
             if not isinstance(f, ProfilingFunction):
                 raise ValueError("invalid profiler type '{}'".format(type(f)))
-            name = f.name()
-            if not name:
-                raise ValueError("invalid profiler name '{}'".format(name))
-            if name in names:
-                raise ValueError("duplicate profiler name '{}'".format(name))
-            names.add(name)
+            fname = f.name()
+            if not fname:
+                raise ValueError("invalid profiler name '{}'".format(fname))
+            if fname in names:
+                raise ValueError("duplicate profiler name '{}'".format(fname))
+            names.add(fname)
         self.profilers = profilers
-        self._name = name if name else 'profiler'
+        super(Profiler, self).__init__(name=name if name else 'profiler')
 
     def exec(self, values):
         """Combine the results from the different profiler functions in a
@@ -99,12 +99,3 @@ class Profiler(ProfilingFunction):
                 raise ValueError('duplicate profiler name {}'.format(f.name()))
             results[f.name()] = f.exec(values)
         return results
-
-    def name(self):
-        """Get the unique profiler name.
-
-        Returns
-        -------
-        string
-        """
-        return self._name

@@ -25,6 +25,16 @@ class ProfilingFunction(metaclass=ABCMeta):
     value in a dictionary that composes the results of multiple profiling
     functions.
     """
+    def __init__(self, name):
+        """Initialize the function name.
+
+        Parameters
+        ----------
+        name: string
+            Unique function name.
+        """
+        self._name = name if name else util.func(self)
+
     @abstractmethod
     def exec(self, values):
         """Compute one or more features over values in a given sequence.
@@ -36,20 +46,18 @@ class ProfilingFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        dict
+        scalar or list or dict
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def name(self):
-        """Unique name of the profiling function. The name is used as key in
-        dictionaries that combine the results of multiple profiling functions.
+        """Get the unique function name.
 
         Returns
         -------
         string
         """
-        raise NotImplementedError()
+        return self._name
 
 
 # -- Value list functions -----------------------------------------------------
@@ -136,7 +144,9 @@ class ValueFunction(DictionaryFunction, ListFunction, metaclass=ABCMeta):
         name: string
             Unique function name.
         """
-        self._name = name if name else util.func(self)
+        super(ValueFunction, self).__init__(
+            name=name if name else util.func(self)
+        )
 
     def apply(self, values):
         """Apply the function to each value in a given list. Returns a list of
@@ -227,15 +237,6 @@ class ValueFunction(DictionaryFunction, ListFunction, metaclass=ABCMeta):
         openclean.function.base.ValueFunction
         """
         raise NotImplementedError()
-
-    def name(self):
-        """Get the unique function name.
-
-        Returns
-        -------
-        string
-        """
-        return self._name
 
 
 # -- Default base class implementations ---------------------------------------
