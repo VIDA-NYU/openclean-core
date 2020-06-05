@@ -10,7 +10,7 @@ statements. they evaluate a given predicate for each value and then return
 either of to values.
 """
 
-from openclean.function.value.base import (
+from openclean.function.base import (
     CallableWrapper, ValueFunction, scalar_pass_through, to_valuefunc
 )
 
@@ -32,21 +32,21 @@ class IfThenElse(ValueFunction):
         predicate: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             Predicate that represents the condition of the if-them-else
             statement.
         if_expression: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             If-expression that is evaluated for all values that satisfy the
             predicate.
         else_expression: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             Else-expression that is evaluated for all values that do not
             satisfy the predicate.
@@ -101,7 +101,7 @@ class IfThenElse(ValueFunction):
 
         Returns
         -------
-        openclean.function.value.base.ValueFunction
+        openclean.function.base.ValueFunction
         """
         if self.is_prepared():
             return IfThenElse(
@@ -124,21 +124,21 @@ class IfThen(IfThenElse):
         predicate: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             Predicate that represents the condition of the if-them-else
             statement.
         if_expression: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             If-expression that is evaluated for all values that satisfy the
             predicate.
         else_expression: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             Else-expression that is evaluated for all values that do not
             satisfy the predicate.
@@ -161,14 +161,14 @@ class Replace(IfThen):
         condition: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             Predicate that represents the condition of the if-them-else
             statement.
         value: (
                 scalar,
                 callable, or
-                openclean.function.value.base.ValueFunction
+                openclean.function.base.ValueFunction
             )
             Expression that is evaluated for all values that satisfy the
             condition.

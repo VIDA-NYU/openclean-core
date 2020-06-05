@@ -9,7 +9,7 @@
 counts.
 """
 
-from openclean.function.value.base import ValueFunction
+from openclean.function.base import ValueFunction
 
 
 def extract(values, label, raise_error=True, default_value=None):
@@ -129,7 +129,7 @@ def normalize(values, normalizer, keep_original=False, labels=None):
     ----------
     values: dict
         Dictionary that maps arbitrary key values to numeric values.
-    normalizer: callable or openclean.function.value.base.ValueFunction,
+    normalizer: callable or openclean.function.base.ValueFunction,
             default=None
         Normalization function that will be used to normalize the numeric
         values in the given dictionary.

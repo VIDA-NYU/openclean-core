@@ -12,7 +12,7 @@ sequence of values.
 from collections import Counter
 
 from openclean.data.sequence import Sequence
-from openclean.function.list.base import DictionaryFunction
+from openclean.function.base import DictionaryFunction
 from openclean.function.list.helper import normalize
 
 
@@ -35,7 +35,7 @@ def distinct(
     columns: int or string or list(int or string), optional
         List of column index or column name for columns for which distinct
         value combinations are computed.
-    normalizer: callable or openclean.function.value.base.ValueFunction,
+    normalizer: callable or openclean.function.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
         frequency counts in the returned dictionary.
@@ -66,7 +66,9 @@ class Distinct(DictionaryFunction):
     """Compute the set of distinct values in a given sequence together with
     their value frequency counts.
     """
-    def __init__(self, normalizer=None, keep_original=False, labels=None):
+    def __init__(
+        self, normalizer=None, keep_original=False, labels=None, name=None
+    ):
         """Initialize the optional normalizer. By default absolute frequency
         counts are returned for the distinct values.
 
@@ -77,7 +79,7 @@ class Distinct(DictionaryFunction):
 
         Parameters
         ----------
-        normalizer: callable or openclean.function.value.base.ValueFunction,
+        normalizer: callable or openclean.function.base.ValueFunction,
                 default=None
             Optional normalization function that will be used to normalize the
             frequency counts in the returned dictionary.
@@ -91,10 +93,13 @@ class Distinct(DictionaryFunction):
             used if the keep_original flag is True. The first element is the
             label for the original value in the returned nested dictionary and
             the second element is the label for the normalized value.
+        name: string, default=None
+            Unique function name.
         """
         self.normalizer = normalizer
         self.keep_original = keep_original
         self.labels = labels
+        self._name = name
 
     def map(self, values):
         """Compute distinct values and their frequency counts for elements in
@@ -121,3 +126,17 @@ class Distinct(DictionaryFunction):
                 labels=self.labels
             )
         return counts
+
+    def name(self):
+        """Get the unique function name.
+
+        Returns
+        -------
+        string
+        """
+        if not self._name:
+            name = 'distinctValueCount'
+            if self.normalizer:
+                name += 'Normalized'
+            return name
+        return self._name

@@ -9,7 +9,7 @@
 one data frame column or tuples from multiple data frame columns.
 """
 
-from openclean.profiling.base import FeatureProfiler
+from openclean.function.base import FeatureProfiler
 from openclean.util.func import funcname
 
 

@@ -12,7 +12,7 @@ from openclean.function.eval.column import Col
 from openclean.function.eval.constant import Const
 from openclean.function.eval.predicate.comp import Eq
 from openclean.function.eval.predicate.domain import IsIn
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.base import CallableWrapper, ValueFunction
 from openclean.operator.base import DataFrameTransformer
 
 

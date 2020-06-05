@@ -8,7 +8,7 @@
 """Evaluate function that returns values from columns in a data frame row."""
 
 from openclean.function.eval.base import Eval, VarApply, is_var_func
-from openclean.function.value.base import scalar_pass_through
+from openclean.function.base import scalar_pass_through
 from openclean.function.value.datatype import cast
 
 

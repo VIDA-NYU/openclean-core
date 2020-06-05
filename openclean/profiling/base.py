@@ -16,33 +16,73 @@ value features. Profilers can also compute new 'value', for example, when
 discovering patterns in the data.
 """
 
-from abc import ABCMeta, abstractmethod
+from openclean.data.sequence import Sequence
+from openclean.function.base import ProfilingFunction
 
 
-class SequenceProfiler(metaclass=ABCMeta):
-    """Profiler for a sequence of data values. Values are either scalar values
-    or tuples of scalar values. Each sequence profiler implements the exec()
-    method and the values() method. Both methods consume an iterable sequence
-    of values. For some profilers it makes sense to implement either the exec
-    method or the values method, depending on the type of profiling task that
-    is being performed.
+# -- Column profiling operator ------------------------------------------------
 
-    The exec method returns a dictionary where the keys are values either from
-    the input sequence or newly computed values (e.g., patterns). With each key
-    one or more feature values may be associated (e.g., value frequency). The
-    keys and values in the dictionary are implementation dependent and differ
-    for each profiler. Note that the result does not have to contain all (or
-    even any) of the original values.
+def profile(df, columns=None, profilers=None):
+    """Generic profiler that executes a list of associated profiling functions
+    on a given list of values and combined their results in a dictionary.
 
-    The values method simply returns the list of keys in the dictionary that
-    the exec method returns. For profiling tasks that for example detect
-    outliers, values() returns the list of detected outliers. The result of the
-    exec method may contain additional weights or scores that represent the
-    confidence or additional evidence for the returned values.
+    Parameters
+    ----------
+    df: pandas.DataFramee
+        Input data frame.
+    columns: int, string, or list(int or string), default=None
+        Single column or list of column index positions or column names.
+        Defines the list of value (pairs) for which profiles are computed.
+    profilers: list(openclean.function.base.ProfilingFunction)
+        List of profiling functions,
     """
-    @abstractmethod
+    values = Sequence(df=df, columns=columns)
+    return Profiler(profilers=profilers).exec(values=values)
+
+
+class Profiler(ProfilingFunction):
+    """Generic profiler that executes a list of associated profiling functions
+    on a given list of values and combined their results in a dictionary.
+    """
+    def __init__(self, profilers, name=None):
+        """Initialize the list of profiler functions and the optional profiler
+        name.
+
+        Raises a ValueError if not all profilers are instances of the
+        ProfilerFunction class or if the functon names are not unique.
+
+        Parameters
+        ----------
+        profilers: list(openclean.function.base.ProfilingFunction)
+            List of profiling functions,
+        name: string, default=None
+            Optional profiler name.
+
+        Raises
+        ------
+        ValueError
+        """
+        # Ensure that profilers is a list of profiling functions with unique
+        # names that are not empty.
+        if not isinstance(profilers, list):
+            profilers = [profilers]
+        names = set()
+        for f in profilers:
+            if not isinstance(f, ProfilingFunction):
+                raise ValueError("invalid profiler type '{}'".format(type(f)))
+            name = f.name()
+            if not name:
+                raise ValueError("invalid profiler name '{}'".format(name))
+            if name in names:
+                raise ValueError("duplicate profiler name '{}'".format(name))
+            names.add(name)
+        self.profilers = profilers
+        self._name = name if name else 'profiler'
+
     def exec(self, values):
-        """Compute one or more features over values in a given sequence.
+        """Combine the results from the different profiler functions in a
+        single dictionary. Raises a ValueError if the names of the profilers
+        are not unique.
 
         Parameters
         ----------
@@ -53,43 +93,18 @@ class SequenceProfiler(metaclass=ABCMeta):
         -------
         dict
         """
-        raise NotImplementedError()
+        results = dict()
+        for f in self.profilers:
+            if f.name() in results:
+                raise ValueError('duplicate profiler name {}'.format(f.name()))
+            results[f.name()] = f.exec(values)
+        return results
 
-    @abstractmethod
-    def values(self, values):
-        """Return a list values computed over the given input sequence. The
-        list contains all values that are returned as keys in the disctionary
-        from the exec method.
-
-        Parameters
-        ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
+    def name(self):
+        """Get the unique profiler name.
 
         Returns
         -------
-        list
+        string
         """
-        raise NotImplementedError()
-
-
-class FeatureProfiler(SequenceProfiler):
-    """Sub-class for profilers that compute one or more features for a given
-    sequence of values. Implements the values() method to simply return the
-    list of keys in the dictionary that is returned by the exec() method.
-    """
-    def values(self, values):
-        """Return a list values computed over the given input sequence. The
-        list contains all values that are returned as keys in the disctionary
-        from the exec method.
-
-        Parameters
-        ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
-
-        Returns
-        -------
-        list
-        """
-        return list(self.exec(values).keys())
+        return self._name

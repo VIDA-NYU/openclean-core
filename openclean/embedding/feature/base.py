@@ -10,7 +10,7 @@
 import numpy as np
 
 from openclean.embedding.base import ValueEmbedder
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.base import CallableWrapper, ValueFunction
 
 
 class FeatureEmbedding(ValueEmbedder):
@@ -25,7 +25,7 @@ class FeatureEmbedding(ValueEmbedder):
         Parameters
         ----------
         features: list
-            List of callables or openclean.function.value.base.ValueFunction.
+            List of callables or openclean.function.base.ValueFunction.
             Value fnctions are initialized by the prepare method.
         """
         # Ensure that features is a list that only contains callables or value

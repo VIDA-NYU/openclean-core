@@ -13,7 +13,7 @@ the values in a list (e.g., data frame column) are expected to satisfy.
 from openclean.function.list.distinct import distinct
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.helpers import always_false, eval_all
+from openclean.profiling.helper import always_false, eval_all
 
 
 def regex_outliers(df, columns, patterns, fullmatch=True):

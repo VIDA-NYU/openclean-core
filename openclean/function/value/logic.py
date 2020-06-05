@@ -7,7 +7,7 @@
 
 """Basic logic operators as value function predicates."""
 
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.base import CallableWrapper, ValueFunction
 
 
 # -- Generic logic operator ---------------------------------------------------

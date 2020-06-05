@@ -15,7 +15,7 @@ from openclean.data.column import as_list, select_clause
 from openclean.function.eval.base import Eval, EvalFunction
 from openclean.function.eval.column import Col
 from openclean.function.eval.constant import Const
-from openclean.function.value.base import ValueFunction, scalar_pass_through
+from openclean.function.base import ValueFunction, scalar_pass_through
 from openclean.function.value.lookup import Lookup
 from openclean.operator.base import DataFrameTransformer
 

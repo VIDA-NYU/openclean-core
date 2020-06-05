@@ -13,9 +13,10 @@ datatype to a list of values (e.g., a column in a data frame).
 """
 
 from openclean.data.sequence import Sequence
-from openclean.function.list.base import DictionaryFunction
+from openclean.function.base import DictionaryFunction
 from openclean.function.value.normalize import divide_by_total
-from openclean.profiling.classifier.datatype import Datatypes, DISTINCT, TOTAL
+from openclean.profiling.classifier.base import DISTINCT, TOTAL
+from openclean.profiling.classifier.datatype import Datatypes
 from openclean.profiling.helper import get_threshold
 
 
@@ -77,7 +78,7 @@ class MajorityTypePicker(DictionaryFunction):
     """
     def __init__(
         self, classifier=None, threshold=None, use_total_counts=False,
-        at_most_one=False
+        at_most_one=False, name=None
     ):
         """Initialize the classifier for data type assignement. The optional
         threshold allows to further constrain the possible results by requiring
@@ -99,11 +100,14 @@ class MajorityTypePicker(DictionaryFunction):
             Ensure that at most one data type is returned in the result. If the
             flag is True and multiple types have the maximum frequency, an
             empty dictionary will be returned.
+        name: string, default='majorityTypePicker'
+            Unique function name.
         """
         self.classifier = classifier
         self.threshold = get_threshold(threshold)
         self.use_total_counts = use_total_counts
         self.at_most_one = at_most_one
+        self._name = name if name else 'majorityTypePicker'
 
     def map(self, values):
         """Select one or more type labels based on data type statistics that
@@ -147,6 +151,15 @@ class MajorityTypePicker(DictionaryFunction):
         if self.at_most_one and len(result) > 1:
             return dict()
         return result
+
+    def name(self):
+        """Unique function name.
+
+        Returns
+        -------
+        string
+        """
+        return self._name
 
 
 # -- Threshold type picker ----------------------------------------------------
@@ -200,6 +213,7 @@ class ThresholdTypePicker(DictionaryFunction):
     """
     def __init__(
         self, classifier=None, threshold=None, use_total_counts=False,
+        name=None
     ):
         """Initialize the classifier for data type assignement. The threshold
         constrains the results by requiring a type to have a minimal frequency.
@@ -216,10 +230,13 @@ class ThresholdTypePicker(DictionaryFunction):
         use_total_counts: bool, default=False
             Use total value counst instead of distinct counts to compute type
             frequencies.
+        name: string, default='thresholdTypePicker'
+            Unique function name.
         """
         self.classifier = classifier
         self.threshold = get_threshold(threshold)
         self.use_total_counts = use_total_counts
+        self._name = name if name else 'thresholdTypePicker'
 
     def map(self, values):
         """Select one or more type labels based on data type statistics that
@@ -255,3 +272,12 @@ class ThresholdTypePicker(DictionaryFunction):
             if self.threshold(freq):
                 result[label] = freq
         return result
+
+    def name(self):
+        """Unique function name.
+
+        Returns
+        -------
+        string
+        """
+        return self._name

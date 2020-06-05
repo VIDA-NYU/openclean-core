@@ -7,7 +7,7 @@
 
 """Unit tests for data type assignment."""
 
-from openclean.function.value.base import PreparedFunction
+from openclean.function.base import PreparedFunction
 from openclean.function.value.classifier import ValueClassifier
 from openclean.profiling.classifier.typepicker import (
     majority_typepicker, threshold_typepicker

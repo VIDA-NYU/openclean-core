@@ -9,7 +9,7 @@
 frame rows.
 """
 
-from openclean.function.value.base import (
+from openclean.function.base import (
     CallableWrapper, PreparedFunction, ValueFunction
 )
 
@@ -41,7 +41,7 @@ class StringFunction(ValueFunction):
         ----------
         func: callable
             String function that is executed on given argument values.
-        consumer: callable or openclean.function.value.base.ValueFunction,
+        consumer: callable or openclean.function.base.ValueFunction,
             default=None
             Downstream function that is executed on the modified value.
         as_string: bool, optional

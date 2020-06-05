@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 
 from openclean.data.column import select_clause
 from openclean.data.sequence import Sequence
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.base import CallableWrapper, ValueFunction
 
 
 # -- Evaluation Functions -----------------------------------------------------
@@ -199,7 +199,7 @@ class FullRowValueEval(EvalFunction):
 
         Parameters
         ----------
-        func: (openclean.function.value.base.ValueFunction or callable)
+        func: (openclean.function.base.ValueFunction or callable)
             Callable or value function that is evaluated on the list of cell
             values from a data frame row.
 
@@ -322,7 +322,7 @@ class MultiColumnValueEval(EvalFunction):
 
         Parameters
         ----------
-        func: (openclean.function.value.base.ValueFunction or callable)
+        func: (openclean.function.base.ValueFunction or callable)
             Callable or value function that is evaluated on a list of cell
             values from a data frame row.
         columns: list(int or string)
@@ -456,7 +456,7 @@ class SingleColumnValueEval(EvalFunction):
 
         Parameters
         ----------
-        func: (openclean.function.value.base.ValueFunction or callable)
+        func: (openclean.function.base.ValueFunction or callable)
             Callable or value function that is evaluated on a list of cell
             values from a data frame row.
         columns: int or string

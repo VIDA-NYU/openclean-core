@@ -9,7 +9,7 @@
 """
 
 from openclean.data.metadata import Feature
-from openclean.function.value.base import ValueFunction
+from openclean.function.base import ValueFunction
 from openclean.function.value.normalize import MinMaxScale
 
 

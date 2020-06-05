@@ -11,7 +11,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.function.value.base import (
+from openclean.function.base import (
     CallableWrapper, ValueFunction, scalar_pass_through, to_valuefunc
 )
 
@@ -30,7 +30,7 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         raise_error: bool, optional
@@ -116,7 +116,7 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.value.base.ValueFunction
+        openclean.function.base.ValueFunction
         """
         if self.is_prepared():
             args = tuple([
@@ -140,7 +140,7 @@ class Eq(Comparison):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         ignore_case: bool, default=False
@@ -182,7 +182,7 @@ class EqIgnoreCase(Eq):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         raise_error: bool, default=False
@@ -203,7 +203,7 @@ class Geq(Comparison):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         raise_error: bool, default=False
@@ -240,7 +240,7 @@ class Gt(Comparison):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         raise_error: bool, default=False
@@ -276,7 +276,7 @@ class Leq(Comparison):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         raise_error: bool, default=False
@@ -313,7 +313,7 @@ class Lt(Comparison):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         raise_error: bool, default=False
@@ -349,7 +349,7 @@ class Neq(Comparison):
 
         Parameters
         ----------
-        args: scalar, callable, or openclean.function.value.base.ValueFunction
+        args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
         ignore_case: bool, default=False

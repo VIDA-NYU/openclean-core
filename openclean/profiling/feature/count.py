@@ -12,7 +12,7 @@ for counters that are not universal but column specific, e.g., counting the
 number of distinct values in a column.
 """
 
-from openclean.profiling.base import FeatureProfiler
+from openclean.function.base import FeatureProfiler
 from openclean.profiling.feature.aggragate import Aggragator
 
 
@@ -39,7 +39,7 @@ class Counts(FeatureProfiler):
         ----------
         predicates: list([
                 callable ||
-                openclean.profiling.base.DataStreamProfilerFactory
+                openclean.function.base.DataStreamProfilerFactory
             ]), optional
             List of callable scalar predicates or profiler factories.
         index: list, optional
@@ -86,7 +86,7 @@ class Count(Aggragator):
         ----------
         predicates: list([
                 callable ||
-                openclean.profiling.base.DataStreamProfilerFactory
+                openclean.function.base.DataStreamProfilerFactory
             ]), optional
             List of callable scalar predicates or profiler factories.
         index: list, optional
@@ -140,7 +140,7 @@ def counts(df, predicates=None, index=None):
         Input data frame.
     predicates: list([
             callable ||
-            openclean.profiling.base.DataStreamProfilerFactory
+            openclean.function.base.DataStreamProfilerFactory
         ]), optional
         List of callable scalar predicates or profiler factories.
     index: list, optional

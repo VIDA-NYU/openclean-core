@@ -11,7 +11,7 @@ string.
 
 import re
 
-from openclean.function.value.base import PreparedFunction
+from openclean.function.base import PreparedFunction
 
 
 class IsMatch(PreparedFunction):

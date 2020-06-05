@@ -9,7 +9,9 @@
 data frames that have class labels assigned to their data rows.
 """
 
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.base import CallableWrapper, ValueFunction
+
+import openclean.util as util
 
 
 class ClassLabel(ValueFunction):
@@ -40,6 +42,7 @@ class ClassLabel(ValueFunction):
         ------
         ValueError
         """
+        super(ClassLabel, self).__init__(name=util.funcname(predicate))
         # Ensure that the predicate is a ValueFunction
         if not isinstance(predicate, ValueFunction):
             # Wrap the predicate inside a ValueFunction. This will raise a
@@ -109,30 +112,26 @@ class ValueClassifier(ValueFunction):
     label or a ValueError is raised if the raise error flag is set to True.
     """
     def __init__(self, *args, **kwargs):
-        """Initialize the object properties. Raises an error if the number of
-        elements in the predicates list and labels list (and the truth values
-        list of given) to not match.
+        """Initialize the individual classifier and object properties.
 
         Parameters
         ----------
-        args: list of callable or openclean.function.value.base.ValueFunction
+        args: list of callable or openclean.function.base.ValueFunction
             List of functions that accept a scalar value as input and that
             return a class label as output.
-        labels: scalar or list(scalar)
-            Class labels that are associated with the predicates.
-        truth_value: list(scalar), optional
-            Return value of the predicate that is considered as True, i.e., the
-            predicate is satisfied.
-        default_label: scalar, optional
-            Default class label that is returned if no predicate is satisfied.
-        raise_error: bool, optional
-            Raise an error if no predicate is satisfied instead of returning
-            the default label.
-
-        Raises
-        ------
-        ValueError
+        none_label: string, default=None
+            Label that is returned by the associated value functions to signal
+            that a value did not satisfy the condition of the classifier.
+        default_label: scalar, default=None
+            Default label that is returned for values that do not satisfy the
+            predicate.
+        raise_error: bool, default=False
+            Raise an error instead of returning the default label if no
+            classifier was satisfied by a given value.
         """
+        super(ValueClassifier, self).__init__(
+            name=kwargs.get('name', 'valueClassifier')
+        )
         self.classifiers = list()
         for f in args:
             if not isinstance(f, ValueFunction):

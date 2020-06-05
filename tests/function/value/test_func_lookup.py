@@ -9,7 +9,7 @@
 
 import pytest
 
-from openclean.function.value.base import scalar_pass_through
+from openclean.function.base import scalar_pass_through
 from openclean.function.value.lookup import Lookup
 
 

@@ -11,7 +11,7 @@ function on them.
 """
 
 from openclean.data.sequence import Sequence
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.base import CallableWrapper, ValueFunction
 
 
 # -- Functions ----------------------------------------------------------------
@@ -25,7 +25,7 @@ def mapping(df, columns, func):
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.value.base.ValueFunction
+    func: callable or openclean.function.base.ValueFunction
         Callable or value function that accepts a single value as the argument.
 
     Returns
