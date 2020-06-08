@@ -55,6 +55,7 @@ class RegExOutliers(ConditionalOutliers):
             If True, the pattern has to match a given string fully in order to
             not be considered an outlier.
         """
+        super(RegExOutliers, self).__init__(name='regexOutlier')
         # Ensure that patterns is a list.
         if not isinstance(patterns, list):
             patterns = [patterns]
@@ -63,11 +64,32 @@ class RegExOutliers(ConditionalOutliers):
         if len(patterns) == 0:
             # An empty pattern list means that no value is being considered as
             # an outlier.
-            predicate = always_false
+            self.predicate = always_false
         elif len(patterns) == 1:
-            predicate = IsNotMatch(pattern=patterns[0], fullmatch=fullmatch)
+            self.predicate = IsNotMatch(
+                pattern=patterns[0],
+                fullmatch=fullmatch
+            )
         else:
             # If a list of patterns is given a value i
             ops = [IsMatch(pattern=p, fullmatch=fullmatch) for p in patterns]
-            predicate = eval_all(predicates=ops, truth_value=False)
-        super(RegExOutliers, self).__init__(predicate=predicate)
+            self.predicate = eval_all(predicates=ops, truth_value=False)
+
+    def outlier(self, value):
+        """Test if a given value is a match for the associated regular
+        expressions. If the value is not a match it is considered an outlier.
+
+        Returns a dictionary for values that are classified as outliers that
+        contains one element 'value' for the tested value.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        if self.predicate(value):
+            return {'value': value}

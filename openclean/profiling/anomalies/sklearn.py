@@ -37,6 +37,22 @@ class SklearnOutliers(AnomalyDetector):
         self.algorithm = algorithm
         self.features = StandardEmbedding() if features is None else features
 
+    def exec(self, values):
+        """Return list of values that are identified as outliers. This anomaly
+        detector does not provide any additional provenance for the detected
+        outlier values.
+
+        Parameters
+        ----------
+        values: iterable
+            Iterable of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        list
+        """
+        return self.find(values)
+
     def find(self, values):
         """Identify values in a given list of distinct values that satisfy the
         outlier condition. Starts by crating an embedding for the given values.

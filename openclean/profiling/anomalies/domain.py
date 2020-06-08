@@ -51,6 +51,24 @@ class DomainOutliers(ConditionalOutliers):
         ignore_case: bool, optional
             Ignore case for domain inclusion checking
         """
-        super(DomainOutliers, self).__init__(
-            predicate=IsNotInDomain(domain=domain, ignore_case=ignore_case)
-        )
+        super(DomainOutliers, self).__init__(name='domainOutlier')
+        self.predicate = IsNotInDomain(domain=domain, ignore_case=ignore_case)
+
+    def outlier(self, value):
+        """Test if a given value is in the associated ground truth domain. If
+        the value is not in the domain it is considered an outlier.
+
+        Returns a dictionary for values that are classified as outliers that
+        contains one element 'value' for the tested value.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        if self.predicate.eval(value):
+            return {'value': value}

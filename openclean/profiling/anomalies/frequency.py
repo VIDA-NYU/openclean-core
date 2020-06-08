@@ -65,16 +65,18 @@ class FrequencyOutliers(ConditionalOutliers):
             that returns a Boolean value. True indicates that the value
             (frequency) satisfies the value outlier condition.
         """
+        super(FrequencyOutliers, self).__init__(name='frequencyOutlier')
         # If the threshold is an integer or float create a greater than
         # threshold using the value (unless the value is 1 in which case we
         # use eq).
         self.threshold = get_threshold(threshold)
         self.frequency = frequency
-        super(FrequencyOutliers, self).__init__(predicate=self.is_outlier)
 
-    def is_outlier(self, value):
+    def outlier(self, value):
         """Test if the relative frequency of a given value satisfies the
-        outlier predicate. Returns True if the value is considered a frequency
+        outlier predicate. Returns a dictionary containing the value and
+        frequency for those values that have a frequency satisfying the
+        threshold and that are therefore considered outliers.
         outlier.
 
         Parameters
@@ -86,4 +88,6 @@ class FrequencyOutliers(ConditionalOutliers):
         -------
         bool
         """
-        return self.threshold(self.frequency.get(value))
+        freq = self.frequency.get(value)
+        if self.threshold(freq):
+            return {'value': value, 'frequency': freq}
