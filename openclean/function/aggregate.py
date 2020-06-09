@@ -9,19 +9,19 @@
 list of values.
 """
 
-from openclean.function.base import ProfilingFunction, ValueFunction
+from openclean.function.base import ValueFunction
 
 import openclean.util as util
 
 
 # -- Generic prepared statistics function -------------------------------------
 
-class ColumnStats(ProfilingFunction):
+class ColumnStats(ValueFunction):
     """Generic function for computing an aggregated statistic over a list of
     values. Provides the option to normalize the values in the list before the
     final result is computed.
     """
-    def __init__(self, func, normalizer=None, name=None):
+    def __init__(self, func, normalizer=None, value=None, name=None):
         """Initialize the statistics function and the optional normalizer.
 
         Parameters
@@ -32,6 +32,9 @@ class ColumnStats(ProfilingFunction):
                 default=None
             Optional normalization function that will be used to normalize
             values before the aggregation function is executed.
+        value: int or float, default=None
+            Prepared result value for a list of values. If the value is None,
+            the operator still needs to be prepared.
         name: string, default=None
             Unique function name for profiling functions.
 
@@ -51,6 +54,22 @@ class ColumnStats(ProfilingFunction):
         )
         self.func = func
         self.normalizer = normalizer
+        self.value = value
+
+    def eval(self, value):
+        """The evaluation method returns the prepared value, i.e., the result
+        that was computed by the prepare method for all input values.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        int or float
+        """
+        return self.value
 
     def exec(self, values):
         """Evaluate the aggregate function over values in a given sequence.
@@ -73,6 +92,38 @@ class ColumnStats(ProfilingFunction):
             return self.func(f.apply(values))
         else:
             return self.func(values)
+
+    def is_prepared(self):
+        """The operator still needs to be prepared if the pre-computed value
+        is None.
+
+        Returns
+        -------
+        bool
+        """
+        return self.value is not None
+
+    def prepare(self, values):
+        """If the aggregator is used as a value function, the preparation step
+        executes the associates statistics function over all values in the
+        list and uses that value as the result for all calls to the eval
+        method.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        openclean.function.aggregate.ColumnStats
+        """
+        return ColumnStats(
+            func=self.func,
+            normalizer=self.normalizer,
+            value=self.exec(values),
+            name=self.name()
+        )
 
 
 # -- Shortcuts for common statistics methods ----------------------------------

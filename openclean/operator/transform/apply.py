@@ -67,7 +67,7 @@ class Apply(DataFrameTransformer):
             # Instantiate the function if a class object is given
             if isinstance(func, type):
                 func = func()
-            func = CallableWrapper(func)
+            func = CallableWrapper(func=func)
         self.func = func
 
     def transform(self, df):

@@ -23,7 +23,7 @@ def is_positive(value):
 def test_sequence_filter():
     """Test filter values in a sequence of values."""
     # Use a value function as argument.
-    values = Filter(CallableWrapper(is_positive)).apply([1, -1, 2, 0, 3])
+    values = Filter(CallableWrapper(func=is_positive)).apply([1, -1, 2, 0, 3])
     assert values == [1, 2, 3]
     # Use a callable as argument.
     values = Filter(is_positive).apply([1, -1, 2, 0, 3])

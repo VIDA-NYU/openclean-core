@@ -210,7 +210,7 @@ class FullRowValueEval(EvalFunction):
         # Ensure that the function is of type ValueFunction. Raises ValueError
         # if the function is not callable.
         if not isinstance(func, ValueFunction):
-            func = CallableWrapper(func)
+            func = CallableWrapper(func=func)
         self.func = func
 
     def eval(self, values):
@@ -335,7 +335,7 @@ class MultiColumnValueEval(EvalFunction):
         # Ensure that the function is of type ValueFunction. Raises ValueError
         # if the function is not callable.
         if not isinstance(func, ValueFunction):
-            func = CallableWrapper(func)
+            func = CallableWrapper(func=func)
         self.func = func
         self.columns = columns
         # The list of column indices is initially None. the list will be
@@ -469,7 +469,7 @@ class SingleColumnValueEval(EvalFunction):
         # Ensure that the function is of type ValueFunction. Raises ValueError
         # if the function is not callable.
         if not isinstance(func, ValueFunction):
-            func = CallableWrapper(func)
+            func = CallableWrapper(func=func)
         self.func = func
         self.columns = columns
         # The column index is initially None. The value will be initialized by

@@ -56,7 +56,7 @@ class IfThenElse(ValueFunction):
         if else_expression is not None:
             self.else_expression = to_valuefunc(else_expression)
         else:
-            self.else_expression = CallableWrapper(scalar_pass_through)
+            self.else_expression = CallableWrapper(func=scalar_pass_through)
 
     def eval(self, value):
         """Evaluate the condition on the given value. Depending on the result,
@@ -103,7 +103,7 @@ class IfThenElse(ValueFunction):
         -------
         openclean.function.base.ValueFunction
         """
-        if self.is_prepared():
+        if not self.is_prepared():
             return IfThenElse(
                 predicate=self.predicate.prepate(values),
                 if_expression=self.if_expression.prepare(values),

@@ -39,14 +39,14 @@ class LogicFunction(ValueFunction):
                 for el in f:
                     if not isinstance(el, ValueFunction):
                         if callable(el):
-                            el = CallableWrapper(el)
+                            el = CallableWrapper(func=el)
                         else:
                             raise ValueError('not callable {}'.format(el))
                     self.predicates.append(el)
             else:
                 if not isinstance(f, ValueFunction):
                     if callable(f):
-                        f = CallableWrapper(f)
+                        f = CallableWrapper(func=f)
                     else:
                         raise ValueError('not callable {}'.format(f))
                 self.predicates.append(f)
@@ -86,7 +86,7 @@ class LogicFunction(ValueFunction):
         values: list
             List of scalar values or tuples of scalar values.
         """
-        if self.is_prepared():
+        if not self.is_prepared():
             args = tuple([f.prepare(values) for f in self.predicates])
             return LogicFunction(*args)
         return self

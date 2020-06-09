@@ -47,7 +47,7 @@ class ClassLabel(ValueFunction):
         if not isinstance(predicate, ValueFunction):
             # Wrap the predicate inside a ValueFunction. This will raise a
             # ValueError if the predicate is not callable.
-            predicate = CallableWrapper(predicate)
+            predicate = CallableWrapper(func=predicate)
         self.predicate = predicate
         self.label = label
         self.truth_value = truth_value
@@ -135,7 +135,7 @@ class ValueClassifier(ValueFunction):
         self.classifiers = list()
         for f in args:
             if not isinstance(f, ValueFunction):
-                f = CallableWrapper(f)
+                f = CallableWrapper(func=f)
             self.classifiers.append(f)
         self.none_label = kwargs.get('none_label')
         self.default_label = kwargs.get('default_label')

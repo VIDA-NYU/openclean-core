@@ -12,7 +12,7 @@ sequence of values.
 from collections import Counter
 
 from openclean.data.sequence import Sequence
-from openclean.function.base import DictionaryFunction
+from openclean.function.base import DictionaryFunction, DefaultDictSerializer
 from openclean.function.util import normalize
 
 
@@ -96,6 +96,11 @@ class Distinct(DictionaryFunction):
         name: string, default=None
             Unique function name.
         """
+        super(Distinct, self).__init__(
+            to_dict=DefaultDictSerializer(
+                feature_label='frequency' if normalizer else 'count'
+            )
+        )
         self.normalizer = normalizer
         self.keep_original = keep_original
         self.labels = labels

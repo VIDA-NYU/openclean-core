@@ -14,14 +14,15 @@ number of distinct values in a column.
 
 from openclean.data.sequence import Sequence
 from openclean.function.base import (
-    CallableWrapper, ProfilingFunction, ValueFunction
+    CallableWrapper, ListFunction, ProfilingFunction, ValueFunction
 )
+from openclean.function.value.filter import Filter
 from openclean.profiling.base import Profiler
 
 
 # -- Predicate satisfaction counter -------------------------------------------
 
-def count(df, columns=None, predicate=None, truth_value=True):
+def count(df, columns=None, predicate=None, filter=None, truth_value=True):
     """Count number of values in a given list that satisfy an associated
     predicate.
 
@@ -34,11 +35,19 @@ def count(df, columns=None, predicate=None, truth_value=True):
         Defines the list of value (pairs) for which the predicate is evaluated.
     predicate: callable or penclean.function.base.ValueFunction
         Predicate that is evaluated over a list of values.
+    filter: (openclean.function.base.ListFunction,
+            openclean.function.base.ValueFunction, or
+            callable), default=None
+        Filter that is applied to all values before the predicate is evaluated.
     truth_value: scalar, defaut=True
         Return value of the predicate that signals that the predicate is
         satisfied by an input value.
     """
-    counter = Count(predicate=predicate, truth_value=truth_value)
+    counter = Count(
+        predicate=predicate,
+        filter=filter,
+        truth_value=truth_value
+    )
     return counter.exec(values=Sequence(df=df, columns=columns))
 
 
@@ -46,7 +55,7 @@ class Count(ProfilingFunction):
     """Count number of values in a given list that satisfy an associated
     predicate.
     """
-    def __init__(self, predicate, truth_value=True, name=None):
+    def __init__(self, predicate, filter=None, truth_value=True, name=None):
         """Initialize the predicate and the unique function name. The predicate
         is expected to be a ValueFunction or a callable.
 
@@ -54,6 +63,11 @@ class Count(ProfilingFunction):
         ----------
         predicate: callable or openclean.function.base.ValueFunction
             Predicate that is evaluated over a list of values.
+        filter: (openclean.function.base.ListFunction,
+                openclean.function.base.ValueFunction, or
+                callable), default=None
+            Filter that is applied to all values before the predicate is
+            evaluated.
         truth_value: scalar, defaut=True
             Return value of the predicate that signals that the predicate is
             satisfied by an input value.
@@ -61,8 +75,14 @@ class Count(ProfilingFunction):
             Optional unique function name. If no name is given, the name of the
             predicate function is used as the default.
         """
+        # Wrap the predicate if it is a simple callable.
         if not isinstance(predicate, ValueFunction):
-            predicate = CallableWrapper(predicate)
+            predicate = CallableWrapper(func=predicate)
+        # Ensure that the filter (if given) is a value function.
+        if filter is not None:
+            if not isinstance(filter, ListFunction):
+                filter = Filter(filter)
+        self.filter = filter
         super(Count, self).__init__(
             name=name if name else predicate.name()
         )
@@ -82,6 +102,8 @@ class Count(ProfilingFunction):
         -------
         int
         """
+        if self.filter is not None:
+            values = self.filter.apply(values)
         if not self.predicate.is_prepared():
             f = self.predicate.prepare(values)
         else:
@@ -95,7 +117,7 @@ class Count(ProfilingFunction):
 
 # -- Multi-predicate counts ---------------------------------------------------
 
-def counts(df, columns=None, predicates=None):
+def counts(df, columns=None, predicates=None, filter=None):
     """The count operator evaluates a list of scalar predicates on a list of
     values from data frame column(s). It returns a dictionary that contains
     the results from the individual counters, keyed by their unique name.
@@ -111,7 +133,6 @@ def counts(df, columns=None, predicates=None):
     predicates: list of callable, openclean.function.base.ValueFunction, or
             openclean.profiling.count.Count
         Predicates that are evaluated over a list of values.
-
     Returns
     -------
     dict

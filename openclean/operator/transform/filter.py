@@ -197,7 +197,9 @@ def get_predicate(columns=None, predicate=None):
         if isinstance(predicate, ValueFunction):
             predicate = Eval(func=predicate, columns=columns)
         elif callable(predicate):
-            predicate = Eval(func=CallableWrapper(predicate), columns=columns)
+            predicate = Eval(
+                func=CallableWrapper(func=predicate), columns=columns
+            )
         elif isinstance(predicate, dict):
             predicate = IsIn(columns=columns, domain=predicate)
         else:

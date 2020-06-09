@@ -33,12 +33,15 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
         args: scalar, callable, or openclean.function.base.ValueFunction
             Either one or two constant values or value functions that represent
             the values that are being compared.
+        name: string
+            Unique name for the comparator.
         raise_error: bool, optional
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
+        super(Comparison, self).__init__(name=kwargs.get('name'))
         if len(args) == 1:
-            self.left_value = CallableWrapper(scalar_pass_through)
+            self.left_value = CallableWrapper(func=scalar_pass_through)
             self.right_value, = args
         elif len(args) == 2:
             self.left_value, self.right_value = args
@@ -85,7 +88,10 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
         # occurs due to incompatible data types the result is False unless the
         # raise type error flag is True.
         try:
-            return self.comp(self.left_value(value), self.right_value(value))
+            return self.comp(
+                left_value=self.left_value.eval(value),
+                right_value=self.right_value.eval(value)
+            )
         except TypeError as ex:
             if self.raise_error:
                 raise ex
@@ -118,13 +124,14 @@ class Comparison(ValueFunction, metaclass=ABCMeta):
         -------
         openclean.function.base.ValueFunction
         """
-        if self.is_prepared():
+        if not self.is_prepared():
             args = tuple([
-                self.left_value.prepate(values),
+                self.left_value.prepare(values),
                 self.right_value.prepare(values)
             ])
             kwargs = {'raise_error': self.raise_error}
-            return Comparison(*args, **kwargs)
+            # Need to create an instance of the same implementing class.
+            return self.__class__(*args, **kwargs)
         return self
 
 
@@ -149,7 +156,7 @@ class Eq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(Eq, self).__init__(*args, **kwargs)
+        super(Eq, self).__init__(*args, name='eq', **kwargs)
         self.ignore_case = kwargs.get('ignore_case', False)
 
     def comp(self, left_value, right_value):
@@ -210,7 +217,7 @@ class Geq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(Geq, self).__init__(*args, **kwargs)
+        super(Geq, self).__init__(*args, name='geq', **kwargs)
 
     def comp(self, left_value, right_value):
         """Test whether a column value is greater or equal than a given compare
@@ -247,7 +254,7 @@ class Gt(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(Gt, self).__init__(*args, **kwargs)
+        super(Gt, self).__init__(*args, name='gt', **kwargs)
 
     def comp(self, left_value, right_value):
         """Test whether a column value is greater than a given compare value.
@@ -283,7 +290,7 @@ class Leq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(Leq, self).__init__(*args, **kwargs)
+        super(Leq, self).__init__(*args, name='leq', **kwargs)
 
     def comp(self, left_value, right_value):
         """Test whether a column value is less or equal than a given compare
@@ -320,7 +327,7 @@ class Lt(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(Lt, self).__init__(*args, **kwargs)
+        super(Lt, self).__init__(*args, name='lt', **kwargs)
 
     def comp(self, left_value, right_value):
         """Test whether a column value is less than a given compare value.
@@ -358,7 +365,7 @@ class Neq(Comparison):
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(Neq, self).__init__(*args, **kwargs)
+        super(Neq, self).__init__(*args, name='neq', **kwargs)
         self.ignore_case = kwargs.get('ignore_case', False)
 
     def comp(self, left_value, right_value):

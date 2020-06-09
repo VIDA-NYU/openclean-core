@@ -52,7 +52,7 @@ class StringFunction(ValueFunction):
         self.func = func
         if consumer is not None:
             if not isinstance(consumer, ValueFunction):
-                consumer = CallableWrapper(consumer)
+                consumer = CallableWrapper(func=consumer)
             self.consumer = consumer
         self.consumer = consumer
         self.as_string = as_string
@@ -81,7 +81,7 @@ class StringFunction(ValueFunction):
         TypeError
         """
         # Handle argument values that are not of type string.
-        if type(value) in [list, tuple]:
+        if isinstance(value, list) or isinstance(value, tuple):
             value = tuple(self.transform(v) for v in value)
         else:
             value = self.transform(value)
@@ -164,6 +164,28 @@ class Capitalize(StringFunction):
             func=str.capitalize,
             consumer=consumer,
             as_string=as_string,
+            raise_error=raise_error
+        )
+
+
+class Length(StringFunction):
+    """String function that returns the length in characters for the string
+    representation of a given value.
+    """
+    def __init__(self, consumer=None, raise_error=False):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        consumer: callable
+            Downstream function that is executed on the modified value.
+        raise_error: bool, optional
+            Raise TypeError for non-string arguments.
+        """
+        super(Length, self).__init__(
+            func=len,
+            consumer=consumer,
+            as_string=True,
             raise_error=raise_error
         )
 

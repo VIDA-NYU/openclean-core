@@ -261,7 +261,7 @@ def is_nan(value):
         return False
 
 
-def is_numeric(value, typecast=True):
+def is_numeric(value, typecast=True, ignore_nan=True):
     """Test if a given value is of type integer or float. If the type cast flag
     is True, any string value that can successfully be converted to integer or
     float will also be accepted.
@@ -272,11 +272,15 @@ def is_numeric(value, typecast=True):
         Scalar value that is tested for being a number.
     typecast: bool, default=True
         Cast string values to integer or float if True.
+    ignore_nan: bool, default=False
+        Consider NaN not as numeric if the flag is True
 
     Returns
     -------
     bool
     """
+    if ignore_nan and is_nan(value):
+        return False
     if isinstance(value, int) or isinstance(value, np.integer):
         return True
     elif isinstance(value, float) or isinstance(value, np.float):
@@ -306,7 +310,7 @@ def is_numeric_type(value):
     -------
     bool
     """
-    return is_numeric(value, typecast=False)
+    return is_numeric(value, typecast=False, ignore_nan=False)
 
 
 # -- Default data type classifiers --------------------------------------------
@@ -318,7 +322,7 @@ class Datetime(ClassLabel):
 
         Parameters
         ----------
-        label: string, default='float'
+        label: string, default='datetime'
             Label that is returned for values that satisfy the predicate.
         formats: string or list(string)
             Date format string using Python strptime() format directives. This

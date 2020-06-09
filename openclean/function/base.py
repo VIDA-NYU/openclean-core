@@ -33,7 +33,7 @@ class ProfilingFunction(metaclass=ABCMeta):
         name: string
             Unique function name.
         """
-        self._name = name if name else util.func(self)
+        self._name = name if name else util.funcname(self)
 
     @abstractmethod
     def exec(self, values):
@@ -73,9 +73,27 @@ class DictionaryFunction(ProfilingFunction, metaclass=ABCMeta):
     a list of values and outputs a dictionary where with each distinct value
     the frequency of that value in the list is associated.
     """
+    def __init__(self, name=None, to_dict=None):
+        """Set the function that is used to serialize mapping results for the
+        profiling function. Expects a callable that takes two arguments: (1)
+        a value and (2) the implementation-specific feature that is associated
+        with the value by the map function.
+
+        Parameters
+        ----------
+        name: string, default=None
+            Unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
+        """
+        super(DictionaryFunction, self).__init__(name=name)
+        self.to_dict = to_dict if to_dict else DefaultDictSerializer()
+
     def exec(self, values):
-        """The execute method of the profiler is the map function of the
-        wrapped dictionary function.
+        """The execute method of the profiler returns a list of dictionaries.
+        Each dictionary contains the serialization of a (value, feature)-pair
+        in the dictionary that is returned by the map function.
 
         Parameters
         ----------
@@ -84,9 +102,9 @@ class DictionaryFunction(ProfilingFunction, metaclass=ABCMeta):
 
         Returns
         -------
-        dict
+        list
         """
-        return self.map(values)
+        return [self.to_dict(v, f) for v, f in self.map(values).items()]
 
     @abstractmethod
     def map(self, values):
@@ -136,17 +154,18 @@ class ValueFunction(DictionaryFunction, ListFunction, metaclass=ABCMeta):
     """The abstract class for value functions defines the interface for methods
     that need to be implemented for preparing and evaluating the function.
     """
-    def __init__(self, name):
+    def __init__(self, name=None, to_dict=None):
         """Initialize the function name.
 
         Parameters
         ----------
-        name: string
+        name: string, default=None
             Unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
         """
-        super(ValueFunction, self).__init__(
-            name=name if name else util.func(self)
-        )
+        super(ValueFunction, self).__init__(name=name, to_dict=to_dict)
 
     def apply(self, values):
         """Apply the function to each value in a given list. Returns a list of
@@ -246,13 +265,16 @@ class PreparedFunction(ValueFunction):
     prepare method. These functions are considered as initialized and ready
     to operate without the need for calling the prepare method first.
     """
-    def __init__(self, name):
+    def __init__(self, name=None, to_dict=None):
         """Initialize the function name.
 
         Parameters
         ----------
-        name: string
+        name: string, default=None
             Unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
         """
         super(PreparedFunction, self).__init__(name=name)
 
@@ -294,7 +316,7 @@ class CallableWrapper(PreparedFunction):
     """Wrapper for callable functions as value functions. This value function
     does not prepare the wrapped callable.
     """
-    def __init__(self, func):
+    def __init__(self, func, to_dict=None):
         """Initialize the wrapped callable function. Raises a ValueError if the
         function is not a callable.
 
@@ -302,6 +324,9 @@ class CallableWrapper(PreparedFunction):
         ----------
         func: callable
             Function that is wrapped as a value finction.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
 
         Raises
         ------
@@ -311,7 +336,10 @@ class CallableWrapper(PreparedFunction):
         if not callable(func):
             raise ValueError('not a callable function')
         self.func = func
-        super(CallableWrapper, self).__init__(name=util.funcname(self.func))
+        super(CallableWrapper, self).__init__(
+            name=util.funcname(self.func),
+            to_dict=to_dict
+        )
 
     def eval(self, value):
         """Evaluate the wrapped function on a given value. The value may either be a
@@ -332,7 +360,7 @@ class CallableWrapper(PreparedFunction):
 
 class ConstantValue(PreparedFunction):
     """Value function that always returns a given constant value."""
-    def __init__(self, value, name=None):
+    def __init__(self, value, name=None, to_dict=None):
         """Initialize the constant value that is returned by this function
         whenever the eval method is called..
 
@@ -342,9 +370,14 @@ class ConstantValue(PreparedFunction):
             Constant return value for the eval method.
         name: string, default='constant'
             Optional unique function name.
-
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
         """
-        super(ConstantValue, self).__init__(name='constant')
+        super(ConstantValue, self).__init__(
+            name=name if name else 'constant',
+            to_dict=to_dict
+        )
         self.const = value
 
     def eval(self, value):
@@ -364,7 +397,43 @@ class ConstantValue(PreparedFunction):
         return self.const
 
 
-# -- Helper functions ---------------------------------------------------------
+# -- Helper classes and functions ---------------------------------------------
+
+class DefaultDictSerializer(object):
+    """Default serializer for (value, feature)-pairs generated by a dictionary
+    function. Serializes each pair as a dictionary with two elements (value and
+    feature). The element labels can be set in the constructor of the class.
+    """
+    def __init__(self, value_label='value', feature_label='feature'):
+        """Initialize the element labels for the returned dictionaries.
+
+        Parameters
+        ----------
+        value_label: string, default='value'
+            Dictionary key associated with given values.
+        feature_label: string, default='feature'
+            Dictionary key associated with given features.
+        """
+        self.value_label = value_label
+        self.feature_label = feature_label
+
+    def __call__(self, value, feature):
+        """Get dictionary serialization for a (value, feature)-pair.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that was mapped to a feature by a dictionary function.
+        feature: any
+            Feature that was associated with the value by the dictionary
+            function.
+
+        Returns
+        -------
+        dict
+        """
+        return {self.value_label: value, self.feature_label: feature}
+
 
 def scalar_pass_through(value):
     """Pass-through method for single scalar values.
@@ -398,7 +467,7 @@ def to_valuefunc(value):
     """
     if not isinstance(value, ValueFunction):
         if callable(value):
-            value = CallableWrapper(value)
+            value = CallableWrapper(func=value)
         else:
             value = ConstantValue(value)
     return value

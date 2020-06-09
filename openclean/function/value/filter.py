@@ -47,7 +47,7 @@ class Filter(ListFunction):
             satisfied by an input value.
         """
         if not isinstance(predicate, ValueFunction):
-            predicate = CallableWrapper(predicate)
+            predicate = CallableWrapper(func=predicate)
         self.predicate = predicate
         self.truth_value = truth_value
 

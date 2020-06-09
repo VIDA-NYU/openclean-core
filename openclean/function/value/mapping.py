@@ -37,7 +37,7 @@ def mapping(df, columns, func):
     ValueError
     """
     if not isinstance(func, ValueFunction):
-        func = CallableWrapper(func)
+        func = CallableWrapper(func=func)
     values = Sequence(df=df, columns=columns)
     result = dict()
     if not func.is_prepared():

@@ -35,7 +35,7 @@ class FeatureEmbedding(ValueEmbedder):
             features = [features]
         for f in features:
             if not isinstance(f, ValueFunction):
-                f = CallableWrapper(f)
+                f = CallableWrapper(func=f)
             self.features.append(f)
         # Maintain size of feature vectore for faster access
         self.size = len(self.features)
