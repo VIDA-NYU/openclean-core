@@ -9,10 +9,12 @@
 frame rows.
 """
 
-from openclean.function.value.comp import eq
+from openclean.function.base import (
+    CallableWrapper, PreparedFunction, ValueFunction
+)
 
 
-class StringFunction(object):
+class StringFunction(ValueFunction):
     """Evaluate a given string function on a given scalar value. This class is
     a wrapper for common string functions that (i) allows to defined behavior
     for arguments that are not strings, and (ii) pass the modified value on
@@ -39,7 +41,8 @@ class StringFunction(object):
         ----------
         func: callable
             String function that is executed on given argument values.
-        consumer: callable, optional
+        consumer: callable or openclean.function.base.ValueFunction,
+            default=None
             Downstream function that is executed on the modified value.
         as_string: bool, optional
             Use string representation for non-string values.
@@ -47,11 +50,15 @@ class StringFunction(object):
             Raise TypeError for non-string arguments.
         """
         self.func = func
+        if consumer is not None:
+            if not isinstance(consumer, ValueFunction):
+                consumer = CallableWrapper(func=consumer)
+            self.consumer = consumer
         self.consumer = consumer
         self.as_string = as_string
         self.raise_error = raise_error
 
-    def __call__(self, value):
+    def eval(self, value):
         """Execute the string function on the given argument. If the argument
         is not of type string one of three behaviors will occur: (i) a
         TypeError is raised if the raise_error flag is True, (ii) the string
@@ -74,17 +81,47 @@ class StringFunction(object):
         TypeError
         """
         # Handle argument values that are not of type string.
-        if type(value) in [list, tuple]:
-            value = tuple(self.apply(v) for v in value)
+        if isinstance(value, list) or isinstance(value, tuple):
+            value = tuple(self.transform(v) for v in value)
         else:
-            value = self.apply(value)
+            value = self.transform(value)
         # Call the consumer if given
         if self.consumer is not None:
-            return self.consumer(value)
+            return self.consumer.eval(value)
         else:
             return value
 
-    def apply(self, value):
+    __call__ = eval
+
+    def is_prepared(self):
+        """Returns False if the optional consumer requires preparation.
+        Otherwise, no preparation is required.
+
+        Returns
+        -------
+        bool
+        """
+        return self.consumer.is_prepared() if self.consumer else True
+
+    def prepare(self, values):
+        """Optional step to prepare the function for a given list of values.
+        This step is only relevant for a potential consumer.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+        """
+        if self.consumer is not None:
+            return StringFunction(
+                func=self.func,
+                consumer=self.consumer.prepare(values),
+                as_string=self.as_string,
+                raise_error=self.raise_error
+            )
+        return self
+
+    def transform(self, value):
         """Apply the string function on a single scalar value. Raises a
         ValueError if the value is not of type string and the raise_error flag
         is True.
@@ -109,7 +146,7 @@ class StringFunction(object):
 
 # -- Shortcuts for common string manipulation functions -----------------------
 
-class capitalize(StringFunction):
+class Capitalize(StringFunction):
     """String function that capitalizes the first letter in argument values."""
     def __init__(self, consumer=None, as_string=False, raise_error=False):
         """Initialize the object properties.
@@ -123,7 +160,7 @@ class capitalize(StringFunction):
         raise_error: bool, optional
             Raise TypeError for non-string arguments.
         """
-        super(capitalize, self).__init__(
+        super(Capitalize, self).__init__(
             func=str.capitalize,
             consumer=consumer,
             as_string=as_string,
@@ -131,7 +168,29 @@ class capitalize(StringFunction):
         )
 
 
-class lower(StringFunction):
+class Length(StringFunction):
+    """String function that returns the length in characters for the string
+    representation of a given value.
+    """
+    def __init__(self, consumer=None, raise_error=False):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        consumer: callable
+            Downstream function that is executed on the modified value.
+        raise_error: bool, optional
+            Raise TypeError for non-string arguments.
+        """
+        super(Length, self).__init__(
+            func=len,
+            consumer=consumer,
+            as_string=True,
+            raise_error=raise_error
+        )
+
+
+class Lower(StringFunction):
     """String function that converts argument values to lower case."""
     def __init__(self, consumer=None, as_string=False, raise_error=False):
         """Initialize the object properties.
@@ -145,7 +204,7 @@ class lower(StringFunction):
         raise_error: bool, optional
             Raise TypeError for non-string arguments.
         """
-        super(lower, self).__init__(
+        super(Lower, self).__init__(
             func=str.lower,
             consumer=consumer,
             as_string=as_string,
@@ -153,62 +212,48 @@ class lower(StringFunction):
         )
 
 
-class split(StringFunction):
+class Split(StringFunction):
     """String function that splits a given string based on a given delimiter
     character.
     """
-    def __init__(self, sep, validate=None, as_string=False, raise_error=False):
+    def __init__(self, delim, as_string=False, raise_error=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        sep: string, optional
+        delim: string, optional
             Delimiter string.
-        validate: int or callable, optional
-            Validate the number of generated tokens against the given count or
-            predicate. Raises ValueError if the validation fails.
         as_string: bool, optional
             Use string representation for non-string values.
         raise_error: bool, optional
             Raise TypeError for non-string arguments.
         """
-        if validate is not None:
-            super(split, self).__init__(
-                func=split_and_validate(sep, validate),
-                as_string=as_string,
-                raise_error=raise_error
-            )
-        else:
-            super(split, self).__init__(
-                func=lambda x: x.split(sep),
-                as_string=as_string,
-                raise_error=raise_error
-            )
+        super(Split, self).__init__(
+            func=lambda x: x.split(delim),
+            as_string=as_string,
+            raise_error=raise_error
+        )
 
 
-class tokens(object):
+class Tokens(PreparedFunction):
     """String function that splits a given string based on a given delimiter
     and evaluates the given comparator on the length of the returned value.
     """
-    def __init__(self, sep, validate, as_string=False, raise_error=False):
+    def __init__(self, delim, as_string=False, raise_error=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        sep: string, optional
+        delim: string, optional
             Delimiter string.
-        validate: int or callable
-            Compare predicate that is evaluated on the number of tokens
-            returned by the split funciton.
         as_string: bool, optional
             Use string representation for non-string values.
         raise_error: bool, optional
             Raise TypeError for non-string arguments.
         """
-        self.split = split(sep, as_string=as_string, raise_error=raise_error)
-        self.validate = validate if callable(validate) else eq(validate)
+        self.split = Split(delim, as_string=as_string, raise_error=raise_error)
 
-    def __call__(self, value):
+    def eval(self, value):
         """Split the given value and evaluate the compare operator on the
         length of the returned token list.
 
@@ -228,10 +273,10 @@ class tokens(object):
             length = len(tokens)
         except TypeError:
             length = 1
-        return self.validate(length)
+        return length
 
 
-class upper(StringFunction):
+class Upper(StringFunction):
     """String function that converts argument values to upper case."""
     def __init__(self, consumer=None, as_string=False, raise_error=False):
         """Initialize the object properties.
@@ -245,55 +290,9 @@ class upper(StringFunction):
         raise_error: bool, optional
             Raise TypeError for non-string arguments.
         """
-        super(upper, self).__init__(
+        super(Upper, self).__init__(
             func=str.upper,
             consumer=consumer,
             as_string=as_string,
             raise_error=raise_error
         )
-
-
-# -- Helper Functions ---------------------------------------------------------
-
-class split_and_validate(object):
-    """Helper function to split a given string and validate the number of
-    returned tokens.
-    """
-    def __init__(self, sep, validate):
-        """Initialize the split delimiter and the token count validator.
-
-        Parameters
-        ----------
-        sep: string, optional
-            Delimiter string.
-        validate: int or callable
-            Compare predicate that is evaluated on the number of tokens
-            returned by the split funciton.
-        """
-        self.sep = sep
-        self.validate = validate if callable(validate) else eq(validate)
-
-    def __call__(self, value):
-        """Split the given string and validate the number of tokens.
-
-        Parameters
-        ----------
-        value: scalar
-            Scalar value that is tested for being a domain member.
-
-        Returns
-        -------
-        list
-
-        Raises
-        ------
-        ValueError
-        """
-        tokens = value.split(self.sep)
-        try:
-            length = len(tokens)
-        except TypeError:
-            length = 1
-        if not self.validate(length):
-            raise ValueError('unexpected number of tokens {}'.format(length))
-        return tokens

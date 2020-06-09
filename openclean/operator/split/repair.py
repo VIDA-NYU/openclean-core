@@ -15,10 +15,8 @@ rows and one that contains the rows for which the update failed.
 import pandas as pd
 
 from openclean.data.column import as_list, select_clause
-from openclean.function.base import Eval, EvalFunction
-from openclean.function.column import Col
-from openclean.function.replace import IfThenReplace
 from openclean.operator.base import DataFrameSplitter
+from openclean.operator.transform.update import get_update_function
 
 
 # -- Functions ----------------------------------------------------------------
@@ -36,7 +34,7 @@ def repair(df, columns, func, exceptions=None):
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.base.EvalFunction
+    func: callable or openclean.function.eval.base.EvalFunction
         Callable that accepts a data frame row as the only argument and outputs
         a (modified) list of value(s).
     exceptions: Error or list(Error)
@@ -74,7 +72,7 @@ class Repair(DataFrameSplitter):
         ----------
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
-        func: callable or openclean.function.base.EvalFunction
+        func: callable or openclean.function.eval.base.EvalFunction
             Callable that accepts a data frame row as the only argument and
             outputs a (modified) (list of) value(s).
         exceptions: Error or list(Error)
@@ -88,15 +86,7 @@ class Repair(DataFrameSplitter):
         """
         # Ensure that columns is a list
         self.columns = as_list(columns)
-        # Ensure that the update function is an evaluation function. Give
-        # special attention to conditional replacement functions that do not
-        # have their pass-through function set.
-        if not isinstance(func, EvalFunction):
-            func = Eval(columns=columns, func=func)
-        elif isinstance(func, IfThenReplace):
-            if func.pass_through is None:
-                func.pass_through = Col(self.columns)
-        self.func = func
+        self.func = get_update_function(func=func, columns=self.columns)
         self.exceptions = exceptions if exceptions is not None else Exception
 
     def split(self, df):
@@ -116,10 +106,8 @@ class Repair(DataFrameSplitter):
         """
         # Call the prepare method
         _, colidxs = select_clause(df=df, columns=self.columns)
-        # Call the prepare method of the update function if it is an evaluation
-        # function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
+        # Call the prepare method of the update function.
+        self.func.prepare(df)
         # Create two data frame, one with the successfully modified rows and
         # one with the rows for which the modification functions raised an
         # exception that was caught by the exception list. For each resulting
@@ -132,7 +120,7 @@ class Repair(DataFrameSplitter):
             colidx = colidxs[0]
             for rowid, values in df.iterrows():
                 try:
-                    val = self.func(values)
+                    val = self.func.eval(values)
                     values = list(values)
                     values[colidx] = val
                     success['data'].append(values)
@@ -144,7 +132,7 @@ class Repair(DataFrameSplitter):
             col_count = len(colidxs)
             for rowid, values in df.iterrows():
                 try:
-                    vals = self.func(values)
+                    vals = self.func.eval(values)
                     if len(vals) != col_count:
                         msg = 'expected {} values instead of {}'
                         raise ValueError(msg.format(col_count, vals))

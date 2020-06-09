@@ -8,7 +8,7 @@
 """Unit test for frequency outlier detection operators."""
 
 from openclean.profiling.anomalies.frequency import frequency_outliers
-from openclean.function.value.comp import geq
+from openclean.function.value.comp import Geq
 
 
 def test_frequency_outliers_for_data_frame(agencies):
@@ -16,12 +16,12 @@ def test_frequency_outliers_for_data_frame(agencies):
     data frame.
     """
     # Single column outlier
-    outlier = frequency_outliers(agencies, 'state', geq(0.9))
+    outlier = frequency_outliers(agencies, 'state', Geq(0.9))
     assert len(outlier) == 1
     assert outlier[0] == 'NY'
     # Multi-column outlier
-    outlier = frequency_outliers(agencies, ['borough', 'state'], geq(0.9))
+    outlier = frequency_outliers(agencies, ['borough', 'state'], Geq(0.9))
     assert len(outlier) == 0
-    outlier = frequency_outliers(agencies, ['borough', 'state'], geq(0.6))
+    outlier = frequency_outliers(agencies, ['borough', 'state'], Geq(0.6))
     assert len(outlier) == 1
     assert outlier[0] == ('BK', 'NY')

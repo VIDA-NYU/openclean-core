@@ -70,7 +70,7 @@ class RestcountriesDownloader(RepositoryDownloader):
 
     def download(self, datasets=None, properties=None):
         """Download the complete country listing provided by the restcountries
-        project. Rauses a ValueError if the dataset name is not None or equal
+        project. Raises a ValueError if the dataset name is not None or equal
         to 'countries'.
 
         Returns a dictionary with a single entry 'countries'.

@@ -7,11 +7,10 @@
 
 """Operators for frequency outlier detection."""
 
-from openclean.data.metadata import Feature
-from openclean.data.stream import Stream
+from openclean.function.distinct import distinct
+from openclean.function.value.normalize import DivideByTotal
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.function.value.comp import get_threshold
-from openclean.function.value.normalize import divide_by_total
+from openclean.profiling.util import get_threshold
 
 
 def frequency_outliers(df, columns, threshold):
@@ -40,9 +39,11 @@ def frequency_outliers(df, columns, threshold):
     """
     # Create the predicate as a lookup over the normalized frequencies of
     # values in the given columns.
-    values = list(Stream(df=df, columns=columns))
-    lookup = Feature(values).normalize(divide_by_total)
-    op = FrequencyOutliers(frequency=lookup, threshold=threshold)
+    values = distinct(df=df, columns=columns, normalizer=DivideByTotal())
+    op = FrequencyOutliers(
+        frequency=values,
+        threshold=threshold
+    )
     return op.find(values=values)
 
 
@@ -56,23 +57,26 @@ class FrequencyOutliers(ConditionalOutliers):
 
         Parameters
         ----------
-        frequency: callable
-            Function that returns the relative frequency of a given value.
+        frequency: dict
+            Dictionary that allows to lookup the relative frequency of a given
+            value.
         threshold: callable
-            Function that accepts a float (i.e., the relative frequency) and that
-            returns a Boolean value. True indicates that the value (frequency)
-            satisfies the value outlier condition.
+            Function that accepts a float (i.e., the relative frequency) and
+            that returns a Boolean value. True indicates that the value
+            (frequency) satisfies the value outlier condition.
         """
+        super(FrequencyOutliers, self).__init__(name='frequencyOutlier')
         # If the threshold is an integer or float create a greater than
         # threshold using the value (unless the value is 1 in which case we
         # use eq).
         self.threshold = get_threshold(threshold)
         self.frequency = frequency
-        super(FrequencyOutliers, self).__init__(predicate=self.is_outlier)
 
-    def is_outlier(self, value):
+    def outlier(self, value):
         """Test if the relative frequency of a given value satisfies the
-        outlier predicate. Returns True if the value is considered a frequency
+        outlier predicate. Returns a dictionary containing the value and
+        frequency for those values that have a frequency satisfying the
+        threshold and that are therefore considered outliers.
         outlier.
 
         Parameters
@@ -84,4 +88,6 @@ class FrequencyOutliers(ConditionalOutliers):
         -------
         bool
         """
-        return self.threshold(self.frequency(value))
+        freq = self.frequency.get(value)
+        if self.threshold(freq):
+            return {'value': value, 'frequency': freq}

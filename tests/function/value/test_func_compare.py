@@ -10,7 +10,7 @@
 import pytest
 
 from openclean.function.value.comp import (
-    eq, eq_ignore_case, geq, gt, leq, lt, neq
+    Eq, EqIgnoreCase, Geq, Gt, Leq, Lt, Neq
 )
 from openclean.function.value.datatype import to_int, to_float
 
@@ -18,45 +18,45 @@ from openclean.function.value.datatype import to_int, to_float
 def test_compare_eq():
     """Test the Eq compare operator."""
     # -- Eq -------------------------------------------------------------------
-    f = eq(1)
+    f = Eq(1)
     assert f(1)
     assert not f(2)
     assert not f('1')
-    f = eq('abc')
+    f = Eq('abc')
     assert f('abc')
     assert not f('Abc')
     # Type error is not raised for == comparison between scalars
-    f = eq(1, raise_error=True)
+    f = Eq(1, raise_error=True)
     assert f(1)
     assert not f('1')
     # Test with type casting
-    as_int = to_int()
-    f = eq(1)
+    as_int = to_int
+    f = Eq(1)
     assert not f('1')
     assert f(as_int('1'))
-    as_float = to_float()
-    f = eq(1.2)
+    as_float = to_float
+    f = Eq(1.2)
     assert not f('1.2')
     assert f(as_float('1.2'))
     # -- EqIgnoreCase ---------------------------------------------------------
-    f = eq_ignore_case('abc')
+    f = EqIgnoreCase('abc')
     assert f('abc')
     assert f('Abc')
     assert not f(1)
-    f = eq_ignore_case('abc', raise_error=True)
+    f = EqIgnoreCase('abc', raise_error=True)
     assert f('abc')
     assert f('Abc')
     assert not f(1)
     # -- Neq ------------------------------------------------------------------
-    f = neq(1)
+    f = Neq(1)
     assert f(2)
     assert f('1')
     assert f('abc')
     # Ignore case
-    f = neq('abc')
+    f = Neq('abc')
     assert f('ABC')
     assert not f('abc')
-    f = neq('abc', ignore_case=True)
+    f = Neq('abc', ignore_case=True)
     assert not f('ABC')
     assert not f('abc')
 
@@ -64,24 +64,36 @@ def test_compare_eq():
 def test_compare_greater():
     """Test greater than and greater or equal operators."""
     # -- Gt -------------------------------------------------------------------
-    f = gt(10)
+    f = Gt(10)
     assert not f(9)
     assert not f(10)
     assert f(11)
     assert not f('abc')
     # Type error
-    f = gt(10, raise_error=True)
+    f = Gt(10, raise_error=True)
     assert f(11)
     with pytest.raises(TypeError):
         assert not f('abc')
     # -- Geq ------------------------------------------------------------------
-    f = geq(10)
+    f = Geq(10)
     assert not f(9)
     assert f(10)
     assert f(11)
     assert not f('abc')
+    # Compare results of two functions
+
+    def digits(value):
+        return sum(c.isdigit() for c in str(value))
+
+    def letters(value):
+        return sum(c.isalpha() for c in str(value))
+
+    f = Gt(digits, letters)
+    assert not f('ABC12')
+    assert not f('ABC123')
+    assert f('ABC1234')
     # Type error
-    f = geq(10, raise_error=True)
+    f = Geq(10, raise_error=True)
     assert f(11)
     with pytest.raises(TypeError):
         assert not f('abc')
@@ -90,24 +102,24 @@ def test_compare_greater():
 def test_compare_lower():
     """Test lower than and lower or equal operators."""
     # -- Lt -------------------------------------------------------------------
-    f = lt(10)
+    f = Lt(10)
     assert f(9)
     assert not f(10)
     assert not f(11)
     assert not f('9')
     # Type error
-    f = lt(10, raise_error=True)
+    f = Lt(10, raise_error=True)
     assert f(9)
     with pytest.raises(TypeError):
         assert not f('abc')
     # -- Leq ------------------------------------------------------------------
-    f = leq(10)
+    f = Leq(10)
     assert f(9)
     assert f(10)
     assert not f(11)
     assert not f('9')
     # Type error
-    f = leq(10, raise_error=True)
+    f = Leq(10, raise_error=True)
     assert f(10)
     with pytest.raises(TypeError):
         assert not f('abc')

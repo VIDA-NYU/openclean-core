@@ -12,11 +12,11 @@ frame.
 import pandas as pd
 
 from openclean.data.column import as_list, select_clause
-from openclean.function.base import Eval, EvalFunction
-from openclean.function.column import Col
-from openclean.function.constant import Const
-from openclean.function.replace import IfThenReplace
-from openclean.function.value.replace import lookup
+from openclean.function.eval.base import Eval, EvalFunction
+from openclean.function.eval.column import Col
+from openclean.function.eval.constant import Const
+from openclean.function.base import ValueFunction, scalar_pass_through
+from openclean.function.value.lookup import Lookup
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -38,7 +38,7 @@ def update(df, columns, func):
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.base.EvalFunction
+    func: callable or openclean.function.eval.base.EvalFunction
         Callable that accepts a data frame row as the only argument and outputs
         a (modified) list of value(s).
 
@@ -101,7 +101,7 @@ class Update(DataFrameTransformer):
         ----------
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
-        func: callable or openclean.function.base.EvalFunction
+        func: callable or openclean.function.eval.base.EvalFunction
             Callable that accepts a data frame row as the only argument and
             outputs a (modified) (list of) value(s).
 
@@ -169,7 +169,7 @@ def get_update_function(func, columns):
 
     Parameters
     ----------
-    func: callable or openclean.function.base.EvalFunction
+    func: callable or openclean.function.eval.base.EvalFunction
         Callable that accepts a data frame row as the only argument and
         outputs a (modified) (list of) value(s).
     columns: list(int or string)
@@ -177,15 +177,20 @@ def get_update_function(func, columns):
 
     Returns
     -------
-    openclean.function.base.EvalFunction
+    openclean.function.eval.base.EvalFunction
     """
-    if isinstance(func, dict):
-        func = Eval(columns=columns, func=lookup(func, for_missing='self'))
-    elif not callable(func):
-        func = Const(func)
-    elif not isinstance(func, EvalFunction):
-        func = Eval(columns=columns, func=func)
-    elif isinstance(func, IfThenReplace):
-        if func.pass_through is None:
-            func.pass_through = Col(columns)
+    if not isinstance(func, EvalFunction):
+        if isinstance(func, dict):
+            func = Eval(
+                columns=columns,
+                func=Lookup(
+                    mapping=func,
+                    raise_error=False,
+                    default_value=scalar_pass_through
+                )
+            )
+        elif isinstance(func, ValueFunction) or callable(func):
+            func = Eval(columns=columns, func=func)
+        else:
+            func = Const(func)
     return func

@@ -5,411 +5,469 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Base classes for value generating functions. Evaluation functions are
-applied to tuples (series) in a dataset (data frame). Functions are expected to
-return either a scalar value or a tuple of scalar values.
-"""
+"""Base class for value function. Collection of basic helper functions."""
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.data.column import select_clause
+import openclean.util as util
 
 
-# -- Evaluation Functions -----------------------------------------------------
+# -- Profiling function ------------------------------------------------------
 
-class EvalFunction(metaclass=ABCMeta):
-    """Evaluation functions are used to compute results over rows (i.e., data
-    series objects) in a data frame. Evaluation functions may be prepared in
-    that they compute statistics or maintain column indices for the data frame
-    proior to being evaluated.
+class ProfilingFunction(metaclass=ABCMeta):
+    """Profiler for a sequence of data values. Values are either scalar values
+    or tuples of scalar values. Each sequence profiler implements the exec()
+    method that consumes a list of values. The result type is implementation
+    dependent. It should either be a scalar value (e.g. for aggregators) or
+    a dictionary.
+
+    Each profiling function has a (unique) name. The name is used as the key
+    value in a dictionary that composes the results of multiple profiling
+    functions.
     """
-    def __call__(self, values):
-        """Make the function callable.
+    def __init__(self, name):
+        """Initialize the function name.
 
         Parameters
         ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
+        name: string
+            Unique function name.
         """
-        return self.exec(values)
+        self._name = name if name else util.funcname(self)
 
     @abstractmethod
     def exec(self, values):
-        """Evaluate the function on a given data frame row. The result type is
-        implementation dependent. The result could either be a single scalar
-        value or a tuple of scalar values.
+        """Compute one or more features over values in a given sequence.
 
         Parameters
         ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
+        values: iterable
+            Iterable of scalar values or tuples of scalar values.
 
         Returns
         -------
-        scalar or tuple
+        scalar or list or dict
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def prepare(self, df):
-        """Prepare the evaluation function before the first call to the exec()
-        method for the given data frame. This allows to compute statistics or
-        column indices for the data frame.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
+    def name(self):
+        """Get the unique function name.
 
         Returns
         -------
-        openclean.function.base.EvalFunction
+        string
         """
-        raise NotImplementedError()
+        return self._name
 
 
-class Eval(object):
-    """Factory pattern for eval functions that evaluate a callable on rows in a
-    data frame. The callable may be a prepared callable. The factory returns an
-    eval function object from one of three different classes based on the value
-    of the columns argument. The signature of the __call__ method for the
-    encapsulated function is expected to have a signature that matches the
-    number of columns the function is evaluated on.
+# -- Value list functions -----------------------------------------------------
+
+class DictionaryFunction(ProfilingFunction, metaclass=ABCMeta):
+    """Interface for dictionary generating functions. These functins convert
+    a list of values into a dictionary. Key values in the created dictionaries
+    are either values from the given input list or a new generated list of
+    values. Values that are associated with key values are implementation-
+    specific results of applying an evaluation function on the key value.
+
+    A typical example of a dictionary function is distinct. This function takes
+    a list of values and outputs a dictionary where with each distinct value
+    the frequency of that value in the list is associated.
     """
-    def __new__(cls, func, columns=None):
-        """Return an instance of the eval function depending on columns
-        argument. Raises ValueError if the given functionis not callable.
-
-        The constructors of the different eval function implementations will
-        raise a ValueError if the given funciton is not a callable.
+    def __init__(self, name=None, to_dict=None):
+        """Set the function that is used to serialize mapping results for the
+        profiling function. Expects a callable that takes two arguments: (1)
+        a value and (2) the implementation-specific feature that is associated
+        with the value by the map function.
 
         Parameters
         ----------
-        func: callable
-            Expects a single callable
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-
-        Raises
-        ------
-        ValueError
+        name: string, default=None
+            Unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
         """
-        # If no columns are are given the function is evaluated on the full
-        # data frame row.
-        if columns is None:
-            return FullRowEval(func=func)
-        # Return different instances of the eval function depending on whether
-        # the function is applied on no column, one column or multiple columns.
-        if isinstance(columns, list):
-            # Even if columns is a list it may only contain a single element.
-            if len(columns) == 1:
-                return SingleColumnEval(func=func, columns=columns[0])
-            elif len(columns) > 1:
-                return MultiColumnEval(func=func, columns=columns)
-            else:
-                return FullRowEval(func=func)
-        else:
-            return SingleColumnEval(func=func, columns=columns)
-
-
-class FullRowEval(EvalFunction):
-    """Eval function that evaluates a callable on all values in a data frame
-    row.
-    """
-    def __init__(self, func):
-        """Initialize the callable. Raises a ValueError if the function
-        argument is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Callable that is evaluated on a cell value from a data frame row.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise ValueError if the function is not callable.
-        if not callable(func):
-            raise ValueError('not a callable')
-        self.func = func
+        super(DictionaryFunction, self).__init__(name=name)
+        self.to_dict = to_dict if to_dict else DefaultDictSerializer()
 
     def exec(self, values):
-        """Evaluate the function on the given data frame row.
+        """The execute method of the profiler returns a list of dictionaries.
+        Each dictionary contains the serialization of a (value, feature)-pair
+        in the dictionary that is returned by the map function.
 
         Parameters
         ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.func(values)
-
-    def prepare(self, df):
-        """If the evaluation function is a prepared callable the respective
-        prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.base.EvalFunction
-        """
-        # Prepare the callable if it is a prepared function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
-        return self
-
-
-class MultiColumnEval(EvalFunction):
-    """Eval function that applies a callable on a set of columns (values) in a
-    data frame row.
-    """
-    def __init__(self, func, columns):
-        """Initialize the function and columns. Raises a ValueError if the
-        given function is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Callable that is being evaluated.
-        columns: list(int or string)
-            List of column index positions or column names.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise ValueError if the function is not callabel
-        if not callable(func):
-            raise ValueError('not a callable')
-        self.func = func
-        self.columns = columns
-        # The list of column indices is initially None. the list will be
-        # initialized by the prepare method.
-        self.colidxs = None
-
-    def exec(self, values):
-        """Evaluate the callable on the given data frame row. Passes only the
-        cell values from those columns that were specified when the object was
-        instantiated.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        args = [values[c] for c in self.colidxs]
-        return self.func(*args)
-
-    def prepare(self, df):
-        """Initialize the corresponding list of column indices for the columns
-        that were specified at object instantiation. If the evaluation function
-        is a prepared callable the respective prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.base.EvalFunction
-        """
-        _, self.colidxs = select_clause(df=df, columns=self.columns)
-        # Prepare the callable if it is a prepared function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
-        return self
-
-
-class SingleColumnEval(EvalFunction):
-    """Eval function that evaluates a callable on a single column in a data
-    frame row.
-    """
-    def __init__(self, func, columns):
-        """Initialize the callable and the source column. Raises a ValueError
-        if the function argument is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Callable that is evaluated on a cell value from a data frame row.
-        columns: int or string
-            Single column index or name.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise ValueError if the function is not callable.
-        if not callable(func):
-            raise ValueError('not a callable')
-        self.func = func
-        self.columns = columns
-        # The column index is initially None. The value will be initialized by
-        # the prepare method.
-        self.colidx = None
-
-    def exec(self, values):
-        """Evaluate the function on the cell value in the source column of the
-        given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.func(values[self.colidx])
-
-    def prepare(self, df):
-        """Initialize the index of the source column in the schema of the given
-        data frame. If the evaluation function is a prepared callable the
-        respective prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.base.EvalFunction
-        """
-        _, colidxs = select_clause(df=df, columns=[self.columns])
-        self.colidx = colidxs[0]
-        # Prepare the callable if it is a prepared function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
-        return self
-
-
-# -- Apply functions ----------------------------------------------------------
-
-class Apply(object):
-    """Apply a function on all values in specified column(s)."""
-    def __new__(cls, columns, func):
-        """Initialize the source column(s) and the applied function.
-
-        Parameters
-        ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        func: callable
-            Function that is applied to all values in the specified columns.
-        """
-        # Choose a pass-through function based on the columns argument and the
-        # 'as_type' type cast argument.
-        if is_var_func(columns):
-            # -- Function that accepts a list of arguments
-            func = VarApply(func)
-        return Eval(func=func, columns=columns)
-
-
-class ApplyFactory(metaclass=ABCMeta):
-    """The apply factory is used to create instances of column functions for
-    each column during the execution of the apply operator. Before the apply
-    operator is executed the get_func() method of the factory is called for
-    each function that apply() is executed on. The factory should return a
-    column-specific callable. The returned callable will then be applied to
-    each value in the respective column seperately.
-    """
-    @abstractmethod
-    def get_func(self, df, colidx):
-        """Get an instance of the column-specific apply function. The factory
-        receives the data frame and the index of the column on whose values the
-        returned function (callable) will be applied.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        colidx: int
-            Index position of the column in the data frame.
-
-        Returns
-        -------
-        callable
-        """
-        return NotImplementedError()
-
-
-class VarApply(object):
-    """Generic apply function for variable argument lists. Applies a given
-    function on all arguments in a variable argument list.
-    """
-    def __init__(self, func):
-        """Initialize the applied function.
-        Parameters
-        ----------
-        func: callable
-            Function that is applied to values in a variable argument list.
-        """
-        self.func = func
-
-    def __call__(self, *args):
-        """Apply function to each element in the argument list. Return list of
-        modified values.
-
-        Parameters
-        ----------
-        *args: list
-            List of (scalar) values from a data frame row.
+        values: list
+            List of scalar values or tuples of scalar values.
 
         Returns
         -------
         list
         """
-        return [self.func(arg) for arg in args]
+        return [self.to_dict(v, f) for v, f in self.map(values).items()]
+
+    @abstractmethod
+    def map(self, values):
+        """The map function takes a list of values and outputs a dictionary.
+        The keys in the returned dictionary are either values from the given
+        input list or generated by the class implementation. The values that
+        are associated with the keys are also implementation-specific.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        dict
+        """
+        raise NotImplementedError()
 
 
-# -- Helper functions ---------------------------------------------------------
+class ListFunction(metaclass=ABCMeta):
+    """Interface for functions that transform a given list of values."""
+    @abstractmethod
+    def apply(self, values):
+        """Apply a function to each value in a given list. Returns a list of
+        values that are the result of evaluating an associated value function
+        for the respective input values.
 
-def is_var_func(columns=None):
-    """Helper function that returns True if the given column argument will
-    result in an evaluation function that operates on a variable number of
-    arguments.
+        Should call the prepare method of an associated value function before
+        executing the eval method on each individual value in the given list.
 
-    If the column argument is missing the result is False since the call to
-    the evaluation function will contain the data frame row as the only
-    argument.
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        list
+        """
+        raise NotImplementedError()
+
+
+# -- Abstract base class for value functions ----------------------------------
+
+class ValueFunction(DictionaryFunction, ListFunction, metaclass=ABCMeta):
+    """The abstract class for value functions defines the interface for methods
+    that need to be implemented for preparing and evaluating the function.
+    """
+    def __init__(self, name=None, to_dict=None):
+        """Initialize the function name.
+
+        Parameters
+        ----------
+        name: string, default=None
+            Unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
+        """
+        super(ValueFunction, self).__init__(name=name, to_dict=to_dict)
+
+    def apply(self, values):
+        """Apply the function to each value in a given list. Returns a list of
+        values that are the result of the eval method for the respective input
+        values.
+
+        Calls the prepare method before executing the eval method on each
+        individual value in the given list.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        list
+        """
+        f = self.prepare(values)
+        return [f.eval(v) for v in values]
+
+    @abstractmethod
+    def eval(self, value):
+        """Evaluate the function on a given value. The value may either be a
+        scalar or a tuple. The value will be from the list of values that was
+        passed to the object in the prepare call.
+
+        The return value of the function is implementation dependent.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def is_prepared(self):
+        """Returns True if the prepare method is ignored by an implementation
+        of this function. Containing classes will only call the prepare method
+        for those value functions that are not prepared.
+
+        Returns
+        -------
+        bool
+        """
+        raise NotImplementedError()
+
+    def map(self, values):
+        """The map function takes a list of values and outputs a dictionary.
+        The keys in the returned dictionary are the distinct values in the
+        input list. The values that are associated with the keys are the result
+        of applying the eval function of this class on the key value.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        dict
+        """
+        f = self.prepare(values)
+        result = dict()
+        for v in values:
+            if v not in result:
+                result[v] = f.eval(v)
+        return result
+
+    @abstractmethod
+    def prepare(self, values):
+        """Optional step to prepare the function for a given list of values.
+        This step allows to compute statistics over the list of values for
+        which the eval method will be called.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        openclean.function.base.ValueFunction
+        """
+        raise NotImplementedError()
+
+
+# -- Default base class implementations ---------------------------------------
+
+class PreparedFunction(ValueFunction):
+    """Abstract base class for value functions that do not make use of the
+    prepare method. These functions are considered as initialized and ready
+    to operate without the need for calling the prepare method first.
+    """
+    def __init__(self, name=None, to_dict=None):
+        """Initialize the function name.
+
+        Parameters
+        ----------
+        name: string, default=None
+            Unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
+        """
+        super(PreparedFunction, self).__init__(name=name)
+
+    def __call__(self, value):
+        """Make the function callable for individual values.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.eval(value)
+
+    def is_prepared(self):
+        """Instances of this class do not need to be further prepared.
+
+        Returns
+        -------
+        bool
+        """
+        return True
+
+    def prepare(self, values):
+        """The prepare step is ignored for a wrapped callable.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+        """
+        return self
+
+
+class CallableWrapper(PreparedFunction):
+    """Wrapper for callable functions as value functions. This value function
+    does not prepare the wrapped callable.
+    """
+    def __init__(self, func, to_dict=None):
+        """Initialize the wrapped callable function. Raises a ValueError if the
+        function is not a callable.
+
+        Parameters
+        ----------
+        func: callable
+            Function that is wrapped as a value finction.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
+
+        Raises
+        ------
+        ValueError
+        """
+        # Ensure that the given function is actually a callable.
+        if not callable(func):
+            raise ValueError('not a callable function')
+        self.func = func
+        super(CallableWrapper, self).__init__(
+            name=util.funcname(self.func),
+            to_dict=to_dict
+        )
+
+    def eval(self, value):
+        """Evaluate the wrapped function on a given value. The value may either be a
+        scalar or a tuple. The return value of the function is dependent on the
+        wrapped function.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.func(value)
+
+
+class ConstantValue(PreparedFunction):
+    """Value function that always returns a given constant value."""
+    def __init__(self, value, name=None, to_dict=None):
+        """Initialize the constant value that is returned by this function
+        whenever the eval method is called..
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Constant return value for the eval method.
+        name: string, default='constant'
+            Optional unique function name.
+        to_dict: callable, default=None
+            Function that accepts a value and a feature as arguments and that
+            returns a dictionary.
+        """
+        super(ConstantValue, self).__init__(
+            name=name if name else 'constant',
+            to_dict=to_dict
+        )
+        self.const = value
+
+    def eval(self, value):
+        """Evaluate the wrapped function on a given value. The value may either be a
+        scalar or a tuple. The return value of the function is dependent on the
+        wrapped function.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.const
+
+
+# -- Helper classes and functions ---------------------------------------------
+
+class DefaultDictSerializer(object):
+    """Default serializer for (value, feature)-pairs generated by a dictionary
+    function. Serializes each pair as a dictionary with two elements (value and
+    feature). The element labels can be set in the constructor of the class.
+    """
+    def __init__(self, value_label='value', feature_label='feature'):
+        """Initialize the element labels for the returned dictionaries.
+
+        Parameters
+        ----------
+        value_label: string, default='value'
+            Dictionary key associated with given values.
+        feature_label: string, default='feature'
+            Dictionary key associated with given features.
+        """
+        self.value_label = value_label
+        self.feature_label = feature_label
+
+    def __call__(self, value, feature):
+        """Get dictionary serialization for a (value, feature)-pair.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that was mapped to a feature by a dictionary function.
+        feature: any
+            Feature that was associated with the value by the dictionary
+            function.
+
+        Returns
+        -------
+        dict
+        """
+        return {self.value_label: value, self.feature_label: feature}
+
+
+def scalar_pass_through(value):
+    """Pass-through method for single scalar values.
 
     Parameters
     ----------
-    columns: int, string, or list(int or string), optional
-        Single column or list of column index positions or column names.
-        These are the columns on which the function will be evalauated.
-        If not specified the function is evalauated on the list of values
-        in the data frame row (i.e., a data series object).
+    value: scalar
+        Scalar cell value from a data frame row.
 
     Returns
     -------
-    bool
+    scalar
     """
-    if columns is None:
-        # If no columns are specified the evaluation function will receive the
-        # data frame row as the only argument.
-        return False
-    if isinstance(columns, list):
-        # Lists with more than one element will create multiple arguments.
-        return len(columns) > 1
-    # Single column case
-    return False
+    return value
+
+
+def to_valuefunc(value):
+    """Return a value function that represents the given argument. If the
+    argument is not a value function, either of the following is expected:
+    (i) a callable that will be wrapped in a CallableWrapper, or (2) a constant
+    value that will be wrapped in a ConstantValue.
+
+    Parameters
+    ----------
+    value: scalar, callable, or openclean.function.base.ValueFunction
+        Argument that is being represented as a value function.
+
+    Returns
+    -------
+    openclean.function.base.ValueFunction
+    """
+    if not isinstance(value, ValueFunction):
+        if callable(value):
+            value = CallableWrapper(func=value)
+        else:
+            value = ConstantValue(value)
+    return value

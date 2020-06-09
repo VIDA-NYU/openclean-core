@@ -9,7 +9,7 @@
 data type for the column.
 """
 
-from openclean.data.stream import Stream
+from openclean.data.sequence import Sequence
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
@@ -37,7 +37,7 @@ def datatype_outliers(df, columns, classifier, domain):
     list
     """
     op = DatatypeOutliers(classifier=classifier, domain=domain)
-    return op.find(values=set(Stream(df=df, columns=columns)))
+    return op.find(values=set(Sequence(df=df, columns=columns)))
 
 
 class DatatypeOutliers(ConditionalOutliers):
@@ -59,21 +59,22 @@ class DatatypeOutliers(ConditionalOutliers):
             Valid data type value(s). Defines the types that are not considered
             outliers.
         """
+        super(DatatypeOutliers, self).__init__(name='datatypeOutlier')
         # Ensure that the domain is not a scalar value.
         if type(domain) in [int, float, str]:
             self.domain = set([domain])
         else:
             self.domain = domain
         self.classifier = classifier
-        # Use a predicate that takes the given classifier to determine the data
-        # type of a value and then checks whether that type belogs to the list
-        # of valid types or not.
-        super(DatatypeOutliers, self).__init__(predicate=self.is_outlier)
 
-    def is_outlier(self, value):
-        """Use classifier to get the data type for the given value. Return True
-        if the returned type label is not included in the set of valid type
-        labels.
+    def outlier(self, value):
+        """Use classifier to get the data type for the given value. If the
+        returned type label is not included in the set of valid type labels
+        the value is considered an outlier.
+
+        Returns a dictionary for values that are classified as outliers that
+        contains two elements: 'value' and 'label', containing the tested value
+        and the returned type label, respectively.
 
         Parameters
         ----------
@@ -84,4 +85,6 @@ class DatatypeOutliers(ConditionalOutliers):
         -------
         bool
         """
-        return self.classifier(value) not in self.domain
+        type_label = self.classifier(value)
+        if type_label not in self.domain:
+            return {'value': value, 'label': type_label}

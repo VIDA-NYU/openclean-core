@@ -11,8 +11,8 @@ data frame.
 
 import pandas as pd
 
-from openclean.function.base import EvalFunction, FullRowEval
-from openclean.function.constant import Const
+from openclean.function.eval.base import EvalFunction, FullRowEval
+from openclean.function.eval.constant import Const
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -27,7 +27,7 @@ def insert(df, names, values, pos=None):
         Input data frame.
     names: string, or list(string)
         Names of the inserted columns.
-    values: scalar, list, callable, or openclean.function.base.EvalFunction
+    values: scalar, list, callable, or openclean.function.eval.base.EvalFunction
         Single value, list of constant values, callable that accepts a data
         frame row as the only argument and returns a (list of) value(s)
         matching the number of columns inserted or an evaluation function
@@ -65,7 +65,7 @@ def inscol(df, names, pos=None, values=None):
         Input data frame.
     names: string, or list(string)
         Names of the inserted columns.
-    values: scalar, list, callable, or openclean.function.base.EvalFunction
+    values: scalar, list, callable, or openclean.function.eval.base.EvalFunction
         Single value, list of constant values, callable that accepts a data
         frame row as the only argument and returns a (list of) value(s)
         matching the number of columns inserted or an evaluation function
@@ -131,7 +131,7 @@ class InsCol(DataFrameTransformer):
         values: scalar,
                 list,
                 callable, or
-                openclean.function.base.EvalFunction, optional
+                openclean.function.eval.base.EvalFunction, optional
             Single value, list of constant values, callable that accepts a data
             frame row as the only argument and returns a (list of) value(s)
             matching the number of columns inserted or an evaluation function
@@ -235,7 +235,7 @@ class InsRow(DataFrameTransformer):
         pos: int, optional
             Insert position for the new columns. If None the columns will be
             appended.
-        values: callable or openclean.function.base.EvalFunction, optional
+        values: callable or openclean.function.eval.base.EvalFunction, optional
             Callable that accepts a data frame row as the only argument and
             outputs a (list of) value(s) matching the number of columns
             inserted.

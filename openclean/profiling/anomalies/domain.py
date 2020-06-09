@@ -7,8 +7,8 @@
 
 """Domain outlier detector."""
 
-from openclean.data.stream import Stream
-from openclean.function.value.domain import is_not_in
+from openclean.data.sequence import Sequence
+from openclean.function.value.domain import IsNotInDomain
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
@@ -33,7 +33,7 @@ def domain_outliers(df, columns, domain, ignore_case=False):
     list
     """
     op = DomainOutliers(domain=domain, ignore_case=ignore_case)
-    return op.find(values=set(Stream(df=df, columns=columns)))
+    return op.find(values=set(Sequence(df=df, columns=columns)))
 
 
 class DomainOutliers(ConditionalOutliers):
@@ -51,6 +51,24 @@ class DomainOutliers(ConditionalOutliers):
         ignore_case: bool, optional
             Ignore case for domain inclusion checking
         """
-        super(DomainOutliers, self).__init__(
-            predicate=is_not_in(domain=domain, ignore_case=ignore_case)
-        )
+        super(DomainOutliers, self).__init__(name='domainOutlier')
+        self.predicate = IsNotInDomain(domain=domain, ignore_case=ignore_case)
+
+    def outlier(self, value):
+        """Test if a given value is in the associated ground truth domain. If
+        the value is not in the domain it is considered an outlier.
+
+        Returns a dictionary for values that are classified as outliers that
+        contains one element 'value' for the tested value.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        if self.predicate.eval(value):
+            return {'value': value}

@@ -10,11 +10,10 @@ general are considered values that do not match a (list of) pattern(s) that
 the values in a list (e.g., data frame column) are expected to satisfy.
 """
 
-from openclean.function.value.base import eval_all
-from openclean.function.value.pattern import is_match, is_not_match
-from openclean.function.value.tautology import tautology
+from openclean.function.distinct import distinct
+from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.distinct import distinct
+from openclean.profiling.util import always_false, eval_all
 
 
 def regex_outliers(df, columns, patterns, fullmatch=True):
@@ -56,6 +55,7 @@ class RegExOutliers(ConditionalOutliers):
             If True, the pattern has to match a given string fully in order to
             not be considered an outlier.
         """
+        super(RegExOutliers, self).__init__(name='regexOutlier')
         # Ensure that patterns is a list.
         if not isinstance(patterns, list):
             patterns = [patterns]
@@ -64,11 +64,32 @@ class RegExOutliers(ConditionalOutliers):
         if len(patterns) == 0:
             # An empty pattern list means that no value is being considered as
             # an outlier.
-            predicate = tautology(return_value=False)
+            self.predicate = always_false
         elif len(patterns) == 1:
-            predicate = is_not_match(pattern=patterns[0], fullmatch=fullmatch)
+            self.predicate = IsNotMatch(
+                pattern=patterns[0],
+                fullmatch=fullmatch
+            )
         else:
             # If a list of patterns is given a value i
-            ops = [is_match(pattern=p, fullmatch=fullmatch) for p in patterns]
-            predicate = eval_all(predicates=ops, truth_value=False)
-        super(RegExOutliers, self).__init__(predicate=predicate)
+            ops = [IsMatch(pattern=p, fullmatch=fullmatch) for p in patterns]
+            self.predicate = eval_all(predicates=ops, truth_value=False)
+
+    def outlier(self, value):
+        """Test if a given value is a match for the associated regular
+        expressions. If the value is not a match it is considered an outlier.
+
+        Returns a dictionary for values that are classified as outliers that
+        contains one element 'value' for the tested value.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        if self.predicate(value):
+            return {'value': value}

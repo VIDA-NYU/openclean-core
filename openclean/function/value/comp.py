@@ -11,31 +11,65 @@
 
 from abc import ABCMeta, abstractmethod
 
+from openclean.function.base import (
+    CallableWrapper, ValueFunction, scalar_pass_through, to_valuefunc
+)
+
 
 # -- Generic compare operator -------------------------------------------------
 
-class Comparison(metaclass=ABCMeta):
+class Comparison(ValueFunction, metaclass=ABCMeta):
     """The generic comparison operator provides functionality to handle cases
     where values of incompatible data types are being compared. An errror will
     be raised for incompatible types if the raise_error flag is True. If the
     flag is False, the comparison will evaluate to False for those values.
     """
-    def __init__(self, value, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant values against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Value expression agains which column values are compared.
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        name: string
+            Unique name for the comparator.
         raise_error: bool, optional
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        self.comp_value = value
-        self.raise_error = raise_error
+        super(Comparison, self).__init__(name=kwargs.get('name'))
+        if len(args) == 1:
+            self.left_value = CallableWrapper(func=scalar_pass_through)
+            self.right_value, = args
+        elif len(args) == 2:
+            self.left_value, self.right_value = args
+        else:
+            raise ValueError('invalid argument list')
+        self.left_value = to_valuefunc(self.left_value)
+        self.right_value = to_valuefunc(self.right_value)
+        self.raise_error = kwargs.get('raise_error', False)
 
-    def __call__(self, value):
+    @abstractmethod
+    def comp(self, left_value, right_value):
+        """Abstract compare function that compares two values. Functionality
+        depends on the type of comparator.
+
+        Parameters
+        ----------
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        raise NotImplementedError()
+
+    def eval(self, value):
         """Evaluate the compare expression on the given value. If the type cast
         flag is set to True, an attempt is made to cast the input value to the
         type of the constant compare value. If type casting fails, the result
@@ -54,294 +88,302 @@ class Comparison(metaclass=ABCMeta):
         # occurs due to incompatible data types the result is False unless the
         # raise type error flag is True.
         try:
-            return self.comp(value)
+            return self.comp(
+                left_value=self.left_value.eval(value),
+                right_value=self.right_value.eval(value)
+            )
         except TypeError as ex:
             if self.raise_error:
                 raise ex
             else:
                 return False
+        except AttributeError:
+            return False
 
-    @abstractmethod
-    def comp(self, value):
-        """Abstract compare function. Implement functionality depending on the
-        type of comparator. All implementations can expect that an attempt has
-        been made to cast the data type of the input value if requested by the
-        type cast flag.
+    __call__ = eval
 
-        Parameters
-        ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+    def is_prepared(self):
+        """Returns False if either of the expressions needs preparation.
 
         Returns
         -------
         bool
         """
-        raise NotImplementedError()
+        return self.left_value.is_prepared() and self.right_value.is_prepared()
+
+    def prepare(self, values):
+        """Prepare the value functions for the left hand side and right hand
+        side value of the comparison.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values.
+
+        Returns
+        -------
+        openclean.function.base.ValueFunction
+        """
+        if not self.is_prepared():
+            args = tuple([
+                self.left_value.prepare(values),
+                self.right_value.prepare(values)
+            ])
+            kwargs = {'raise_error': self.raise_error}
+            # Need to create an instance of the same implementing class.
+            return self.__class__(*args, **kwargs)
+        return self
 
 
 # -- Implementations for the standard value comparators -----------------------
 
-class eq(Comparison):
+class Eq(Comparison):
     """Simple comparator for single columns values that tests for equality with
     a given constant value.
     """
-    def __init__(
-        self, value, ignore_case=False, raise_error=False
-    ):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        ignore_case: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        ignore_case: bool, default=False
             Ignore case in comparison if set to True.
-        raise_error: bool, optional
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(eq, self).__init__(value=value, raise_error=raise_error)
-        self.ignore_case = ignore_case
+        super(Eq, self).__init__(*args, name='eq', **kwargs)
+        self.ignore_case = kwargs.get('ignore_case', False)
 
-    def comp(self, value):
+    def comp(self, left_value, right_value):
         """Test for equality between the constant compare value and the given
         input value.
 
         Parameters
         ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
 
         Returns
         -------
         bool
         """
-        if self.ignore_case and isinstance(value, str):
-            return value.lower() == self.comp_value.lower()
+        if self.ignore_case:
+            return left_value.lower() == right_value.lower()
         else:
-            return value == self.comp_value
+            return left_value == right_value
 
 
-class eq_ignore_case(eq):
+class EqIgnoreCase(Eq):
     """Shortcut for comparing single column values in a case-insenstive manner.
     """
-    def __init__(self, value, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        raise_error: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(eq_ignore_case, self).__init__(value=value, ignore_case=True)
+        kwargs['ignore_case'] = True
+        super(EqIgnoreCase, self).__init__(*args, **kwargs)
 
 
-class geq(Comparison):
-    """Simple comparator for single column values that tests whether a give
+class Geq(Comparison):
+    """Simple comparator for single column values that tests whether a given
     value is greater or equal than a constant comparison value.
     """
-    def __init__(self, value, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        raise_error: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(geq, self).__init__(value=value, raise_error=raise_error)
+        super(Geq, self).__init__(*args, name='geq', **kwargs)
 
-    def comp(self, value):
+    def comp(self, left_value, right_value):
         """Test whether a column value is greater or equal than a given compare
         value.
 
         Parameters
         ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
 
         Returns
         -------
         bool
         """
-        return value >= self.comp_value
+        return left_value >= right_value
 
 
-class gt(Comparison):
+class Gt(Comparison):
     """Simple comparator for single column values that tests whether a given
     value is greater than a constant comparison value.
     """
-    def __init__(self, value, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        raise_error: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(gt, self).__init__(value=value, raise_error=raise_error)
+        super(Gt, self).__init__(*args, name='gt', **kwargs)
 
-    def comp(self, value):
+    def comp(self, left_value, right_value):
         """Test whether a column value is greater than a given compare value.
 
         Parameters
         ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
 
         Returns
         -------
         bool
         """
-        return value > self.comp_value
+        return left_value > right_value
 
 
-class leq(Comparison):
+class Leq(Comparison):
     """Simple comparator for single column values that tests whether a given
     value is less or equal than a constant comparison value.
     """
-    def __init__(self, value, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        raise_error: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(leq, self).__init__(value=value, raise_error=raise_error)
+        super(Leq, self).__init__(*args, name='leq', **kwargs)
 
-    def comp(self, value):
+    def comp(self, left_value, right_value):
         """Test whether a column value is less or equal than a given compare
         value.
 
         Parameters
         ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
 
         Returns
         -------
         bool
         """
-        return value <= self.comp_value
+        return left_value <= right_value
 
 
-class lt(Comparison):
+class Lt(Comparison):
     """Simple comparator for single column values that tests whether a given
     value is less than a constant comparison value.
     """
-    def __init__(self, value, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        raise_error: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(lt, self).__init__(value=value, raise_error=raise_error)
+        super(Lt, self).__init__(*args, name='lt', **kwargs)
 
-    def comp(self, value):
+    def comp(self, left_value, right_value):
         """Test whether a column value is less than a given compare value.
 
         Parameters
         ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
 
         Returns
         -------
         bool
         """
-        return value < self.comp_value
+        return left_value < right_value
 
 
-class neq(Comparison):
+class Neq(Comparison):
     """Simple comparator for single olumn values that tests for inequality with
     a constant comparison value.
     """
-    def __init__(self, value, ignore_case=False, raise_error=False):
+    def __init__(self, *args, **kwargs):
         """Initialize the constant value against which all input values are
         being compared.
 
         Parameters
         ----------
-        value: scalar
-            Constant scalar value against which all input values are compared.
-        ignore_case: bool, optional
+        args: scalar, callable, or openclean.function.base.ValueFunction
+            Either one or two constant values or value functions that represent
+            the values that are being compared.
+        ignore_case: bool, default=False
             Ignore case in comparison if set to True.
-        raise_error: bool, optional
+        raise_error: bool, default=False
             Raise TypeError exception if values of incompatible data types are
             being compared. By default, the comparison result is False.
         """
-        super(neq, self).__init__(value=value, raise_error=raise_error)
-        self.ignore_case = ignore_case
+        super(Neq, self).__init__(*args, name='neq', **kwargs)
+        self.ignore_case = kwargs.get('ignore_case', False)
 
-    def comp(self, value):
+    def comp(self, left_value, right_value):
         """Test for inequality between the column value and the result of
         evaluating the value expression on a data frame row.
 
         Parameters
         ----------
-        value: scalar
-            Scalar value that is compared against the constant compare value.
+        left_value: scalar
+            Left value of the comparison.
+        right_value: scalar
+            Right value of the comparison.
 
         Returns
         -------
         bool
         """
-        if self.ignore_case and isinstance(value, str):
-            return value.lower() != self.comp_value.lower()
+        if self.ignore_case:
+            return left_value.lower() != right_value.lower()
         else:
-            return value != self.comp_value
-
-
-# -- Helper methods -----------------------------------------------------------
-
-def get_threshold(threshold):
-    """Ensure that the given threshold is a callable.
-
-    Parameters
-    ----------
-    threshold: callable, int or float
-        Expects a callable or a numeric value that will be wrapped in a
-        comparison operator.
-
-    Retuns
-    ------
-    callable
-
-    Raise
-    -----
-    ValueError
-    """
-    # If the threshold is an integer or float create a greater than threshold
-    # using the value (unless the value is 1 in which case we use eq).
-    if type(threshold) in [int, float]:
-        if threshold == 1:
-            threshold = eq(1)
-        else:
-            threshold = gt(threshold)
-    elif not callable(threshold):
-        raise ValueError('invalid threshold constraint')
-    return threshold
+            return left_value != right_value

@@ -9,8 +9,9 @@
 
 import pandas as pd
 
+from openclean.data.sequence import Sequence
 from openclean.data.column import as_list, select_clause
-from openclean.function.base import ApplyFactory
+from openclean.function.base import CallableWrapper, ValueFunction
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -28,7 +29,7 @@ def apply(df, columns, func):
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.base.ApplyFactory
+    func: callable or openclean.function.eval.base.ApplyFactory
         Callable that accepts a single value or a fatory that creates such a
         callable.
 
@@ -56,14 +57,18 @@ class Apply(DataFrameTransformer):
             Input data frame.
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
-        func: callable or openclean.function.base.ApplyFactory
-            Callable that accepts a single value or a fatory that creates such
-            a callable.
+        func: (openclean.function.eval.base.ValueFunction, or callable)
+            Callable or value function that accepts a single value.
         """
         # Ensure that columns is a list.
         self.columns = as_list(columns)
-        # Instantiate the function if a class object is given
-        self.func = func() if isinstance(func, type) else func
+        # Ensure that the function is a value function.
+        if not isinstance(func, ValueFunction):
+            # Instantiate the function if a class object is given
+            if isinstance(func, type):
+                func = func()
+            func = CallableWrapper(func=func)
+        self.func = func
 
     def transform(self, df):
         """Return a data frame where all values in the specified columns have
@@ -80,11 +85,11 @@ class Apply(DataFrameTransformer):
         """
         # Get list of indices for updated columns.
         _, colidxs = select_clause(df=df, columns=self.columns)
-        # Create apply functions for all columns.
+        # Apply the value function to each column separately.
         functions = list()
         for colidx in colidxs:
-            if isinstance(self.func, ApplyFactory):
-                f = self.func.get_func(df, colidx)
+            if not self.func.is_prepared():
+                f = self.func.prepare(Sequence(df, colidx))
             else:
                 f = self.func
             functions.append((f, colidx))

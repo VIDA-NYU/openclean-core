@@ -10,11 +10,12 @@ import pandas as pd
 import pytest
 
 from openclean.data.column import Column
-from openclean.data.load import dataset, load_restcountries_eu
+from openclean.data.load import dataset
 
 
 DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
 AGENCY_FILE = os.path.join(DIR, 'agencies.csv')
+COUNTRIES_FILE = os.path.join(DIR, 'countries.csv')
 IDI_FILE = os.path.join(DIR, 'ICT-development-index.tsv.gz')
 NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
 SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
@@ -29,7 +30,7 @@ def agencies():
 @pytest.fixture
 def countries():
     """Get dataset with known countries from restcountries.eu web service."""
-    return load_restcountries_eu(download_dir=DIR)
+    return dataset(COUNTRIES_FILE)
 
 
 @pytest.fixture

@@ -7,132 +7,277 @@
 
 """Type picker select one or more class labels based on statistics about the
 frequency of occurrence for each label in a set of data values.
+
+The classes in this module implement different strategies for assigning a
+datatype to a list of values (e.g., a column in a data frame).
 """
 
-from abc import ABCMeta, abstractmethod
-
-from openclean.function.value.comp import get_threshold
+from openclean.data.sequence import Sequence
+from openclean.function.base import DictionaryFunction
 from openclean.function.value.normalize import divide_by_total
+from openclean.profiling.classifier.base import DISTINCT, TOTAL
+from openclean.profiling.classifier.datatype import Datatypes
+from openclean.profiling.util import get_threshold
 
 
-# -- Generic interface --------------------------------------------------------
+# -- Majority type picker ----------------------------------------------------
 
-class TypePicker(metaclass=ABCMeta):
-    """Generic interface for data type pickers. Selects one or more class
-    labels based on counts of occurrence.
+def majority_typepicker(
+    df, columns=None, classifier=None, threshold=None, use_total_counts=False,
+    at_most_one=False
+):
+    """Pick the most frequent type assigned by a given classifier to the values
+    in a given list. Generates a dictionary containing the most frequent
+    type(s) as key(s) and their normalized frequency as the associated value.
+
+    The majority of a type may be defined based on the distinct values in the
+    given list or the absolute value counts. Allows to further restrict the
+    choice by requiring the frequency of the selected type to be above a given
+    threshold.
+
+    Parameters
+    ----------
+    df: pandas.DataFramee
+        Input data frame.
+    columns: int, string, or list(int or string), default=None
+        Single column or list of column index positions or column names.
+        Defines the list of value (pairs) that are considered by the type
+        picker.
+    classifier: openclean.function.value.classifier.ValueClassifier
+            , default=None
+        Classifier that assigns data type class labels for scalar column
+        values.
+    threshold: callable or int or float
+        Callable predicate or numeric value that is used to constrain the
+        possible candidates based on their normalized frequency.
+    use_total_counts: bool, default=False
+        Use total value counst instead of distinct counts to compute type
+        frequencies.
+    at_most_one: bool, default=False
+        Ensure that at most one data type is returned in the result. If the
+        flag is True and multiple types have the maximum frequency, an
     """
-    @abstractmethod
-    def select(self, stats, key_distinct='distinct', key_total='total'):
-        """Select one or more type labels based on the given statistics.
-        Expects a feature dictionary that contains for each type label the
-        number of distinct values with the label as well as the number of
-        total values having the type label.
-
-        Parameters
-        ----------
-        stats: openclean.data.metadata.FeatureDict
-            Dictionary that contains distinct and total counts for each type
-            label.
-        key_distinct: string, optional
-            Key to access distinct counts for a type label.
-        key_total: string, optional
-            Key to access total counts for a type label.
-
-        Returns
-        -------
-        list
-        """
-        raise NotImplementedError()
+    picker = MajorityTypePicker(
+        classifier=classifier,
+        threshold=threshold,
+        use_total_counts=use_total_counts,
+        at_most_one=at_most_one
+    )
+    return picker.map(Sequence(df=df, columns=columns))
 
 
-# -- Basic implementations of the type picker interface -----------------------
+class MajorityTypePicker(DictionaryFunction):
+    """Pick the most frequent type assigned by a given classifier to the values
+    in a given list. Generates a dictionary containing the most frequent
+    type(s) as key(s) and their normalized frequency as the associated value.
 
-MAJORITYPICKER_DISTINCT = 'distinct'
-MAJORITYPICKER_TOTAL = 'total'
-
-MAJORITYPICKER_STATS = [MAJORITYPICKER_DISTINCT, MAJORITYPICKER_TOTAL]
-
-
-class MajorityTypePicker(TypePicker):
-    """Default majority picker. Selects the most frequent type label. Allows to
-    specify a threshold constraint that the most frequent label has to satisfy.
-    The optional pick_one flag controls whether at most one label is returned
-    or more.
+    The majority of a type may be defined based on the distinct values in the
+    given list or the absolute value counts. Allows to further restrict the
+    choice by requiring the frequency of the selected type to be above a given
+    threshold.
     """
     def __init__(
-        self, statistics='distinct', normalize=divide_by_total, threshold=None,
-        pick_one=True
+        self, classifier=None, threshold=None, use_total_counts=False,
+        at_most_one=False, name=None
     ):
-        """Define the label count statistics upon which the selection is based.
-        Also allows to define a threshold that the most common value has to
-        satisfy.
+        """Initialize the classifier for data type assignement. The optional
+        threshold allows to further constrain the possible results by requiring
+        a minimal frequency for the picked type.
 
         Parameters
         ----------
-        statistics: string, optional
-            Determine whether to base the selection on the distinct label
-            counts or the total label counts.
-        normalize: callable or type
-            Normalization function that is applied before the class labels are
-            selected.
-        threshold: callable, optional
-            Threshold condition that the most common type has to satisfy.
-        pick_one: bool, optional
-            If True only the label with the highest score is returned (if it
-            satisfies the constraeint). Otherwise, all labels that satisfy
-            the constraint are returned.
-
-        Raises
-        ------
-        ValueError
+        classifier: openclean.function.value.classifier.ValueClassifier
+                , default=None
+            Classifier that assigns data type class labels for scalar column
+            values.
+        threshold: callable or int or float
+            Callable predicate or numeric value that is used to constrain the
+            possible candidates based on their normalized frequency.
+        use_total_counts: bool, default=False
+            Use total value counst instead of distinct counts to compute type
+            frequencies.
+        at_most_one: bool, default=False
+            Ensure that at most one data type is returned in the result. If the
+            flag is True and multiple types have the maximum frequency, an
+            empty dictionary will be returned.
+        name: string, default='majorityTypePicker'
+            Unique function name.
         """
-        # Ensure that valid statistics are selected.
-        if statistics not in MAJORITYPICKER_STATS:
-            raise ValueError('invalid picker statistic %s' % (statistics))
-        self.statistics = statistics
-        self.normalize = normalize
-        if threshold is not None:
-            self.threshold = get_threshold(threshold)
-        else:
-            self.threshold = None
-        self.pick_one = pick_one
+        self.classifier = classifier
+        self.threshold = get_threshold(threshold)
+        self.use_total_counts = use_total_counts
+        self.at_most_one = at_most_one
+        self._name = name if name else 'majorityTypePicker'
 
-    def select(self, stats, key_distinct='distinct', key_total='total'):
-        """Select one or more type labels (from most frequent to least) that
-        satisfy the threshold constraint.
+    def map(self, values):
+        """Select one or more type labels based on data type statistics that
+        are computed over the given list of values using the associated
+        classifier.
+
+        Returns a dictionary where the key(s) are the selected type(s) and the
+        values are normalized type frequencies (using divide_by_total). If no
+        type satisfies the associated threshold or more than one type does but
+        the ensure single type flag is True, the result is an empty dictionary.
 
         Parameters
         ----------
-        stats: openclean.data.metadata.FeatureDict
-            Dictionary that contains distinct and total counts for each type
-            label.
-        key_distinct: string, optional
-            Key to access distinct counts for a type label.
-        key_total: string, optional
-            Key to access total counts for a type label.
+        values: list
+            List of scalar values or tuples of scalar values that are first
+            typed to then select the most frequent type.
 
         Returns
         -------
         list
         """
-        # Get feature for the selected statistics.
-        if self.statistics == MAJORITYPICKER_DISTINCT:
-            key = key_distinct
-        elif self.statistics == MAJORITYPICKER_TOTAL:
-            key = key_total
-        else:
-            raise ValueError('invalid picker statistic %s' % (self.statistics))
-        feature = stats.to_scalar(key)
-        # Normalize vector if normalization function is given.
-        if self.normalize is not None:
-            feature = feature.normalize(self.normalize)
-        # Return label(s) that satisfy the threshold.
-        labels = list()
-        for label, score in feature.most_common():
-            if self.threshold is not None:
-                if not self.threshold(score):
-                    break
-            labels.append(label)
-            if self.pick_one:
-                break
-        return labels
+        types = Datatypes(
+            classifier=self.classifier,
+            features=TOTAL if self.use_total_counts else DISTINCT,
+            normalizer=divide_by_total
+        ).map(values)
+        # Return an empty dictionary if the list of returned types is empty.
+        if not types:
+            return dict()
+        # Find the type with the frequency value. Return an empty dictionary if
+        # the value does not satisfy the threshold.
+        max_freq = max(types.values())
+        if not self.threshold(max_freq):
+            return dict()
+        result = dict()
+        for label, freq in types.items():
+            if freq == max_freq:
+                result[label] = freq
+        # If more than one type matches the maximum frequency and the ensure
+        # single result flag is True, return an empty dictionary.
+        if self.at_most_one and len(result) > 1:
+            return dict()
+        return result
+
+    def name(self):
+        """Unique function name.
+
+        Returns
+        -------
+        string
+        """
+        return self._name
+
+
+# -- Threshold type picker ----------------------------------------------------
+
+def threshold_typepicker(
+    df, columns=None, classifier=None, threshold=None, use_total_counts=False
+):
+    """Identify all types assigned by a given classifier to the values in a
+    list having a frequency that exceeds a specified threshold. Generates a
+    dictionary containing the types as keys and their normalized frequency as
+    the associated value.
+
+    The frequency of a type may be computed based on the distinct values in the
+    given list or the absolute value counts.
+
+    Parameters
+    ----------
+    df: pandas.DataFramee
+        Input data frame.
+    columns: int, string, or list(int or string), default=None
+        Single column or list of column index positions or column names.
+        Defines the list of value (pairs) that are considered by the type
+        picker.
+    classifier: openclean.function.value.classifier.ValueClassifier
+            , default=None
+        Classifier that assigns data type class labels for scalar column
+        values.
+    threshold: callable or int or float
+        Callable predicate or numeric value that is used to constrain the
+        possible candidates based on their normalized frequency.
+    use_total_counts: bool, default=False
+        Use total value counst instead of distinct counts to compute type
+        frequencies.
+    """
+    picker = ThresholdTypePicker(
+        classifier=classifier,
+        threshold=threshold,
+        use_total_counts=use_total_counts
+    )
+    return picker.map(Sequence(df=df, columns=columns))
+
+
+class ThresholdTypePicker(DictionaryFunction):
+    """Identify all types assigned by a given classifier to the values in a
+    list having a frequency that exceeds a specified threshold. Generates a
+    dictionary containing the types as keys and their normalized frequency as
+    the associated value.
+
+    The frequency of a type may be computed based on the distinct values in the
+    given list or the absolute value counts.
+    """
+    def __init__(
+        self, classifier=None, threshold=None, use_total_counts=False,
+        name=None
+    ):
+        """Initialize the classifier for data type assignement. The threshold
+        constrains the results by requiring a type to have a minimal frequency.
+
+        Parameters
+        ----------
+        classifier: openclean.function.value.classifier.ValueClassifier
+                , default=None
+            Classifier that assigns data type class labels for scalar column
+            values.
+        threshold: callable or int or float
+            Callable predicate or numeric value that is used to constrain the
+            possible candidates based on their normalized frequency.
+        use_total_counts: bool, default=False
+            Use total value counst instead of distinct counts to compute type
+            frequencies.
+        name: string, default='thresholdTypePicker'
+            Unique function name.
+        """
+        self.classifier = classifier
+        self.threshold = get_threshold(threshold)
+        self.use_total_counts = use_total_counts
+        self._name = name if name else 'thresholdTypePicker'
+
+    def map(self, values):
+        """Select one or more type labels based on data type statistics that
+        are computed over the given list of values using the associated
+        classifier.
+
+        Returns a dictionary where the key(s) are the selected type(s) and the
+        values are normalized type frequencies (using divide_by_total). If no
+        type satisfies the associated threshold or more than one type does but
+        the ensure single type flag is True, the result is an empty dictionary.
+
+        Parameters
+        ----------
+        values: list
+            List of scalar values or tuples of scalar values that are first
+            typed to then select the most frequent type.
+
+        Returns
+        -------
+        list
+        """
+        types = Datatypes(
+            classifier=self.classifier,
+            features=TOTAL if self.use_total_counts else DISTINCT,
+            normalizer=divide_by_total
+        ).map(values)
+        # Return an empty dictionary if the list of returned types is empty.
+        if not types:
+            return dict()
+        # Find all types that satisfy the frequency constraint.
+        result = dict()
+        for label, freq in types.items():
+            if self.threshold(freq):
+                result[label] = freq
+        return result
+
+    def name(self):
+        """Unique function name.
+
+        Returns
+        -------
+        string
+        """
+        return self._name

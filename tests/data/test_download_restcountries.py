@@ -31,7 +31,8 @@ def test_download_restcountries():
         ]
     downloads = downloader.download()
     assert len(downloads) == 1
-    df = downloads[restcountries.COUNTRIES]
+    descriptor, df = downloads[0]
+    assert descriptor.identifier() == restcountries.COUNTRIES
     assert list(df.columns) == columns
     with pytest.raises(ValueError):
         downloader.download(datasets='capitals')

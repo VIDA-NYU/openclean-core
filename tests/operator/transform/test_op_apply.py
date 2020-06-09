@@ -9,11 +9,10 @@
 
 import numpy as np
 
-from openclean.function.normalize import DivideByTotal
-from openclean.function.replace import Replace
+from openclean.function.value.cond import Replace
 from openclean.function.value.datatype import is_nan
-from openclean.function.value.replace import replace
-from openclean.function.value.string import upper
+from openclean.function.value.normalize import DivideByTotal
+from openclean.function.value.string import Upper
 from openclean.operator.transform.apply import apply
 from openclean.operator.transform.update import update
 
@@ -23,10 +22,10 @@ NAMES_UPPER = ['ALICE', 'BOB', 'CLAUDIA', 'DAVE', 'EILEEN', 'FRANK', 'GERTRUD']
 
 def test_simple_apply_operator(employees):
     """Test applying a single callabel to columns of a data frame."""
-    df = apply(employees, 'Name', upper())
+    df = apply(employees, 'Name', Upper())
     assert list(df['Name']) == NAMES_UPPER
     assert df['Salary'][2] == '21k'
-    df = apply(employees, df.columns, upper)
+    df = apply(employees, df.columns, Upper)
     assert list(df['Name']) == NAMES_UPPER
     assert df['Salary'][2] == '21K'
 
@@ -37,17 +36,17 @@ def test_apply_factory_operator(employees):
     # all values.
     df = apply(employees, 'Age', DivideByTotal())
     for v in df['Age']:
-        assert v == 0
+        assert v == 0 or is_nan(v)
     df = apply(apply(employees, 'Age', np.nan_to_num), 'Age', DivideByTotal())
     for v in df['Age'].iloc[[0, 1, 2, 4, 5, 6]]:
         assert v > 0
     # Same results as before but using conditional replace
-    df = update(employees, 'Age', Replace('Age', is_nan, 0))
+    df = update(employees, 'Age', Replace(is_nan, 0))
     df = apply(df, 'Age', DivideByTotal())
     for v in df['Age'].iloc[[0, 1, 2, 4, 5, 6]]:
         assert v > 0
     # Test another shortcut
-    df = update(employees, 'Age', replace(is_nan, 0))
+    df = update(employees, 'Age', Replace(is_nan, 0))
     df = apply(df, 'Age', DivideByTotal())
     for v in df['Age'].iloc[[0, 1, 2, 4, 5, 6]]:
         assert v > 0

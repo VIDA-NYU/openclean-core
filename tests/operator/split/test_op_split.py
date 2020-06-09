@@ -8,7 +8,8 @@
 """Unit tests for the split operator."""
 
 from openclean.data.column import Column
-from openclean.function.predicate.comp import Eq
+from openclean.function.eval.column import Col
+from openclean.function.eval.predicate.comp import Eq
 from openclean.operator.split.split import split
 
 
@@ -16,7 +17,7 @@ def test_split_operator(nyc311):
     """Simple test for split operator."""
     # Divide the data frame into one set with 20 rows (matching borough STATEN
     # ISLAND) and one data frame with the remaining rows.
-    df_true, df_false = split(nyc311, Eq('borough', 'STATEN ISLAND'))
+    df_true, df_false = split(nyc311, Eq(Col('borough'), 'STATEN ISLAND'))
     assert df_true.shape == (20, len(nyc311.columns))
     assert df_false.shape == (nyc311.shape[0] - 20, len(nyc311.columns))
     # Ensure that the columns are instances of the Column class
