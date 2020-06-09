@@ -13,7 +13,7 @@ from collections import Counter
 
 from openclean.data.sequence import Sequence
 from openclean.function.base import DictionaryFunction
-from openclean.function.list.helper import normalize
+from openclean.function.util import normalize
 
 
 def distinct(

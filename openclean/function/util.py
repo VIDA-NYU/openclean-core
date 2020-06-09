@@ -14,7 +14,7 @@ from openclean.function.base import ValueFunction
 
 def extract(values, label, raise_error=True, default_value=None):
     """Create a flat dictionary from a nested one. The resulting dictionary
-    contains the same keys as the input dictionary. the associated values are
+    contains the same keys as the input dictionary. The associated values are
     the values from the nested dictionaries under the given label.
 
     If a nested value does not contain the given label as key a KeyError is
@@ -52,7 +52,7 @@ def extract(values, label, raise_error=True, default_value=None):
 
 
 def merge(values_1, values_2, labels, join='inner'):
-    """Merge two dictionaries. the resulting dictionary will map key values to
+    """Merge two dictionaries. The resulting dictionary will map key values to
     dictionaries. Each nested dictionary has two elements, representing the
     values from the respective merged dictionary. The labels for these elements
     are defined by the labels argument.

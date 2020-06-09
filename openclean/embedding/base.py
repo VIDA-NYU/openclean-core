@@ -11,8 +11,10 @@ in a given stream of scalar values or tuples of scalar values.
 """
 
 from abc import ABCMeta, abstractmethod
+from collections import OrderedDict
 
-from openclean.data.metadata import FeatureVector
+import numpy as np
+
 from openclean.data.sequence import Sequence
 
 
@@ -39,13 +41,32 @@ def embedding(df, columns, features):
 
     Returns
     -------
-    openclean.data.metadata.FeatureVector
+    openclean.embedding.base.FeatureVector
     """
     op = Embedding(features=features)
     return op.exec(values=Sequence(df=df, columns=columns))
 
 
 # -- Embedding classes --------------------------------------------------------
+
+class FeatureVector(OrderedDict):
+    """Maintain a list values (e.g., the distinct values in a data frame
+    column) together with their feature vectors (e.g., word embeddings).
+    """
+    def add(self, value, vec):
+        self[value] = vec
+
+    @property
+    def data(self):
+        """Get numpy array containing all feature vectors. The order of vectors
+        is the same as the order in whch they were added.
+
+        Returns
+        -------
+        numpy.array
+        """
+        return np.array([row for row in self.values()])
+
 
 class Embedding(object):
     """Compute feature vectors for values in a given stream of scalar values
@@ -76,7 +97,7 @@ class Embedding(object):
 
         Returns
         -------
-        openclean.data.metadata.FeatureVector
+        openclean.embedding.base.FeatureVector
         """
         # Prepare the associated feature generator. Make sure to use the full
         # list of values when pre-computing statistics. This may return a

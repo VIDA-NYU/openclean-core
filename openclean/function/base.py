@@ -112,7 +112,7 @@ class ListFunction(metaclass=ABCMeta):
     @abstractmethod
     def apply(self, values):
         """Apply a function to each value in a given list. Returns a list of
-        values that are the result of evaluating an assicuated value function
+        values that are the result of evaluating an associated value function
         for the respective input values.
 
         Should call the prepare method of an associated value function before

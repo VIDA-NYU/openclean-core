@@ -17,7 +17,7 @@ from openclean.function.base import DictionaryFunction
 from openclean.function.value.normalize import divide_by_total
 from openclean.profiling.classifier.base import DISTINCT, TOTAL
 from openclean.profiling.classifier.datatype import Datatypes
-from openclean.profiling.helper import get_threshold
+from openclean.profiling.util import get_threshold
 
 
 # -- Majority type picker ----------------------------------------------------

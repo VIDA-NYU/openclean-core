@@ -7,10 +7,10 @@
 
 """Operators for frequency outlier detection."""
 
-from openclean.function.list.distinct import distinct
+from openclean.function.distinct import distinct
 from openclean.function.value.normalize import DivideByTotal
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.helper import get_threshold
+from openclean.profiling.util import get_threshold
 
 
 def frequency_outliers(df, columns, threshold):

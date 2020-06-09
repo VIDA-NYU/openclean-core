@@ -9,7 +9,7 @@
 
 import pandas as pd
 
-from openclean.data.transform import to_set
+from openclean.data.util import to_set
 from openclean.function.eval.base import Eval, is_var_func
 from openclean.function.value.domain import IsInDomain, IsNotInDomain
 

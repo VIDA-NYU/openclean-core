@@ -8,7 +8,8 @@
 """Feature function that computes normalized frequencies for values in a list.
 """
 
-from openclean.data.metadata import Feature
+from collections import Counter
+
 from openclean.function.base import ValueFunction
 from openclean.function.value.normalize import MinMaxScale
 
@@ -26,7 +27,7 @@ class NormalizedFrequency(ValueFunction):
         normalizer: openclean.function.value.normalize.MinMaxScale,
                 default=None
             Normalization function.
-        mapping: openclean.data.meatdata.Feature, default=None
+        mapping: dict, default=None
             Lookup table for value frequencies.
         """
         self.normalizer = normalizer
@@ -70,6 +71,6 @@ class NormalizedFrequency(ValueFunction):
         -------
         openclean.embedding.feature.frequency.NormalizedFrequency
         """
-        mapping = Feature(values)
+        mapping = Counter(values)
         normalizer = MinMaxScale().prepare(mapping.values())
         return NormalizedFrequency(mapping=mapping, normalizer=normalizer)

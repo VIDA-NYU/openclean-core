@@ -9,8 +9,8 @@
 
 from collections import Counter
 
-from openclean.function.list.distinct import Distinct
-from openclean.function.list.helper import extract, merge, normalize
+from openclean.function.distinct import Distinct
+from openclean.function.util import extract, merge, normalize
 from openclean.function.value.classifier import ValueClassifier
 from openclean.function.base import ProfilingFunction
 

@@ -9,7 +9,7 @@
 
 import pandas as pd
 
-from openclean.data.transform import to_lookup
+from openclean.data.util import to_lookup
 from openclean.function.eval.base import Eval
 from openclean.function.value.lookup import Lookup
 

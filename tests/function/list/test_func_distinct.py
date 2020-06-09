@@ -7,7 +7,7 @@
 
 """Unit tests for the distinct value count generator."""
 
-from openclean.function.list.distinct import distinct
+from openclean.function.distinct import distinct
 from openclean.function.value.normalize import (
     divide_by_total, MaxAbsScale, MinMaxScale
 )
