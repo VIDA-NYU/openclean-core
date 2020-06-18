@@ -13,7 +13,7 @@ import pandas as pd
 
 from openclean.function.eval.column import Col
 from openclean.function.eval.constant import Const
-from openclean.function.eval.aggregate.row import Greatest, Least
+from openclean.function.eval.aggregate.row import Max, Mean, Min, Sum
 
 
 def test_scalar_list_functions():
@@ -30,14 +30,21 @@ def test_scalar_list_functions():
     )
     LEAST = [1, 3, 1]
     GREATES = [3, 5, 4]
-    values = [Col('A'), Col('B'), Const(3)]
-    least = Least(values)
-    greatest = Greatest(values)
+    AMOUNT = [6, 12, 8]
+    MEAN = [2, 4, 2]
+    least = Min('A', 'B', Const(3))
+    greatest = Max('A', 'B', Const(3))
+    mean = Mean('A', 'B', Const(3))
+    amount = Sum('A', 'B', Const(3))
     least.prepare(df)
     greatest.prepare(df)
+    mean.prepare(df)
+    amount.prepare(df)
     for i in range(3):
         assert least.eval(df.iloc[i]) == LEAST[i]
         assert greatest.eval(df.iloc[i]) == GREATES[i]
+        assert amount.eval(df.iloc[i]) == AMOUNT[i]
+        assert int(mean.eval(df.iloc[i])) == MEAN[i]
 
 
 def test_tuple_list_functions():
@@ -55,8 +62,8 @@ def test_tuple_list_functions():
     LEAST = [(1, 2), (3, 3), (1, 4)]
     GREATES = [(3, 3), (5, 6), (4, 5)]
     values = [Col(['A', 'B']), Col(['B', 'C']), Const((3, 3))]
-    least = Least(values)
-    greatest = Greatest(values)
+    least = Min(*values)
+    greatest = Max(*values)
     least.prepare(df)
     greatest.prepare(df)
     for i in range(3):

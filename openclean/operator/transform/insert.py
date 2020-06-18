@@ -27,7 +27,12 @@ def insert(df, names, values, pos=None):
         Input data frame.
     names: string, or list(string)
         Names of the inserted columns.
-    values: scalar, list, callable, or openclean.function.eval.base.EvalFunction
+    values: (
+            scalar,
+            list,
+            callable, or
+            openclean.function.eval.base.EvalFunction
+        )
         Single value, list of constant values, callable that accepts a data
         frame row as the only argument and returns a (list of) value(s)
         matching the number of columns inserted or an evaluation function
@@ -65,7 +70,12 @@ def inscol(df, names, pos=None, values=None):
         Input data frame.
     names: string, or list(string)
         Names of the inserted columns.
-    values: scalar, list, callable, or openclean.function.eval.base.EvalFunction
+    values: (
+            scalar,
+            list,
+            callable, or
+            openclean.function.eval.base.EvalFunction
+        )
         Single value, list of constant values, callable that accepts a data
         frame row as the only argument and returns a (list of) value(s)
         matching the number of columns inserted or an evaluation function

@@ -4,3 +4,5 @@
 #
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
+
+import openclean.vizual as vizual  # noqa: F401
