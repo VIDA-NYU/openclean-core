@@ -242,10 +242,11 @@ class InsRow(DataFrameTransformer):
 
         Parameters
         ----------
-        pos: int, optional
+        pos: int, default=None
             Insert position for the new columns. If None the columns will be
             appended.
-        values: callable or openclean.function.eval.base.EvalFunction, optional
+        values: callable or openclean.function.eval.base.EvalFunction,
+                default=None
             Callable that accepts a data frame row as the only argument and
             outputs a (list of) value(s) matching the number of columns
             inserted.
@@ -307,8 +308,9 @@ class InsRow(DataFrameTransformer):
                         raise ValueError('invalid value list')
                     rows = [self.values]
             else:
-                rows = [self.values] * len(df.columns)
-                rows = [rows]
+                rows = [[self.values] * len(df.columns)]
+        else:
+            rows = [[None] * len(df.columns)]
         # Create a modified data frame where rows are modified by the update
         # function.
         data = list()

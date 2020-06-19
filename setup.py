@@ -17,7 +17,8 @@ install_requires = [
     'pandas>=1.0.0',
     'jsonschema>=3.2.0',
     'python-dateutil',
-    'Shapely>=1.7.0'
+    'Shapely>=1.7.0',
+    'histore==0.1.1'
 ]
 
 

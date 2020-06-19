@@ -12,41 +12,9 @@ column value in a Pandas data frame.
 
 import pandas as pd
 
-
-class Column(str):
-    """Columns in openclean data frames are subclasses of Python strings that
-    contain a unique column identifier. This implementation is based on:
-    https://bytes.com/topic/python/answers/32098-my-experiences-subclassing-string
-
-    The order of creation is that the __new__ method is called which returns
-    the object then __init__ is called.
-    """
-    def __new__(cls, colid, name, *args, **keywargs):
-        """Initialize the String object with the given column name. Ignore the
-        column identifier.
-
-        Parameters
-        ----------
-        colid: int
-            Unique column identifier
-        name: string
-            Column name
-        """
-        return str.__new__(cls, str(name))
-
-    def __init__(self, colid, name):
-        """Initialize the unique column identifier. The column name has already
-        been initialized by the __new__ method that is called prior to the
-        __init__ method.
-
-        Parameters
-        ----------
-        colid: int
-            Unique column identifier
-        name: string
-            Column name
-        """
-        self.colid = colid
+# Openclean makes use of the identifiable column name that is also defined in
+# HISTORE.
+from histore.document.schema import Column as Column  # noqa: F401
 
 
 # -- Helper functions ---------------------------------------------------------
@@ -126,3 +94,49 @@ def select_clause(df, columns):
         column_names.append(colname)
         column_index.append(colidx)
     return column_names, column_index
+
+
+def select_by_id(df, colids, raise_error=True):
+    """Get the list of column index positions in a data frame for list of
+    columns that are referenced by unique column identifier.
+
+    Raises errors if the identifier list contains values that do not reference
+    columns in the data frame schema and the raise error flag is True.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Pandas data frame.
+    colids: int or list(int)
+        Single column identifier or list of column identifier.
+    raise_error: bool, default=True
+        Raise error if the column list contains unknown identifier.
+
+    Returns
+    -------
+    list
+
+    Raises
+    ------
+    ValueError
+    """
+    # Use a lookup for identifier of columns that are renamed
+    includecols = set(colids) if isinstance(colids, list) else set([colids])
+    # Implemnted using the select operator. For this, we need to get the index
+    # positions for thoses columns that are included in the result.
+    select_clause = list()
+    for colidx, col in enumerate(df.columns):
+        try:
+            # Attempt to access the column id. If the identifier is for a
+            # column that is being rename add the index to the select clause.
+            if col.colid in includecols:
+                select_clause.append(colidx)
+                includecols.remove(col.colid)
+        except AttributeError:
+            pass
+    # Raise an error if not all of the identifier in includecols have been
+    # encountered.
+    if includecols and raise_error:
+        missing = list(includecols)
+        raise ValueError("unknown column identifier {}".format(missing))
+    return select_clause

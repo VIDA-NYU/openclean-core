@@ -31,7 +31,6 @@ def test_scalar_list_functions():
     LEAST = [1, 3, 1]
     GREATES = [3, 5, 4]
     AMOUNT = [6, 12, 8]
-    MEAN = [2, 4, 2]
     least = Min('A', 'B', Const(3))
     greatest = Max('A', 'B', Const(3))
     mean = Mean('A', 'B', Const(3))
@@ -44,7 +43,7 @@ def test_scalar_list_functions():
         assert least.eval(df.iloc[i]) == LEAST[i]
         assert greatest.eval(df.iloc[i]) == GREATES[i]
         assert amount.eval(df.iloc[i]) == AMOUNT[i]
-        assert int(mean.eval(df.iloc[i])) == MEAN[i]
+        assert mean.eval(df.iloc[i]) == AMOUNT[i] / 3
 
 
 def test_tuple_list_functions():

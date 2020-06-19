@@ -9,7 +9,7 @@
 values that are extracted for data frame rows.
 """
 
-import statistics
+import numpy as np
 
 from openclean.function.eval.base import EvalFunction
 from openclean.function.eval.column import Col
@@ -113,7 +113,7 @@ class Mean(RowCellsFunction):
             frame row).
         """
         values = [colfunc(arg) for arg in args]
-        super(Mean, self).__init__(aggregator=statistics.mean, values=values)
+        super(Mean, self).__init__(aggregator=np.mean, values=values)
 
 
 class Min(RowCellsFunction):

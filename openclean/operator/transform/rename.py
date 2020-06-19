@@ -9,7 +9,7 @@
 openclean.
 """
 
-from openclean.data.column import Column, as_list
+from openclean.data.column import Column, as_list, select_by_id
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -38,6 +38,34 @@ def rename(df, columns, names):
     ------
     ValueError
     """
+    return Rename(columns=columns, names=names).transform(df)
+
+
+def rename_columns(df, colids, names):
+    """Rename columns that are referenced by their unique identifier. Raises a
+    ValueError if the column identifier list contains values that do not
+    reference columns in the data frame schema.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Input data frame.
+    colids: int or list(int)
+        Single column identifier or list of column indentifier.
+    names: string or list(string)
+        Single name or list of names for the renamed columns. The number of
+        values in that list must match the number of column identifiers.
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    Raises
+    ------
+    ValueError
+    """
+    # Get index positions for referenced columns.
+    columns = select_by_id(df=df, colids=colids)
     return Rename(columns=columns, names=names).transform(df)
 
 

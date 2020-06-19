@@ -9,11 +9,39 @@
 openclean.
 """
 
-from openclean.data.column import Column, as_list, select_clause
+from openclean.data.column import Column, as_list, select_clause, select_by_id
 from openclean.operator.base import DataFrameTransformer
 
 
 # -- Functions ----------------------------------------------------------------
+
+def filter_columns(df, colids, names=None):
+    """Filter columns by their identifier. Returns a data frame that contains
+    the columns whose identifier are included in the given list. Raises a
+    ValueError if the column identifier list contains values that do not
+    reference columns in the data frame schema.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Input data frame.
+    colids: int or list(int)
+        Single column identifier or list of column indentifier.
+    names: string or list(string)
+        Single name or list of names for the resulting columns.
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    Raises
+    ------
+    ValueError
+    """
+    # Get index positions for referenced columns.
+    columns = select_by_id(df=df, colids=colids)
+    return Select(columns=columns, names=names).transform(df)
+
 
 def select(df, columns, names=None):
     """Projection operator that selects a list of columns from a data frame.
@@ -72,7 +100,7 @@ class Select(DataFrameTransformer):
         if names is not None:
             self.names = names if isinstance(names, list) else [names]
             if len(self.columns) != len(self.names):
-                raise ValueError('incompatible list for columns and names')
+                raise ValueError('incompatible lists for columns and names')
         else:
             self.names = None
 

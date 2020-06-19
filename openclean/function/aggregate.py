@@ -159,9 +159,9 @@ class Mean(ColumnStats):
         name: string, default=None
             Unique function name for profiling functions.
         """
-        import statistics
+        import numpy as np
         super(Mean, self).__init__(
-            func=statistics.mean,
+            func=np.mean,
             normalizer=normalizer,
             name=name
         )

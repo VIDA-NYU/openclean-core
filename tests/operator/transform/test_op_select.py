@@ -77,7 +77,11 @@ def test_select_with_duplicates(employees):
 
 def test_select_with_rename(employees):
     """Test selecting columns and renaming columns."""
-    d1 = select(employees, columns=['Name', 'Salary'], names=['Person', 'Income'])
+    d1 = select(
+        employees,
+        columns=['Name', 'Salary'],
+        names=['Person', 'Income']
+    )
     assert 'Person' in d1.columns
     assert 'Income' in d1.columns
     assert 'Name' not in d1.columns
