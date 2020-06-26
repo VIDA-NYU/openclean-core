@@ -9,10 +9,10 @@
 
 from collections import Counter
 
-from openclean.function.distinct import Distinct
-from openclean.function.util import extract, merge, normalize
+from openclean.function.base import Distinct, ProfilingFunction
 from openclean.function.value.classifier import ValueClassifier
-from openclean.function.base import ProfilingFunction
+
+import openclean.function.base as base  # extract, merge, normalize
 
 
 """Enumarate accepted values for the datatype features argument."""
@@ -151,7 +151,7 @@ class Classifier(ValueClassifier, ProfilingFunction):
         dict
         """
         if label is not None:
-            values = extract(values, label)
+            values = base.extract(values, label)
         if self.features == BOTH:
             counts = dict()
             for value, count in values.items():
@@ -164,13 +164,13 @@ class Classifier(ValueClassifier, ProfilingFunction):
                     counts[type_label] = {DISTINCT: 1, TOTAL: count}
             if self.normalizer is not None:
                 # Normalize the results if a normalizer is given.
-                counts = merge(
-                    normalize(
-                        extract(counts, DISTINCT),
+                counts = base.merge(
+                    base.normalize(
+                        base.extract(counts, DISTINCT),
                         normalizer=self.normalizer
                     ),
-                    normalize(
-                        extract(counts, TOTAL),
+                    base.normalize(
+                        base.extract(counts, TOTAL),
                         normalizer=self.normalizer
                     ),
                     labels=self.labels
@@ -186,7 +186,7 @@ class Classifier(ValueClassifier, ProfilingFunction):
                 raise ValueError('invalid features {}'.format(self.features))
             if self.normalizer is not None:
                 # Normalize the results if a normalizer is given.
-                counts = normalize(counts, normalizer=self.normalizer)
+                counts = base.normalize(counts, normalizer=self.normalizer)
         return counts
 
     def name(self):

@@ -18,7 +18,7 @@ install_requires = [
     'jsonschema>=3.2.0',
     'python-dateutil',
     'Shapely>=1.7.0',
-    'histore==0.1.1'
+    'histore==0.1.2'
 ]
 
 

@@ -12,19 +12,29 @@ return either a scalar value or a tuple of scalar values.
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.data.column import select_clause
-from openclean.data.sequence import Sequence
-from openclean.function.base import CallableWrapper, ValueFunction
-
 
 # -- Evaluation Functions -----------------------------------------------------
 
 class EvalFunction(metaclass=ABCMeta):
-    """Evaluation functions are used to compute results over rows (i.e., data
-    series objects) in a data frame. Evaluation functions may be prepared in
-    that they compute statistics or maintain column indices for the data frame
-    proior to being evaluated.
+    """Evaluation functions are used to compute results over rows in a data
+    frame. Evaluation functions may be prepared in that they compute statistics
+    or maintain column indices for the data frame proior to being evaluated.
     """
+    def __add__(self, other):
+        """Return an instance of the Add class to compute the sum of two
+        evaluation function values.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the operator.
+
+        Returns
+        -------
+        openclean.function.base.Add
+        """
+        return Add(self, other)
+
     def __call__(self, values):
         """Make the function callable.
 
@@ -38,6 +48,156 @@ class EvalFunction(metaclass=ABCMeta):
         scalar or tuple
         """
         return self.eval(values)
+
+    def __eq__(self, other):
+        """Return an instance of the Eq class to compare the results of two
+        evaluation functions for equality.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the comparison.
+
+        Returns
+        -------
+        openclean.function.base.Eq
+        """
+        return Eq(self, other)
+
+    def __floordiv__(self, other):
+        """Return an instance of the Add class to compute the (floor) division
+        of two evaluation function values.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the operator.
+
+        Returns
+        -------
+        openclean.function.base.FloorDivide
+        """
+        return FloorDivide(self, other)
+
+    def __gt__(self, other):
+        """Return an instance of the Eq class to compare the results of two
+        evaluation functions using '>'.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the comparison.
+
+        Returns
+        -------
+        openclean.function.base.Gt
+        """
+        return Gt(self, other)
+
+    def __ge__(self, other):
+        """Return an instance of the Eq class to compare the results of two
+        evaluation functions using '>='.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the comparison.
+
+        Returns
+        -------
+        openclean.function.base.Geq
+        """
+        return Geq(self, other)
+
+    def __le__(self, other):
+        """Return an instance of the Eq class to compare the results of two
+        evaluation functions using '<='.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the comparison.
+
+        Returns
+        -------
+        openclean.function.base.Leq
+        """
+        return Leq(self, other)
+
+    def __lt__(self, other):
+        """Return an instance of the Eq class to compare the results of two
+        evaluation functions using '<'.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the comparison.
+
+        Returns
+        -------
+        openclean.function.base.Lt
+        """
+        return Lt(self, other)
+
+    def __mul__(self, other):
+        """Return an instance of the Subtract class to compute the product
+        of two evaluation function values.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the operator.
+
+        Returns
+        -------
+        openclean.function.base.Multiply
+        """
+        return Multiply(self, other)
+
+    def __ne__(self, other):
+        """Return an instance of the Eq class to compare the results of two
+        evaluation functions for inequality.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the comparison.
+
+        Returns
+        -------
+        openclean.function.base.Neq
+        """
+        return Neq(self, other)
+
+    def __sub__(self, other):
+        """Return an instance of the Subtract class to compute the subtraction
+        of two evaluation function values.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the operator.
+
+        Returns
+        -------
+        openclean.function.base.Subtract
+        """
+        return Subtract(self, other)
+
+    def __truediv__(self, other):
+        """Return an instance of the Add class to compute the division of two
+        evaluation function values.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the operator.
+
+        Returns
+        -------
+        openclean.function.base.Divide
+        """
+        return Divide(self, other)
 
     @abstractmethod
     def eval(self, values):
@@ -57,10 +217,24 @@ class EvalFunction(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
+    def is_prepared(self):
+        """Returns True if the evaluation function has been prepared and does
+        not require a call of the prepare method.
+
+        Returns
+        -------
+        bool
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def prepare(self, df):
         """Prepare the evaluation function before the first call to the eval()
         method for the given data frame. This allows to compute statistics or
         column indices for the data frame.
+
+        Functions that need preparation should return a new instance of the
+        evaluation function as the result of this method.
 
         Parameters
         ----------
@@ -74,620 +248,669 @@ class EvalFunction(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
-class Eval(object):
-    """Factory pattern for eval functions that evaluate a callable on rows in a
-    data frame. The callable may be a prepared callable. The factory returns an
-    eval function object from one of three different classes based on the value
-    of the columns argument. The signature of the __call__ method for the
-    encapsulated function is expected to have a signature that matches the
-    number of columns the function is evaluated on.
-    """
-    def __new__(cls, func, columns=None):
-        """Return an instance of the eval function depending on columns
-        argument. Raises ValueError if the given functionis not callable.
-
-        The constructors of the different eval function implementations will
-        raise a ValueError if the given funciton is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Expects a single callable
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-
-        Raises
-        ------
-        ValueError
-        """
-        # If no columns are are given the function is evaluated on the full
-        # data frame row.
-        if columns is None:
-            if isinstance(func, ValueFunction):
-                return FullRowValueEval(func=func)
-            else:
-                return FullRowEval(func=func)
-        # Return different instances of the eval function depending on whether
-        # the function is applied on no column, one column or multiple columns.
-        if isinstance(columns, list):
-            # Even if columns is a list it may only contain a single element.
-            if len(columns) == 1:
-                if isinstance(func, ValueFunction):
-                    return SingleColumnValueEval(func=func, columns=columns[0])
-                else:
-                    return SingleColumnEval(func=func, columns=columns[0])
-            elif len(columns) > 1:
-                if isinstance(func, ValueFunction):
-                    return MultiColumnValueEval(func=func, columns=columns)
-                else:
-                    return MultiColumnEval(func=func, columns=columns)
-            else:
-                if isinstance(func, ValueFunction):
-                    return FullRowValueEval(func=func)
-                else:
-                    return FullRowEval(func=func)
-        else:
-            if isinstance(func, ValueFunction):
-                return SingleColumnValueEval(func=func, columns=columns)
-            else:
-                return SingleColumnEval(func=func, columns=columns)
-
-
-class FullRowEval(EvalFunction):
-    """Eval function that evaluates a callable on all values in a data frame
+class PreparedFunction(EvalFunction):
+    """Evaluation function that does not need to be prepared nor has it an
+    associated function that would need preparation.
     row.
     """
-    def __init__(self, func):
-        """Initialize the callable. Raises a ValueError if the function
-        argument is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Callable that is evaluated on the list of cell values from a data
-            frame row.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise ValueError if the function is not callable.
-        if not callable(func):
-            raise ValueError('not a callable')
-        self.func = func
-
-    def eval(self, values):
-        """Evaluate the function on the given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.func(values)
-
-    def prepare(self, df):
-        """If the evaluation function is a prepared callable the respective
-        prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        # Prepare the callable if it is a prepared function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
-        return self
-
-
-class FullRowValueEval(EvalFunction):
-    """Eval function that evaluates a value function on all values in a data
-    frame row.
-    """
-    def __init__(self, func):
-        """Initialize the value function. Raises a ValueError if the function
-        argument is not a callable or an instance of ValueFunction.
-
-        Parameters
-        ----------
-        func: (openclean.function.base.ValueFunction or callable)
-            Callable or value function that is evaluated on the list of cell
-            values from a data frame row.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Ensure that the function is of type ValueFunction. Raises ValueError
-        # if the function is not callable.
-        if not isinstance(func, ValueFunction):
-            func = CallableWrapper(func=func)
-        self.func = func
-
-    def eval(self, values):
-        """Evaluate the function on the given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.func(tuple([values]))
-
-    def prepare(self, df):
-        """If the evaluation function is a prepared callable the respective
-        prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        # Prepare the callable if it is a prepared function.
-        if not self.funcis_prepared():
-            self.func.prepare(Sequence(df=df, columns=[df.columns]))
-        return self
-
-
-class MultiColumnEval(EvalFunction):
-    """Eval function that applies a callable on a set of columns (values) in a
-    data frame row.
-    """
-    def __init__(self, func, columns):
-        """Initialize the function and columns. Raises a ValueError if the
-        given function is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Callable that is being evaluated.
-        columns: list(int or string)
-            List of column index positions or column names.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise ValueError if the function is not callabel
-        if not callable(func):
-            raise ValueError('not a callable')
-        self.func = func
-        self.columns = columns
-        # The list of column indices is initially None. the list will be
-        # initialized by the prepare method.
-        self.colidxs = None
-
-    def eval(self, values):
-        """Evaluate the callable on the given data frame row. Passes only the
-        cell values from those columns that were specified when the object was
-        instantiated.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        args = [values[c] for c in self.colidxs]
-        return self.func(*args)
-
-    def prepare(self, df):
-        """Initialize the corresponding list of column indices for the columns
-        that were specified at object instantiation. If the evaluation function
-        is a prepared callable the respective prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        _, self.colidxs = select_clause(df=df, columns=self.columns)
-        # Prepare the callable if it is a prepared function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
-        return self
-
-
-class MultiColumnValueEval(EvalFunction):
-    """Eval function that applies a value function on a set of columns (values)
-    in a data frame row.
-    """
-    def __init__(self, func, columns):
-        """Initialize the function and columns. Raises a ValueError if the
-        given function is not a callable or of type ValueFunction.
-
-        Parameters
-        ----------
-        func: (openclean.function.base.ValueFunction or callable)
-            Callable or value function that is evaluated on a list of cell
-            values from a data frame row.
-        columns: list(int or string)
-            List of column index positions or column names.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Ensure that the function is of type ValueFunction. Raises ValueError
-        # if the function is not callable.
-        if not isinstance(func, ValueFunction):
-            func = CallableWrapper(func=func)
-        self.func = func
-        self.columns = columns
-        # The list of column indices is initially None. the list will be
-        # initialized by the prepare method.
-        self.colidxs = None
-
-    def eval(self, values):
-        """Evaluate the callable on the given data frame row. Passes only the
-        cell values from those columns that were specified when the object was
-        instantiated.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        # The value function will expect a single argument. Make sure to create
-        # a tuple containing the column values.
-        return self.func(tuple([values[c] for c in self.colidxs]))
-
-    def prepare(self, df):
-        """Initialize the corresponding list of column indices for the columns
-        that were specified at object instantiation. If the evaluation function
-        is a prepared callable the respective prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        _, self.colidxs = select_clause(df=df, columns=self.columns)
-        # Prepare the value function if it is not a prepared function.
-        if not self.func.is_prepared():
-            self.func.prepare(Sequence(df=df, columns=self.columns))
-        return self
-
-
-class SingleColumnEval(EvalFunction):
-    """Eval function that evaluates a callable on a single column in a data
-    frame row.
-    """
-    def __init__(self, func, columns):
-        """Initialize the callable and the source column. Raises a ValueError
-        if the function argument is not a callable.
-
-        Parameters
-        ----------
-        func: callable
-            Callable that is evaluated on a cell value from a data frame row.
-        columns: int or string
-            Single column index or name.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Raise ValueError if the function is not callable.
-        if not callable(func):
-            raise ValueError('not a callable')
-        self.func = func
-        self.columns = columns
-        # The column index is initially None. The value will be initialized by
-        # the prepare method.
-        self.colidx = None
-
-    def eval(self, values):
-        """Evaluate the function on the cell value in the source column of the
-        given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.func(values[self.colidx])
-
-    def prepare(self, df):
-        """Initialize the index of the source column in the schema of the given
-        data frame. If the evaluation function is a prepared callable the
-        respective prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        _, colidxs = select_clause(df=df, columns=self.columns)
-        self.colidx = colidxs[0]
-        # Prepare the callable if it is a prepared function.
-        if isinstance(self.func, EvalFunction):
-            self.func.prepare(df)
-        return self
-
-
-class SingleColumnValueEval(EvalFunction):
-    """Eval function that evaluates a value function on a single column in a
-    data frame row.
-    """
-    def __init__(self, func, columns):
-        """Initialize the callable and the source column. Raises a ValueError
-        if the function argument is not a callable.
-
-        Parameters
-        ----------
-        func: (openclean.function.base.ValueFunction or callable)
-            Callable or value function that is evaluated on a list of cell
-            values from a data frame row.
-        columns: int or string
-            Single column index or name.
-
-        Raises
-        ------
-        ValueError
-        """
-        # Ensure that the function is of type ValueFunction. Raises ValueError
-        # if the function is not callable.
-        if not isinstance(func, ValueFunction):
-            func = CallableWrapper(func=func)
-        self.func = func
-        self.columns = columns
-        # The column index is initially None. The value will be initialized by
-        # the prepare method.
-        self.colidx = None
-
-    def eval(self, values):
-        """Evaluate the function on the cell value in the source column of the
-        given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.func(values[self.colidx])
-
-    def prepare(self, df):
-        """Initialize the index of the source column in the schema of the given
-        data frame. If the evaluation function is a prepared callable the
-        respective prepare() method is called.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        _, colidxs = select_clause(df=df, columns=[self.columns])
-        self.colidx = colidxs[0]
-        # Prepare the value function if it is not a prepared function.
-        if not self.func.is_prepared():
-            self.func.prepare(Sequence(df=df, columns=self.columns))
-        return self
-
-
-# -- Apply functions ----------------------------------------------------------
-
-class Apply(object):
-    """Apply a function on all values in specified column(s)."""
-    def __new__(cls, columns, func):
-        """Initialize the source column(s) and the applied function.
-
-        Parameters
-        ----------
-        columns: int, string, or list(int or string)
-            Single column or list of column index positions or column names.
-        func: callable
-            Function that is applied to all values in the specified columns.
-        """
-        # Choose a pass-through function based on the columns argument and the
-        # 'as_type' type cast argument.
-        if is_var_func(columns):
-            # -- Function that accepts a list of arguments
-            func = VarApply(func)
-        return Eval(func=func, columns=columns)
-
-
-class ApplyFactory(metaclass=ABCMeta):
-    """The apply factory is used to create instances of column functions for
-    each column during the execution of the apply operator. Before the apply
-    operator is executed the get_func() method of the factory is called for
-    each function that apply() is executed on. The factory should return a
-    column-specific callable. The returned callable will then be applied to
-    each value in the respective column seperately.
-    """
-    @abstractmethod
-    def get_func(self, df, colidx):
-        """Get an instance of the column-specific apply function. The factory
-        receives the data frame and the index of the column on whose values the
-        returned function (callable) will be applied.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        colidx: int
-            Index position of the column in the data frame.
-
-        Returns
-        -------
-        callable
-        """
-        return NotImplementedError()
-
-
-class VarApply(object):
-    """Generic apply function for variable argument lists. Applies a given
-    function on all arguments in a variable argument list.
-    """
-    def __init__(self, func):
-        """Initialize the applied function.
-        Parameters
-        ----------
-        func: callable
-            Function that is applied to values in a variable argument list.
-        """
-        self.func = func
-
-    def __call__(self, *args):
-        """Apply function to each element in the argument list. Return list of
-        modified values.
-
-        Parameters
-        ----------
-        *args: list
-            List of (scalar) values from a data frame row.
-
-        Returns
-        -------
-        list
-        """
-        return [self.func(arg) for arg in args]
-
-
-# -- Helper functions ---------------------------------------------------------
-
-"""Helper classes to evaluate single-value functions on lists of arguments."""
-
-
-class All(object):
-    """Predicate that tests if all values in a given list evaluate to True for
-    a given predicate.
-    """
-    def __init__(self, predicate):
-        """Initialize the evaluated predicate.
-
-        Parameters
-        ----------
-        predicate: callable
-            Predicate that is evaluated on argument values.
-        """
-        self.predicate = predicate
-
-    def __call__(self, *args):
-        """Returns True if all given argument values evaluate to True.
-
-        Parameters
-        ----------
-        *args: list
-            List of (scalar) values from a data frame row.
+    def is_prepared(self):
+        """Always True for prepared functions.
 
         Returns
         -------
         bool
         """
-        for val in args:
-            if not self.predicate(val):
-                return False
         return True
 
-
-class One(object):
-    """Predicate that tests if at least one value in a given list evaluates to
-    True for a given predicate.
-    """
-    def __init__(self, predicate):
-        """Initialize the evaluated predicate.
+    def prepare(self, df):
+        """Since the function is prepared it can return a reference to itself.
 
         Parameters
         ----------
-        predicate: callable
-            Predicate that is evaluated on argument values.
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
         """
-        self.predicate = predicate
+        return self
 
-    def __call__(self, *args):
-        """Returns True if at least one of the given argument values is empty.
+
+# -- Constant function --------------------------------------------------------
+
+class Const(PreparedFunction):
+    """Evaluation function that returns a constant value for each data frame
+    row.
+    """
+    def __init__(self, value):
+        """Initialize the constant return value.
 
         Parameters
         ----------
-        *args: list
-            List of (scalar) values from a data frame row.
+        value: scalar
+            Constant return value for the function.
+        """
+        self.value = value
+
+    def eval(self, values):
+        """Execute method for the evaluation function. Returns the defined
+        constant value.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.value
+
+
+# -- Binary operators ---------------------------------------------------------
+
+class BinaryOperator(EvalFunction):
+    """Generic comparator for comparing two column value expressions."""
+    def __init__(self, lhs, rhs, op, raise_error=False, default_value=None):
+        """Initialize the column(s) (lhs) whose values are compared against the
+        given value expression (rhs). For both arguments a evaluation function
+        is expected.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        op: callable
+            Callable that accepts two arguments, the left-hand side and
+            right-hand side values.
+        raise_error: bool, optional
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        default_value: any, default=None
+            Default value that is returned instead of raising an error.
+        """
+        self.lhs = to_eval(lhs)
+        self.rhs = to_eval(rhs)
+        self.op = op
+        self.raise_error = raise_error
+        self.default_value = default_value
+
+    def eval(self, values):
+        """Evaluate the compare expression on the given data frame row.
+        Evaluates the value expression first to get a (scalar) value. That
+        value is then used to create an instance of the compare operator using
+        the factory function.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Pandas data frame row object
 
         Returns
         -------
         bool
         """
-        for val in args:
-            if self.predicate(val):
-                return True
-        return False
+        # Evaluate the left hand side and right hand side function to get the
+        # values that are passed to the compare function.
+        # Call compare method of the implementing subclass. If a TypeError
+        # occurs due to incompatible data types the result is False unless the
+        # raise type error flag is True.
+        try:
+            return self.op(self.lhs(values), self.rhs(values))
+        except TypeError as ex:
+            if self.raise_error:
+                raise ex
+            else:
+                return self.default_value
+        except AttributeError:
+            return self.default_value
+
+    def is_prepared(self):
+        """Return True if both associated expressions are prepared.
+
+        Returns
+        -------
+        bool
+        """
+        return self.lhs.is_prepared() and self.rhs.is_prepared()
+
+    def prepare(self, df):
+        """Prepare both evaluation functions (lhs and rhs).
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        if not self.is_prepared():
+            return BinaryOperator(
+                lhs=self.lhs.prepare(df),
+                rhs=self.rhs.prepare(df),
+                op=self.op,
+                raise_error=self.raise_error,
+                default_value=self.default_value
+            )
+        else:
+            return self
 
 
-def is_var_func(columns=None):
-    """Helper function that returns True if the given column argument will
-    result in an evaluation function that operates on a variable number of
-    arguments.
+# -- Comparison predicates ----------------------------------------------------
 
-    If the column argument is missing the result is False since the call to
-    the evaluation function will contain the data frame row as the only
-    argument.
+class Eq(BinaryOperator):
+    """Binary equality comparison predicate."""
+    def __init__(self, lhs, rhs, ignore_case=False, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs_: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        ignore_case: bool, default=False
+            Ignore case in comparison if set to True.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(Eq, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compare,
+            raise_error=raise_error,
+            default_value=False
+        )
+        self.ignore_case = ignore_case
+
+    def compare(self, lhs, rhs):
+        """Compare two values and return True if they are equal.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the comparison.
+        rhs: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        if self.ignore_case:
+            if isinstance(lhs, tuple):
+                lhs = tuple([v.lower() for v in lhs])
+            else:
+                lhs = lhs.lower()
+            if isinstance(rhs, tuple):
+                rhs = tuple([v.lower() for v in rhs])
+            else:
+                rhs = rhs.lower()
+        return lhs == rhs
+
+
+class EqIgnoreCase(Eq):
+    """Shortcut for comparing single column values in a case-insenstive manner.
+    """
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs_: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, optional
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(EqIgnoreCase, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            ignore_case=True,
+            raise_error=raise_error
+        )
+
+
+class Geq(BinaryOperator):
+    """Predicate for '>=' comparison."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(Geq, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compare,
+            raise_error=raise_error,
+            default_value=False
+        )
+
+    def compare(self, lhs, rhs):
+        """Return True if the left value is greater or equal than the right
+        value.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the comparison.
+        rhs: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return lhs >= rhs
+
+
+class Gt(BinaryOperator):
+    """Predicate for '>' comparison."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(Gt, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compare,
+            raise_error=raise_error,
+            default_value=False
+        )
+
+    def compare(self, lhs, rhs):
+        """Return True if the left value is greater than the right value.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the comparison.
+        rhs: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return lhs > rhs
+
+
+class Leq(BinaryOperator):
+    """Predicate for '<=' comparison."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(Leq, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compare,
+            raise_error=raise_error,
+            default_value=False
+        )
+
+    def compare(self, lhs, rhs):
+        """Return True if the left value is lower or equal that the right
+        value.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the comparison.
+        rhs: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return lhs <= rhs
+
+
+class Lt(BinaryOperator):
+    """Predicate for '<' comparison."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(Lt, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compare,
+            raise_error=raise_error,
+            default_value=False
+        )
+
+    def compare(self, lhs, rhs):
+        """Return True if the left value is lower than the right value.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the comparison.
+        rhs: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        return lhs < rhs
+
+
+class Neq(BinaryOperator):
+    """Predicate for '!=' comparison."""
+    def __init__(self, lhs, rhs, ignore_case=False, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the comparison.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the comparison.
+        ignore_case: bool, default=False
+            Ignore case in comparison if set to True.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being compared. By default, the comparison result is False.
+        """
+        super(Neq, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compare,
+            raise_error=raise_error,
+            default_value=False
+        )
+        self.ignore_case = ignore_case
+
+    def compare(self, lhs, rhs):
+        """Compare two values and return True if they are not equal.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the comparison.
+        rhs: scalar or tuple
+            Right value of the comparison.
+
+        Returns
+        -------
+        bool
+        """
+        if self.ignore_case:
+            if isinstance(lhs, tuple):
+                lhs = tuple([v.lower() for v in lhs])
+            else:
+                lhs = lhs.lower()
+            if isinstance(rhs, tuple):
+                rhs = tuple([v.lower() for v in rhs])
+            else:
+                rhs = rhs.lower()
+        return lhs != rhs
+
+
+# -- Arithmetic operators -----------------------------------------------------
+
+class Add(BinaryOperator):
+    """Arithmetic '+' operator."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being added.
+        """
+        super(Add, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compute,
+            raise_error=raise_error,
+            default_value=0
+        )
+
+    def compute(self, lhs, rhs):
+        """Compute sum of the given values.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the operator.
+        rhs: scalar or tuple
+            Right value of the operator.
+
+        Returns
+        -------
+        scalar
+        """
+        return lhs + rhs
+
+
+class Divide(BinaryOperator):
+    """Arithmetic '/' operator."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being added.
+        """
+        super(Divide, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compute,
+            raise_error=raise_error,
+            default_value=0
+        )
+
+    def compute(self, lhs, rhs):
+        """Compute division of the given values.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the operator.
+        rhs: scalar or tuple
+            Right value of the operator.
+
+        Returns
+        -------
+        scalar
+        """
+        return lhs / rhs
+
+
+class FloorDivide(BinaryOperator):
+    """Arithmetic '//' operator."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being added.
+        """
+        super(FloorDivide, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compute,
+            raise_error=raise_error,
+            default_value=0
+        )
+
+    def compute(self, lhs, rhs):
+        """Compute floor division of the given values.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the operator.
+        rhs: scalar or tuple
+            Right value of the operator.
+
+        Returns
+        -------
+        scalar
+        """
+        return lhs // rhs
+
+
+class Multiply(BinaryOperator):
+    """Arithmetic '*' operator."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being added.
+        """
+        super(Multiply, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compute,
+            raise_error=raise_error,
+            default_value=0
+        )
+
+    def compute(self, lhs, rhs):
+        """Compute product of the given values.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the operator.
+        rhs: scalar or tuple
+            Right value of the operator.
+
+        Returns
+        -------
+        scalar
+        """
+        return lhs * rhs
+
+
+class Subtract(BinaryOperator):
+    """Arithmetic '-' operator."""
+    def __init__(self, lhs, rhs, raise_error=False):
+        """Initialize the expressions of the operator.
+
+        Parameters
+        ----------
+        lhs: openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
+        raise_error: bool, default=False
+            Raise TypeError exception if values of incompatible data types are
+            being added.
+        """
+        super(Subtract, self).__init__(
+            lhs=lhs,
+            rhs=rhs,
+            op=self.compute,
+            raise_error=raise_error,
+            default_value=0
+        )
+
+    def compute(self, lhs, rhs):
+        """Compute subtraction of the given values.
+
+        Parameters
+        ----------
+        lhs: scalar or tuple
+            Left value of the operator.
+        rhs: scalar or tuple
+            Right value of the operator.
+
+        Returns
+        -------
+        scalar
+        """
+        return lhs - rhs
+
+
+# -- Helper Functions ---------------------------------------------------------
+
+def to_eval(value):
+    """Ensure that the value is an evaluation function. If the given argument
+    is not an evaluation function the value is wrapped as a constant value.
 
     Parameters
     ----------
-    columns: int, string, or list(int or string), optional
-        Single column or list of column index positions or column names.
-        These are the columns on which the function will be evaluated.
-        If not specified the function is evaluated on the list of values
-        in the data frame row (i.e., a data series object).
+    value: openclean.function.eval.base.EvalFunction or scalar
+        Value that is represented as an evaluation function.
 
     Returns
     -------
-    bool
+    openclean.function.eval.base.EvalFunction
     """
-    if columns is None:
-        # If no columns are specified the evaluation function will receive the
-        # data frame row as the only argument.
-        return False
-    if isinstance(columns, list):
-        # Lists with more than one element will create multiple arguments.
-        return len(columns) > 1
-    # Single column case
-    return False
+    if not isinstance(value, EvalFunction):
+        value = Const(value)
+    return value
