@@ -12,6 +12,8 @@ return either a scalar value or a tuple of scalar values.
 
 from abc import ABCMeta, abstractmethod
 
+import openclean.util as util
+
 
 # -- Evaluation Functions -----------------------------------------------------
 
@@ -31,7 +33,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Add
+        openclean.function.eval.base.Add
         """
         return Add(self, other)
 
@@ -60,7 +62,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Eq
+        openclean.function.eval.base.Eq
         """
         return Eq(self, other)
 
@@ -75,7 +77,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.FloorDivide
+        openclean.function.eval.base.FloorDivide
         """
         return FloorDivide(self, other)
 
@@ -90,7 +92,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Gt
+        openclean.function.eval.base.Gt
         """
         return Gt(self, other)
 
@@ -105,7 +107,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Geq
+        openclean.function.eval.base.Geq
         """
         return Geq(self, other)
 
@@ -120,7 +122,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Leq
+        openclean.function.eval.base.Leq
         """
         return Leq(self, other)
 
@@ -135,7 +137,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Lt
+        openclean.function.eval.base.Lt
         """
         return Lt(self, other)
 
@@ -150,7 +152,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Multiply
+        openclean.function.eval.base.Multiply
         """
         return Multiply(self, other)
 
@@ -165,7 +167,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Neq
+        openclean.function.eval.base.Neq
         """
         return Neq(self, other)
 
@@ -180,7 +182,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Subtract
+        openclean.function.eval.base.Subtract
         """
         return Subtract(self, other)
 
@@ -195,7 +197,7 @@ class EvalFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.Divide
+        openclean.function.eval.base.Divide
         """
         return Divide(self, other)
 
@@ -274,6 +276,124 @@ class PreparedFunction(EvalFunction):
         -------
         openclean.function.eval.base.EvalFunction
         """
+        return self
+
+
+class PreparedFullRowEval(PreparedFunction):
+    """Eval function that evaluates a callable on all values in a data frame
+    row.
+    """
+    def __init__(self, func):
+        """Initialize the callable. Raises a ValueError if the function
+        argument is not a callable.
+
+        Parameters
+        ----------
+        func: callable
+            Callable that is evaluated on the list of cell values from a data
+            frame row.
+
+        Raises
+        ------
+        ValueError
+        """
+        # Raise ValueError if the function is not callable.
+        self.func = util.ensure_callable(func)
+
+    def eval(self, values):
+        """Evaluate the function on the given data frame row.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.func(*list(values))
+
+
+class NestedEvalFunction(EvalFunction):
+    """Wrapper around an evaluation function. Allows to apply a given function
+    on the results of the wrapped function.
+    """
+    def __init__(self, func, producer, is_unary=True):
+        """Initialized the nested producer function and the function that is
+        being applied on the results of the producer. The is_unary flag
+        indicates if the applied function requires tuples or lists returned by
+        the producer to be cast to variable argument lists.
+
+        Raises a ValueError if the producer is not a EvalFunction or the
+        applied function is not a callable.
+
+        Parameters
+        ----------
+        func: callable
+            Callable that is applied on the values that are returned by the
+            producer.
+        producer: openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows.
+        is_unary: bool, default=True
+            Control behavior for producer that return values which are lists or
+            tuples.
+
+        Raises
+        ------
+        ValueError
+        """
+        if not isinstance(producer, EvalFunction):
+            raise ValueError('not an evaluation function')
+        self.func = util.ensure_callable(func)
+        self.producer = producer
+        self.is_unary = is_unary
+
+    def eval(self, values):
+        """Evaluate the function on the given data frame row.
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        args = self.producer.eval(values)
+        if not self.is_unary and util.is_multiarg(args):
+            return self.func(*args)
+        else:
+            return self.func(args)
+
+    def is_prepared(self):
+        """The function is prepared if the producer is prepared.
+
+        Returns
+        -------
+        bool
+        """
+        return self.producer.is_prepared()
+
+    def prepare(self, df):
+        """Since the function is prepared it can return a reference to itself.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        if not self.is_prepared():
+            return NestedEvalFunction(
+                func=self.func,
+                producer=self.producer.prepare(df),
+                is_unary=self.is_unary
+            )
         return self
 
 

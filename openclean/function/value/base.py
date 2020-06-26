@@ -101,7 +101,7 @@ def distinct(
     columns: int or string or list(int or string), optional
         List of column index or column name for columns for which distinct
         value combinations are computed.
-    normalizer: callable or openclean.function.base.ValueFunction,
+    normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
         frequency counts in the returned dictionary.
@@ -145,7 +145,7 @@ class Distinct(object):
 
         Parameters
         ----------
-        normalizer: callable or openclean.function.base.ValueFunction,
+        normalizer: callable or openclean.function.value.base.ValueFunction,
                 default=None
             Optional normalization function that will be used to normalize the
             frequency counts in the returned dictionary.
@@ -310,7 +310,7 @@ class ValueFunction(ProfilingFunction, metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.function.base.ValueFunction
+        openclean.function.value.base.ValueFunction
         """
         raise NotImplementedError()
 
@@ -424,93 +424,6 @@ class CallableWrapper(PreparedFunction):
         scalar or tuple
         """
         return self.func(value)
-
-
-class ConstantValue(PreparedFunction):
-    """Value function that always returns a given constant value."""
-    def __init__(self, value, name=None):
-        """Initialize the constant value that is returned by this function
-        whenever the eval method is called..
-
-        Parameters
-        ----------
-        value: scalar or tuple
-            Constant return value for the eval method.
-        name: string, default='constant'
-            Optional unique function name.
-        """
-        super(ConstantValue, self).__init__(name=name if name else 'constant')
-        self.const = value
-
-    def eval(self, value):
-        """Evaluate the wrapped function on a given value. The value may either
-        be a scalar or a tuple. The return value of the function is dependent
-        on the wrapped function.
-
-        Parameters
-        ----------
-        value: scalar or tuple
-            Value from the list that was used to prepare the function.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.const
-
-
-# -- Evaluation Functions -----------------------------------------------------
-
-class EvalFunction(metaclass=ABCMeta):
-    """Evaluation functions are used to compute results over rows (i.e., data
-    series objects) in a data frame. Evaluation functions may be prepared in
-    that they compute statistics or maintain column indices for the data frame
-    proior to being evaluated.
-    """
-    @abstractmethod
-    def close(self):
-        """Signal to the function instance that processing of a data frame is
-        done. The function should not expect any further calls to the process
-        method. Used to release any resources that the functin may holds.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def process(self, row):
-        """Evaluate the function on a given data frame row. The result type is
-        implementation dependent. The result could either be a single scalar
-        value or a tuple of scalar values.
-
-        Parameters
-        ----------
-        row: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def open(self, df):
-        """Prepare the evaluation function before the first call to the row
-        evaluation method. This allows to (i) initialize the index positions of
-        the columns that the function operates on, and (ii) prepare associated
-        functions that are used by the process() method.
-
-        Returns a (new) instance of the evaluation function.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        raise NotImplementedError()
 
 
 # -- Helper classes and functions ---------------------------------------------
@@ -632,7 +545,7 @@ def normalize(values, normalizer, keep_original=False, labels=None):
     ----------
     values: dict
         Dictionary that maps arbitrary key values to numeric values.
-    normalizer: callable or openclean.function.base.ValueFunction,
+    normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Normalization function that will be used to normalize the numeric
         values in the given dictionary.
@@ -698,27 +611,4 @@ def scalar_pass_through(value):
     -------
     scalar
     """
-    return value
-
-
-def to_valuefunc(value):
-    """Return a value function that represents the given argument. If the
-    argument is not a value function, either of the following is expected:
-    (i) a callable that will be wrapped in a CallableWrapper, or (2) a constant
-    value that will be wrapped in a ConstantValue.
-
-    Parameters
-    ----------
-    value: scalar, callable, or openclean.function.base.ValueFunction
-        Argument that is being represented as a value function.
-
-    Returns
-    -------
-    openclean.function.base.ValueFunction
-    """
-    if not isinstance(value, ValueFunction):
-        if callable(value):
-            value = CallableWrapper(func=value)
-        else:
-            value = ConstantValue(value)
     return value

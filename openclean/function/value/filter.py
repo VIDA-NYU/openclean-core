@@ -9,7 +9,7 @@
 interface from the base module.
 """
 
-from openclean.function.base import (
+from openclean.function.value.base import (
     CallableWrapper, ListFunction, ValueFunction
 )
 
@@ -22,7 +22,7 @@ def filter(values, predicate, truth_value=True):
     ----------
     values: list
         List of scalar values or tuples of scalar values.
-    predicate: openclean.function.base.ValueFunction or callable
+    predicate: openclean.function.value.base.ValueFunction or callable
         Callable or value function that is used to filter values in a given
         list.
     truth_value: scalar, defaut=True
@@ -39,7 +39,7 @@ class Filter(ListFunction):
 
         Parameters
         ----------
-        predicate: openclean.function.base.ValueFunction or callable
+        predicate: openclean.function.value.base.ValueFunction or callable
             Callable or value function that is used to filter values in a given
             list.
         truth_value: scalar, defaut=True

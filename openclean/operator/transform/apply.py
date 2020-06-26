@@ -11,7 +11,7 @@ import pandas as pd
 
 from openclean.data.sequence import Sequence
 from openclean.data.column import as_list, select_clause
-from openclean.function.base import CallableWrapper, ValueFunction
+from openclean.function.value.base import CallableWrapper, ValueFunction
 from openclean.operator.base import DataFrameTransformer
 
 

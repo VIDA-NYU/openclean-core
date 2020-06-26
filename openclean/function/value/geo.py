@@ -15,7 +15,7 @@ import re
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_parse
 
-from openclean.function.base import PreparedFunction
+from openclean.function.value.base import PreparedFunction
 
 
 """Suppress extra information messages from shapely.

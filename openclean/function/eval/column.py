@@ -7,81 +7,65 @@
 
 """Evaluate function that returns values from columns in a data frame row."""
 
-from openclean.function.eval.base import Eval, VarApply, is_var_func
-from openclean.function.base import scalar_pass_through
-from openclean.function.value.datatype import cast
+from openclean.data.column import select_clause
+from openclean.function.eval.base import EvalFunction
 
 
-class Col(object):
+class Col(EvalFunction):
     """Evaluation function that returns value(s) from one or more column(s) in
-    the data frame row. Allows to convert values (i.e., change their data type)
-    using an optional type converter (callable).
+    the data frame row.
     """
-    def __new__(
-        self, columns, as_type=None, default_value=None, raise_error=False
-    ):
-        """Initialize the source column(s). Define the behavior for optional
-        type conversion.
+    def __init__(self, columns, colidx=None):
+        """Initialize the source column(s).
 
         Parameters
         ----------
         columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
-        as_type: callable, optional
-            Function that converts the data type of a given scalar value.
-        default_value: scalar, optional
-            Default value that is being returned for values that cannot be
-            converted to the specified type if the raise_error flag is False.
-        raise_error: bool, optional
-            Raise ValueError if the value that is being extracted from a data
-            frame row cannot be converted to the specified type.
+        colidx: list(int), default=None
+            Prepared list of index positions for columns.
         """
-        # Choose a pass-through function based on the columns argument and the
-        # 'as_type' type cast argument.
-        if is_var_func(columns):
-            # -- Function that accepts a list of arguments
-            if as_type is None:
-                func = var_pass_through
-            else:
+        self.columns = columns
+        self.colidx = colidx
 
-                def typecast(value):
-                    return cast(
-                        value=value,
-                        func=as_type,
-                        default_value=default_value,
-                        raise_error=raise_error
-                    )
+    def eval(self, values):
+        """Get value from the lookup columns.
 
-                func = VarApply(typecast)
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        if len(self.colidx) == 1:
+            return values[self.colidx[0]]
         else:
-            # -- Function that accepts a single argument
-            if as_type is None:
-                func = scalar_pass_through
-            else:
+            return [values[i] for i in self.colidx]
 
-                def func(value):
-                    return cast(
-                        value=value,
-                        func=as_type,
-                        default_value=default_value,
-                        raise_error=raise_error
-                    )
+    def is_prepared(self):
+        """The function is prepared if the column index is not None.
 
-        return Eval(func=func, columns=columns)
+        Returns
+        -------
+        bool
+        """
+        return self.colidx is not None
 
+    def prepare(self, df):
+        """Get index positions of the value columns for the schema of the
+        given data frame.
 
-# -- Helper classes and methods -----------------------------------------------
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
 
-def var_pass_through(*args):
-    """Pass-through function for a variable list of argument values.
-
-    Parameters
-    ----------
-    *args: list
-        List of (scalar) values from a data frame row.
-
-    Returns
-    -------
-    list
-    """
-    return args
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        _, colidx = select_clause(df, columns=self.columns)
+        return Col(columns=self.columns, colidx=colidx)

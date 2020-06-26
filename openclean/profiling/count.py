@@ -13,7 +13,7 @@ number of distinct values in a column.
 """
 
 from openclean.data.sequence import Sequence
-from openclean.function.base import (
+from openclean.function.value.base import (
     CallableWrapper, ListFunction, ProfilingFunction, ValueFunction
 )
 from openclean.function.value.filter import Filter
@@ -35,8 +35,8 @@ def count(df, columns=None, predicate=None, filter=None, truth_value=True):
         Defines the list of value (pairs) for which the predicate is evaluated.
     predicate: callable or penclean.function.base.ValueFunction
         Predicate that is evaluated over a list of values.
-    filter: (openclean.function.base.ListFunction,
-            openclean.function.base.ValueFunction, or
+    filter: (openclean.function.value.base.ListFunction,
+            openclean.function.value.base.ValueFunction, or
             callable), default=None
         Filter that is applied to all values before the predicate is evaluated.
     truth_value: scalar, defaut=True
@@ -61,10 +61,10 @@ class Count(ProfilingFunction):
 
         Parameters
         ----------
-        predicate: callable or openclean.function.base.ValueFunction
+        predicate: callable or openclean.function.value.base.ValueFunction
             Predicate that is evaluated over a list of values.
-        filter: (openclean.function.base.ListFunction,
-                openclean.function.base.ValueFunction, or
+        filter: (openclean.function.value.base.ListFunction,
+                openclean.function.value.base.ValueFunction, or
                 callable), default=None
             Filter that is applied to all values before the predicate is
             evaluated.
@@ -130,7 +130,7 @@ def counts(df, columns=None, predicates=None, filter=None):
         Single column or list of column index positions or column names.
         Defines the list of value (pairs) for which the predicates are
         evaluated.
-    predicates: list of callable, openclean.function.base.ValueFunction, or
+    predicates: list of callable, openclean.function.value.base.ValueFunction, or
             openclean.profiling.count.Count
         Predicates that are evaluated over a list of values.
     Returns
@@ -152,7 +152,7 @@ class Counts(Profiler):
 
         Parameters
         ----------
-        predicates: list of callable, openclean.function.base.ValueFunction, or
+        predicates: list of callable, openclean.function.value.base.ValueFunction, or
                 openclean.profiling.count.Count
             Predicates that are evaluated over a list of values.
         name: string, default=None

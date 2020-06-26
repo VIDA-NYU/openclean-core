@@ -10,7 +10,7 @@
 import pandas as pd
 
 from openclean.data.util import to_set
-from openclean.function.base import PreparedFunction, scalar_pass_through
+from openclean.function.value.base import PreparedFunction, scalar_pass_through
 from openclean.function.value.string import Lower
 
 

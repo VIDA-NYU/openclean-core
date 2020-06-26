@@ -9,7 +9,7 @@
 of values in a list.
 """
 
-from openclean.function.base import ValueFunction
+from openclean.function.value.base import ValueFunction
 from openclean.function.value.normalize import MinMaxScale
 
 

@@ -13,7 +13,7 @@ datatype to a list of values (e.g., a column in a data frame).
 """
 
 from openclean.data.sequence import Sequence
-from openclean.function.base import DictionaryFunction
+from openclean.function.value.base import DictionaryFunction
 from openclean.function.value.normalize import divide_by_total
 from openclean.profiling.classifier.base import DISTINCT, TOTAL
 from openclean.profiling.classifier.datatype import Datatypes

@@ -9,7 +9,7 @@
 for data frame rows.
 """
 
-from openclean.function.eval.base import EvalFunction, FullRowEval
+from openclean.function.eval.base import EvalFunction, PreparedFullRowEval
 
 
 # -- Generic logic operator ---------------------------------------------------
@@ -37,11 +37,20 @@ class LogicOperator(EvalFunction):
         self.predicates = list()
         for f in args:
             if not isinstance(f, EvalFunction):
-                if callable(f):
-                    f = FullRowEval(func=f)
-                else:
-                    raise ValueError('not a callable {}'.format(f))
+                f = PreparedFullRowEval(func=f)
             self.predicates.append(f)
+
+    def is_prepared(self):
+        """Test if all predicates are prepared.
+
+        Returns
+        -------
+        bool
+        """
+        for f in self.predicates:
+            if not f.is_prepared():
+                return False
+        return True
 
     def prepare(self, df):
         """Call the respective prepare() method for the individual predicates.
@@ -55,9 +64,9 @@ class LogicOperator(EvalFunction):
         -------
         openclean.function.eval.base.EvalFunction
         """
-        # Prepare the evaluation functions.
-        for f in self.predicates:
-            f.prepare(df)
+        if self.is_prepared():
+            # Return a new object instance where all predicates are prepared.
+            return LogicOperator(*[f.prepare(df) for f in self.predicates])
         return self
 
 
@@ -103,20 +112,16 @@ class And(LogicOperator):
 
 class Not(LogicOperator):
     """Logical negation of a predicate(s)."""
-    def __init__(self, *args):
+    def __init__(self, predicate):
         """Initialize the predicate that is being negated. Raises a ValueError
         if more than one predicate is given.
 
         Parameters
         ----------
-        args: callable, openclean.function.eval.base.EvalFunction, or list
-            Single callable or evaluation function, or a list of callables or
-            evaluation functions.
+        predicate: callable or openclean.function.eval.base.EvalFunction
+            Single callable or evaluation function.
         """
-        super(Not, self).__init__(*args)
-        # Ensure that the list of predicates only contains one element
-        if len(self.predicates) != 1:
-            raise ValueError('invalid arguments')
+        super(Not, self).__init__(*[predicate])
 
     def eval(self, values):
         """Return the negated result from evaluating the associated predicate

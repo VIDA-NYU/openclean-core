@@ -47,7 +47,7 @@ def datatypes(
             , default=None
         Classifier that assigns data type class labels for scalar column
         values. Uses the standard classifier if not specified.
-    normalizer: callable or openclean.function.base.ValueFunction,
+    normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
         frequency counts in the returned dictionary.
@@ -98,7 +98,7 @@ class Datatypes(Classifier):
                 , default=None
             Classifier that assigns data type class labels for scalar column
             values. Uses the standard classifier if not specified.
-        normalizer: callable or openclean.function.base.ValueFunction,
+        normalizer: callable or openclean.function.value.base.ValueFunction,
                 default=None
             Optional normalization function that will be used to normalize the
             frequency counts in the returned dictionary.

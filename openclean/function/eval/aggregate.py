@@ -9,35 +9,41 @@
 one or more data frame columns for all data frame rows.
 """
 
+import numpy as np
+
 from openclean.data.column import select_clause
-from openclean.function.base import ProfilingFunction
 from openclean.function.eval.base import EvalFunction
 
-import openclean.function.aggregate as aggr
+import openclean.util as util
 
 
 # -- Generic prepared statistics function -------------------------------------
 
-class ColumnStats(EvalFunction):
-    def __init__(self, func, columns=None):
+class ColumnAggregator(EvalFunction):
+    """Evaluation functin that computes a statistic value over one or more
+    columns in a data frame and returns this value as result for all calls to
+    the eval() method.
+    """
+    def __init__(self, func, columns=None, value=None):
         """Initialize the statistics function and the list of columns on which
         the function will be applied.
 
-        Raises a ValueError if the given function is not a profiling function.
+        Raises a ValueError if the given function is not callable.
 
         Parameters
         ----------
-        func: openclean.function.base.ProfilingFunction
+        func: callable
             Function that accepts values from one or more columns as input.
         columns: int, string, or list(int or string), default=None
             Single column or list of column index positions or column names.
+        value: int, float, or tuple, default=None
+            Constant value that will be returned by the eval() method. This
+            value is only set if the function has been prepared.
         """
-        if not isinstance(func, ProfilingFunction):
-            raise ValueError('not a profiling function')
-        self.func = func
+        # This will raise a ValueError if the function is not callable.
+        self.func = util.ensure_callable(func)
         self.columns = columns
-        # The statistics value will be initialized by the prepare() method.
-        self.value = None
+        self._value = value
 
     def eval(self, values):
         """The execute method for the evaluation functon returns the computed
@@ -52,7 +58,16 @@ class ColumnStats(EvalFunction):
         -------
         scalar
         """
-        return self.value
+        return self._value
+
+    def is_prepared(self):
+        """The function needs preparation if the constant return value is None.
+
+        Returns
+        -------
+        bool
+        """
+        return self._value is not None
 
     def prepare(self, df):
         """Prepare the evaluation function by computing the statistics value
@@ -71,42 +86,30 @@ class ColumnStats(EvalFunction):
         # Determine the list of column indices over which the statistics will
         # be computed
         if self.columns is None:
-            colidxs = range(len(df.columns))
+            colidx = range(len(df.columns))
         elif isinstance(self.columns, list):
-            _, colidxs = select_clause(df, columns=self.columns)
+            _, colidx = select_clause(df, columns=self.columns)
         else:
-            _, colidxs = select_clause(df, columns=[self.columns])
+            _, colidx = select_clause(df, columns=[self.columns])
         # If we have more than one column create a list of values that
         # concatenates the values from the individual columns.
-        if len(colidxs) > 1:
+        if len(colidx) > 1:
             values = list()
-            for c in colidxs:
+            for c in colidx:
                 values.extend(list(df.iloc[:, c]))
-            self.value = self.func.exec(values)
+            value = self.func(values)
         else:
-            self.value = self.func.exec(list(df.iloc[:, colidxs[0]]))
-        return self
+            value = self.func(list(df.iloc[:, colidx[0]]))
+        return ColumnAggregator(
+            func=self.func,
+            columns=self.columns,
+            value=value
+        )
 
 
 # -- Shortcuts for common statistics methods ----------------------------------
 
-class Max(ColumnStats):
-    """Evaluation function that returns the maximum of values for one or more
-    columns in a data frame.
-    """
-    def __init__(self, columns=None):
-        """Initialize the statistics function in the super class as well as the
-        list of columns on which the function will be applied.
-
-        Parameters
-        ----------
-        columns: int, string, or list(int or string), optional
-            Single column or list of column index positions or column names.
-        """
-        super(Max, self).__init__(func=aggr.Max(), columns=columns)
-
-
-class Mean(ColumnStats):
+class Avg(ColumnAggregator):
     """Evaluation function that returns the mean of values for one or more
     columns in a data frame.
     """
@@ -119,10 +122,26 @@ class Mean(ColumnStats):
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
         """
-        super(Mean, self).__init__(func=aggr.Mean(), columns=columns)
+        super(Avg, self).__init__(func=np.mean, columns=columns)
 
 
-class Min(ColumnStats):
+class Max(ColumnAggregator):
+    """Evaluation function that returns the maximum of values for one or more
+    columns in a data frame.
+    """
+    def __init__(self, columns=None):
+        """Initialize the statistics function in the super class as well as the
+        list of columns on which the function will be applied.
+
+        Parameters
+        ----------
+        columns: int, string, or list(int or string), optional
+            Single column or list of column index positions or column names.
+        """
+        super(Max, self).__init__(func=max, columns=columns)
+
+
+class Min(ColumnAggregator):
     """Evaluation function that returns the minimum of values for one or more
     columns in a data frame.
     """
@@ -135,10 +154,10 @@ class Min(ColumnStats):
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
         """
-        super(Min, self).__init__(func=aggr.Min(), columns=columns)
+        super(Min, self).__init__(func=min, columns=columns)
 
 
-class Sum(ColumnStats):
+class Sum(ColumnAggregator):
     """Evaluation function that returns the sum over values for one or more
     columns in a data frame.
     """
@@ -151,4 +170,4 @@ class Sum(ColumnStats):
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
         """
-        super(Sum, self).__init__(func=aggr.Sum(), columns=columns)
+        super(Sum, self).__init__(func=sum, columns=columns)

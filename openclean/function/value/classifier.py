@@ -9,7 +9,7 @@
 data frames that have class labels assigned to their data rows.
 """
 
-from openclean.function.base import CallableWrapper, ValueFunction
+from openclean.function.value.base import CallableWrapper, ValueFunction
 
 import openclean.util as util
 
@@ -116,7 +116,7 @@ class ValueClassifier(ValueFunction):
 
         Parameters
         ----------
-        args: list of callable or openclean.function.base.ValueFunction
+        args: list of callable or openclean.function.value.base.ValueFunction
             List of functions that accept a scalar value as input and that
             return a class label as output.
         none_label: string, default=None

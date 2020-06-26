@@ -9,10 +9,10 @@
 
 from collections import Counter
 
-from openclean.function.base import Distinct, ProfilingFunction
+from openclean.function.value.base import Distinct, ProfilingFunction
 from openclean.function.value.classifier import ValueClassifier
 
-import openclean.function.base as base  # extract, merge, normalize
+import openclean.function.value.base as base  # extract, merge, normalize
 
 
 """Enumarate accepted values for the datatype features argument."""
@@ -47,7 +47,7 @@ class Classifier(ValueClassifier, ProfilingFunction):
             values. Uses the standard classifier if not specified.
         name: string, default='classifier'
             Unique classifier name.
-        normalizer: callable or openclean.function.base.ValueFunction,
+        normalizer: callable or openclean.function.value.base.ValueFunction,
                 default=None
             Optional normalization function that will be used to normalize the
             frequency counts in the returned dictionary.

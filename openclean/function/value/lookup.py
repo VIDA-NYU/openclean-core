@@ -7,7 +7,7 @@
 
 """Lookup function for value mappings."""
 
-from openclean.function.base import PreparedFunction
+from openclean.function.value.base import PreparedFunction
 
 
 class Lookup(PreparedFunction):

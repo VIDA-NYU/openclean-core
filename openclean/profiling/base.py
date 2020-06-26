@@ -17,7 +17,7 @@ discovering patterns in the data.
 """
 
 from openclean.data.sequence import Sequence
-from openclean.function.base import ProfilingFunction
+from openclean.function.value.base import ProfilingFunction
 
 
 # -- Column profiling operator ------------------------------------------------
@@ -33,7 +33,7 @@ def profile(df, columns=None, profilers=None):
     columns: int, string, or list(int or string), default=None
         Single column or list of column index positions or column names.
         Defines the list of value (pairs) for which profiles are computed.
-    profilers: list(openclean.function.base.ProfilingFunction)
+    profilers: list(openclean.function.value.base.ProfilingFunction)
         List of profiling functions,
     """
     values = Sequence(df=df, columns=columns)
@@ -53,7 +53,7 @@ class Profiler(ProfilingFunction):
 
         Parameters
         ----------
-        profilers: list(openclean.function.base.ProfilingFunction)
+        profilers: list(openclean.function.value.base.ProfilingFunction)
             List of profiling functions,
         name: string, default=None
             Optional profiler name.

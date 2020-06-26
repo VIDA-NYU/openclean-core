@@ -9,7 +9,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.function.base import ProfilingFunction
+from openclean.function.value.base import ProfilingFunction
 
 
 class AnomalyDetector(ProfilingFunction, metaclass=ABCMeta):

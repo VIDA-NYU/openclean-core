@@ -7,8 +7,6 @@
 
 """Collection of helper functions for data profilers."""
 
-from openclean.function.value.comp import Eq, Gt
-
 
 def always_false(*args):
     """Predicate that always evaluates to False.
@@ -102,9 +100,17 @@ def get_threshold(threshold):
     # using the value (unless the value is 1 in which case we use eq).
     if type(threshold) in [int, float]:
         if threshold == 1:
-            threshold = Eq(1)
+
+            def is_one(value):
+                return value == 1
+
+            threshold = is_one
         else:
-            threshold = Gt(threshold)
+
+            def gt(value):
+                return value > threshold
+
+            threshold = gt
     elif not callable(threshold):
         raise ValueError('invalid threshold constraint')
     return threshold

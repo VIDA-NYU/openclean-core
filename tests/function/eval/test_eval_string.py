@@ -8,36 +8,83 @@
 """Unit tests for the split and format functions."""
 
 import pandas as pd
+import pytest
 
 from openclean.function.eval.column import Col
-from openclean.function.eval.string import Capitalize, Format, Lower, Upper
+from openclean.function.eval.string import (
+    Capitalize, Concat, Format, Length, Lower, Upper, Split
+)
 
 
-def test_format_column_values():
-    """Test re-formating values from one or more columns in a data frame."""
-    df = pd.DataFrame(
+@pytest.fixture
+def people():
+    return pd.DataFrame(
         data=[
-            ['A.lice', 23],
-            ['B.ob', 33]
+            ['alice davies', 23],
+            ['bob Smith', 33]
         ],
-        columns=['A', 'B']
+        columns=['Name', 'Age']
     )
 
-    def split(value):
-        return value[0].split('.')
 
-    f = Format('{}{}', split).prepare(df)
-    assert f.eval(df.iloc[0]) == 'Alice'
-    assert f.eval(df.iloc[1]) == 'Bob'
-    f = Format('{}-{}', Col(['A', 'B'])).prepare(df)
-    assert f.eval(df.iloc[0]) == 'A.lice-23'
-    assert f.eval(df.iloc[1]) == 'B.ob-33'
-    f = Capitalize('A').prepare(df)
-    assert f.eval(df.iloc[0]) == 'A.lice'
-    assert f.eval(df.iloc[1]) == 'B.ob'
-    f = Lower('A').prepare(df)
-    assert f.eval(df.iloc[0]) == 'a.lice'
-    assert f.eval(df.iloc[1]) == 'b.ob'
-    f = Upper('B', as_string=True).prepare(df)
-    assert f.eval(df.iloc[0]) == '23'
-    assert f.eval(df.iloc[1]) == '33'
+def test_string_capitalize(people):
+    """Test string capitalization function for column values."""
+    f = Capitalize(Col('Name')).prepare(people)
+    names = []
+    for _, values in people.iterrows():
+        names.append(f.eval(values))
+    assert names == ['Alice davies', 'Bob smith']
+    # Test for non-string columns.
+    f = Capitalize(Col('Age')).prepare(people)
+    with pytest.raises(ValueError):
+        f.eval(people.iloc[0])
+    f = Capitalize(Col('Age'), as_string=True).prepare(people)
+    assert f.eval(people.iloc[0]) == '23'
+
+
+def test_string_format(people):
+    """Test formating strings using one or more values extracted from data
+    frame columns.
+    """
+    f = Format(Col('Name'), 'My name is {}').prepare(people)
+    assert f.eval(people.iloc[0]) == 'My name is alice davies'
+    f = Format(Capitalize(Split(Col('Name'))), '{1}, {0}').prepare(people)
+    assert f.eval(people.iloc[0]) == 'Davies, Alice'
+    f = Format(Col(['Name', 'Age']), '{} is {}').prepare(people)
+    assert f.eval(people.iloc[0]) == 'alice davies is 23'
+
+
+def test_string_length(people):
+    """Test string character count function for column values."""
+    f = Length(Col('Name')).prepare(people)
+    length = []
+    for _, values in people.iterrows():
+        length.append(f.eval(values))
+    assert length == [12, 9]
+
+
+def test_string_lower(people):
+    """Test string to lower characters function for column values."""
+    f = Lower(Col('Name')).prepare(people)
+    names = []
+    for _, values in people.iterrows():
+        names.append(f.eval(values))
+    assert names == ['alice davies', 'bob smith']
+
+
+def test_string_split_and_concat(people):
+    """Test splitting and concatenating strings extracted from column values.
+    """
+    f = Split(Lower(Col('Name'))).prepare(people)
+    assert f.eval(people.iloc[1]) == ['bob', 'smith']
+    f = Concat(Split(Lower(Col('Name'))), '|').prepare(people)
+    assert f.eval(people.iloc[1]) == 'bob|smith'
+
+
+def test_string_upper(people):
+    """Test string to upper characters function for column values."""
+    f = Upper(Col('Name')).prepare(people)
+    names = []
+    for _, values in people.iterrows():
+        names.append(f.eval(values))
+    assert names == ['ALICE DAVIES', 'BOB SMITH']

@@ -20,6 +20,8 @@ def test_add_eval_functions():
     assert f.eval([]) == 5
     f = Const(2) + Const(3) + Const(4)
     assert f.eval([]) == 9
+    f = Const(2) + 3
+    assert f.eval([]) == 5
 
 
 def test_divide_eval_functions():
