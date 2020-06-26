@@ -9,9 +9,7 @@
 interface from the base module.
 """
 
-from openclean.function.value.base import (
-    CallableWrapper, ListFunction, ValueFunction
-)
+from openclean.function.value.base import CallableWrapper, ValueFunction
 
 
 def filter(values, predicate, truth_value=True):
@@ -32,7 +30,7 @@ def filter(values, predicate, truth_value=True):
     return Filter(predicate).apply(values)
 
 
-class Filter(ListFunction):
+class Filter(object):
     """Filter values in a list based on a given predicate function."""
     def __init__(self, predicate, truth_value=True):
         """Initialize the predicate that is used to filter values in a list.

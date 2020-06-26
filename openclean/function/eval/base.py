@@ -362,7 +362,7 @@ class NestedEvalFunction(EvalFunction):
         scalar or tuple
         """
         args = self.producer.eval(values)
-        if not self.is_unary and util.is_multiarg(args):
+        if not self.is_unary and util.is_list_or_tuple(args):
             return self.func(*args)
         else:
             return self.func(args)

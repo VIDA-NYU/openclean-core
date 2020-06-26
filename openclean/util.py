@@ -48,7 +48,7 @@ def funcname(f):
         return f.__class__.__name__
 
 
-def is_multiarg(value):
+def is_list_or_tuple(value):
     """Test if a given value is a list or tuple that can be converted into
     multiple arguments.
 

@@ -9,7 +9,7 @@
 
 import pytest
 
-from openclean.function.base import CallableWrapper
+from openclean.function.value.base import CallableWrapper
 from openclean.function.value.filter import Filter
 
 

@@ -7,7 +7,7 @@
 
 """Unit tests for the WKT type parser."""
 
-from openclean.function.geo.wkt import WKTType, is_wkt
+from openclean.function.value.geo import WKTType, is_wkt
 
 
 def test_wkt_type_label():
