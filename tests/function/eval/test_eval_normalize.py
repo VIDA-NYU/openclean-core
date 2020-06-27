@@ -37,6 +37,19 @@ def dataset():
         (MinMaxScale, [22/41, 33/41, 1, 0])
     ]
 )
-def test_normalization_functions(dataset, op, results):
+def test_normalization_function_with_int(dataset, op, results):
     f = op(Int('Age', default_value=1)).prepare(dataset)
+    assert [f.eval(row) for _, row in dataset.iterrows()] == results
+
+
+@pytest.mark.parametrize(
+    'op,results',
+    [
+        (DivideByTotal, [23/99, 34/99, 42/99, 0]),
+        (MaxAbsScale, [23/42, 34/42, 1, 0]),
+        (MinMaxScale, [0, (34-23)/(42-23), 1, 0])
+    ]
+)
+def test_normalization_woth_ignore(dataset, op, results):
+    f = op(Int('Age'), raise_error=False, default_value=0).prepare(dataset)
     assert [f.eval(row) for _, row in dataset.iterrows()] == results
