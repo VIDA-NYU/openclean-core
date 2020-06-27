@@ -333,8 +333,9 @@ class NestedEvalFunction(EvalFunction):
         func: callable
             Callable that is applied on the values that are returned by the
             producer.
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         is_unary: bool, default=True
             Control behavior for producer that return values which are lists or
             tuples.
@@ -343,7 +344,11 @@ class NestedEvalFunction(EvalFunction):
         ------
         ValueError
         """
-        if not isinstance(producer, EvalFunction):
+        if util.is_list_or_tuple(producer):
+            for f in producer:
+                if not isinstance(f, EvalFunction):
+                    raise ValueError('not an evaluation function')
+        elif not isinstance(producer, EvalFunction):
             raise ValueError('not an evaluation function')
         self.func = util.ensure_callable(func)
         self.producer = producer
@@ -361,7 +366,12 @@ class NestedEvalFunction(EvalFunction):
         -------
         scalar or tuple
         """
-        args = self.producer.eval(values)
+        if isinstance(self.producer, tuple):
+            args = tuple([f.eval(values) for f in self.producer])
+        elif isinstance(self.producer, list):
+            args = [f.eval(values) for f in self.producer]
+        else:
+            args = self.producer.eval(values)
         if not self.is_unary and util.is_list_or_tuple(args):
             return self.func(*args)
         else:
@@ -374,7 +384,13 @@ class NestedEvalFunction(EvalFunction):
         -------
         bool
         """
-        return self.producer.is_prepared()
+        if util.is_list_or_tuple(self.producer):
+            for f in self.producer:
+                if not f.is_prepared():
+                    return False
+                return True
+        else:
+            return self.producer.is_prepared()
 
     def prepare(self, df):
         """Since the function is prepared it can return a reference to itself.
@@ -389,9 +405,13 @@ class NestedEvalFunction(EvalFunction):
         openclean.function.eval.base.EvalFunction
         """
         if not self.is_prepared():
+            if util.is_list_or_tuple(self.producer):
+                prepared_producer = [f.prepare(df) for f in self.producer]
+            else:
+                prepared_producer = self.producer.prepare(df)
             return NestedEvalFunction(
                 func=self.func,
-                producer=self.producer.prepare(df),
+                producer=prepared_producer,
                 is_unary=self.is_unary
             )
         return self

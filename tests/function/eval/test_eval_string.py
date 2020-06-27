@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the split and format functions."""
+"""Unit tests for string evaluation functions."""
 
 import pandas as pd
 import pytest
@@ -51,6 +51,9 @@ def test_string_format(people):
     f = Format(Capitalize(Split(Col('Name'))), '{1}, {0}').prepare(people)
     assert f.eval(people.iloc[0]) == 'Davies, Alice'
     f = Format(Col(['Name', 'Age']), '{} is {}').prepare(people)
+    assert f.eval(people.iloc[0]) == 'alice davies is 23'
+    # Use a list of producers.
+    f = Format([Col('Age'), Col('Name')], '{1} is {0}').prepare(people)
     assert f.eval(people.iloc[0]) == 'alice davies is 23'
 
 

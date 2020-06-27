@@ -17,8 +17,9 @@ class Capitalize(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -40,8 +41,9 @@ class Concat(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         delimiter: string
             Delimiter string.
         as_string: bool, optional
@@ -70,8 +72,9 @@ class Format(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         template: string
             String format template.
 
@@ -99,8 +102,9 @@ class Length(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -121,8 +125,9 @@ class Lower(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -144,8 +149,9 @@ class Split(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         delimiter: string
             Delimiter string.
         as_string: bool, optional
@@ -172,8 +178,9 @@ class Upper(NestedEvalFunction):
 
         Parameters
         ----------
-        producer: openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows.
+        producer: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
