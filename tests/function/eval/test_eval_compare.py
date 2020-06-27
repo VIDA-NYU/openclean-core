@@ -9,8 +9,8 @@
 
 import pandas as pd
 
-from openclean.function.eval.column import Col
-from openclean.function.eval.predicate.comp import (
+from openclean.function.eval.base import Col
+from openclean.function.eval.base import (
     Eq, EqIgnoreCase, Geq, Gt, Leq, Lt, Neq
 )
 

@@ -15,7 +15,7 @@ from openclean.data.column import as_list, select_clause
 
 
 class Sequence(object):
-    """Factory pattern for lists of values from a single data frame column
+    """Factory pattern for a lists of values from a single data frame column
     or tuples from a list of columns.
 
     The main reason for having a separate sequence class for pandas data frames

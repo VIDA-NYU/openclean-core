@@ -9,8 +9,7 @@
 values that are extracted for data frame rows.
 """
 
-from openclean.function.eval.base import EvalFunction
-from openclean.function.eval.column import Col
+from openclean.function.eval.base import EvalFunction, to_const_eval
 
 
 # -- Generic function for lists of values -------------------------------------
@@ -56,18 +55,6 @@ class RowAggregator(EvalFunction):
         """
         return self.aggregator([f.eval(values) for f in self.values])
 
-    def is_prepared(self):
-        """Test if all value generating functions are prepared.
-
-        Returns
-        -------
-        bool
-        """
-        for f in self.values:
-            if not f.is_prepared():
-                return False
-        return True
-
     def prepare(self, df):
         """Prepare the associated evaluation functions.
 
@@ -80,12 +67,10 @@ class RowAggregator(EvalFunction):
         -------
         openclean.function.eval.base.EvalFunction
         """
-        if not self.is_prepared():
-            return RowAggregator(
-                aggregator=self.aggregator,
-                values=[f.prepare(df) for f in self.values]
-            )
-        return self
+        return RowAggregator(
+            aggregator=self.aggregator,
+            values=[f.prepare(df) for f in self.values]
+        )
 
 
 # -- Shortcuts for common list functions --------------------------------------
@@ -105,7 +90,7 @@ class Greatest(RowAggregator):
             for the list function (e.g., extract values from columns in a data
             frame row).
         """
-        values = [colfunc(arg) for arg in args]
+        values = [to_const_eval(arg) for arg in args]
         super(Greatest, self).__init__(aggregator=max, values=values)
 
 
@@ -125,22 +110,5 @@ class Least(RowAggregator):
             for the list function (e.g., extract values from columns in a data
             frame row).
         """
-        values = [colfunc(arg) for arg in args]
+        values = [to_const_eval(arg) for arg in args]
         super(Least, self).__init__(aggregator=min, values=values)
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def colfunc(func):
-    """Ensure that the argument is an evaluation function. If the value is a
-    string it is assumed to be a column name and a column function is returned.
-
-    Returns
-    -------
-    openclean.function.eval.base.EvalFunction
-    """
-    if not isinstance(func, EvalFunction):
-        if isinstance(func, str):
-            return Col(func)
-        raise ValueError("invalid argument '{}'".format(func))
-    return func

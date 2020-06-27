@@ -7,19 +7,20 @@
 
 """Collection of evaluation functions that operate on string values."""
 
-from openclean.function.eval.base import NestedEvalFunction
+from openclean.function.eval.base import Eval
 
 
-class Capitalize(NestedEvalFunction):
+class Capitalize(Eval):
     """String function that capitalizes the first letter in argument values."""
-    def __init__(self, producer, as_string=False):
+    def __init__(self, columns, as_string=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -29,21 +30,22 @@ class Capitalize(NestedEvalFunction):
                 as_string=as_string,
                 unpack_list=True
             ),
-            producer=producer,
+            columns=columns,
             is_unary=True
         )
 
 
-class Concat(NestedEvalFunction):
+class Concat(Eval):
     """String function that splits a string using a given delimiter."""
-    def __init__(self, producer, delimiter, as_string=False):
+    def __init__(self, columns, delimiter, as_string=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         delimiter: string
             Delimiter string.
         as_string: bool, optional
@@ -58,23 +60,24 @@ class Concat(NestedEvalFunction):
 
         super(Concat, self).__init__(
             func=join_string,
-            producer=producer,
+            columns=columns,
             is_unary=True
         )
 
 
-class Format(NestedEvalFunction):
+class Format(Eval):
     """Function that returns a formated string based on a given format template
     and a variable list of input values from a data frame row.
     """
-    def __init__(self, producer, template):
+    def __init__(self, columns, template):
         """Initialize the format template and the value generation function.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         template: string
             String format template.
 
@@ -88,23 +91,24 @@ class Format(NestedEvalFunction):
 
         super(Format, self).__init__(
             func=format_string,
-            producer=producer,
+            columns=columns,
             is_unary=False
         )
 
 
-class Length(NestedEvalFunction):
+class Length(Eval):
     """String function that returns the length (i.e., nunumber of characters)
     for a given value.
     """
-    def __init__(self, producer, as_string=False):
+    def __init__(self, columns, as_string=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -113,21 +117,22 @@ class Length(NestedEvalFunction):
                 func=len,
                 as_string=as_string
             ),
-            producer=producer,
+            columns=columns,
             is_unary=True
         )
 
 
-class Lower(NestedEvalFunction):
+class Lower(Eval):
     """String function that converts argument values to lower case."""
-    def __init__(self, producer, as_string=False):
+    def __init__(self, columns, as_string=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -137,21 +142,22 @@ class Lower(NestedEvalFunction):
                 as_string=as_string,
                 unpack_list=True
             ),
-            producer=producer,
+            columns=columns,
             is_unary=True
         )
 
 
-class Split(NestedEvalFunction):
+class Split(Eval):
     """String function that splits a string using a given delimiter."""
-    def __init__(self, producer, delimiter=' ', as_string=False):
+    def __init__(self, columns, delimiter=' ', as_string=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         delimiter: string
             Delimiter string.
         as_string: bool, optional
@@ -166,21 +172,22 @@ class Split(NestedEvalFunction):
                 func=split_string,
                 as_string=as_string
             ),
-            producer=producer,
+            columns=columns,
             is_unary=True
         )
 
 
-class Upper(NestedEvalFunction):
+class Upper(Eval):
     """String function that converts argument values to upper case."""
-    def __init__(self, producer, as_string=False):
+    def __init__(self, columns, as_string=False):
         """Initialize the object properties.
 
         Parameters
         ----------
-        producer: list, tuple, or openclean.function.eval.base.EvalFunction
-            Evaluation function to extract values from data frame rows. This
-            can also be a list or tuple of evaluation functions.
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         as_string: bool, optional
             Use string representation for non-string values.
         """
@@ -190,7 +197,7 @@ class Upper(NestedEvalFunction):
                 as_string=as_string,
                 unpack_list=True
             ),
-            producer=producer,
+            columns=columns,
             is_unary=True
         )
 

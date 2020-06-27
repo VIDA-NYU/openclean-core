@@ -11,9 +11,8 @@ frame.
 
 import pandas as pd
 
-from openclean.data.column import as_list, select_clause, select_by_id
-from openclean.function.eval.base import Const, EvalFunction
-from openclean.function.eval.column import Col
+from openclean.data.column import select_clause, select_by_id
+from openclean.function.eval.base import Col, Const, EvalFunction, Eval
 from openclean.function.value.base import ValueFunction, scalar_pass_through
 from openclean.function.value.lookup import Lookup
 from openclean.operator.base import DataFrameTransformer
@@ -153,7 +152,7 @@ class Update(DataFrameTransformer):
         ValueError
         """
         # Ensure that columns is a list
-        self.columns = as_list(columns)
+        self.columns = columns
         self.func = get_update_function(func=func, columns=self.columns)
 
     def transform(self, df):
@@ -173,7 +172,7 @@ class Update(DataFrameTransformer):
         # Get list of indices for updated columns.
         _, colidxs = select_clause(df=df, columns=self.columns)
         # Call the prepare method of the update function.
-        self.func.prepare(df)
+        f = self.func.prepare(df)
         # Create a modified data frame where rows are modified by the update
         # function.
         data = list()
@@ -182,14 +181,14 @@ class Update(DataFrameTransformer):
         if len(colidxs) == 1:
             colidx = colidxs[0]
             for rowid, values in df.iterrows():
-                val = self.func(values)
+                val = f.eval(values)
                 values = list(values)
                 values[colidx] = val
                 data.append(values)
         else:
             col_count = len(colidxs)
             for rowid, values in df.iterrows():
-                vals = self.func(values)
+                vals = f.eval(values)
                 if len(vals) != col_count:
                     msg = 'expected {} values instead of {}'
                     raise ValueError(msg.format(col_count, vals))

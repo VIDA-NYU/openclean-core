@@ -10,7 +10,7 @@
 import pandas as pd
 import pytest
 
-from openclean.function.eval.column import Col
+from openclean.function.eval.base import Col
 from openclean.function.eval.string import (
     Capitalize, Concat, Format, Length, Lower, Upper, Split
 )

@@ -66,9 +66,9 @@ class Map(EvalFunction):
             if not isinstance(mapping, ValueFunction):
                 raise ValueError('could not convert mapping to value function')
         self.columns = columns
-        self.colidx = colidx
         self.mapping = mapping
         self.raise_error = raise_error
+        self._colidx = colidx
 
     def eval(self, values):
         """Get mapping for cell values in the lookup columns.
@@ -82,20 +82,11 @@ class Map(EvalFunction):
         -------
         scalar or tuple
         """
-        if len(self.colidx) == 1:
-            key = values[self.colidx[0]]
+        if len(self._colidx) == 1:
+            key = values[self._colidx[0]]
         else:
-            key = [values[i] for i in self.colidx]
+            key = [values[i] for i in self._colidx]
         return self.mapping.eval(key)
-
-    def is_prepared(self):
-        """The function is prepared if the column index is not None.
-
-        Returns
-        -------
-        bool
-        """
-        return self.colidx is not None
 
     def prepare(self, df):
         """Get index positions of the lookup columns for the schema of the

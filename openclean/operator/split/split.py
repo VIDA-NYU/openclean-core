@@ -60,7 +60,7 @@ class Split(DataFrameSplitter):
 
         Parameters
         ----------
-        predicate: callable
+        predicate: openclean.function.eval.base.EvalFunction
             Callable that accepts a data frame row as the only argument.
         """
         self.predicate = predicate
@@ -81,8 +81,7 @@ class Split(DataFrameSplitter):
         pandas.DataFrame, pandas.DataFrame
         """
         # Prepare the predicate if it is an evaluation function.
-        if isinstance(self.predicate, EvalFunction):
-            self.predicate.prepare(df)
+        f = self.predicate.prepare(df)
         # Create a Boolean array to maintain information about those rows that
         # satisfy the predicate (true map) and those that do not satisfy the
         # predicate (false map).
@@ -90,7 +89,7 @@ class Split(DataFrameSplitter):
         fmap = [False] * len(df.index)
         index = 0
         for rowid, values in df.iterrows():
-            if self.predicate.eval(values):
+            if f.eval(values):
                 tmap[index] = True
             else:
                 fmap[index] = True

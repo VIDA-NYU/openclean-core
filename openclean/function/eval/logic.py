@@ -9,87 +9,26 @@
 for data frame rows.
 """
 
-from openclean.function.eval.base import EvalFunction, PreparedFullRowEval
+from openclean.function.eval.base import EvalFunction, to_eval
 
 
-# -- Generic logic operator ---------------------------------------------------
-
-class LogicOperator(EvalFunction):
-    """Base class for logic operators."""
+class And(EvalFunction):
+    """Logical conjunction of predicates."""
     def __init__(self, *args):
-        """Initialize the list of predicates in the proposition. Raises a
-        ValueError if the elements in the predicate list are not evaluation
-        functions or callables.
+        """Initialize the list of predicates in the conjunction.
 
         Parameters
         ----------
-        predicates: callable, openclean.function.eval.base.EvalFunction, or
+        args: callable, openclean.function.eval.base.EvalFunction, or
                 list
             Single callable or evaluation function, or a list of callables or
             evaluation functions.
-
-        Raises
-        ------
-        ValueError
         """
         # Convert all elements in the list of predicates to evaluation
         # functions.
         self.predicates = list()
         for f in args:
-            if not isinstance(f, EvalFunction):
-                f = PreparedFullRowEval(func=f)
-            self.predicates.append(f)
-
-    def is_prepared(self):
-        """Test if all predicates are prepared.
-
-        Returns
-        -------
-        bool
-        """
-        for f in self.predicates:
-            if not f.is_prepared():
-                return False
-        return True
-
-    def prepare(self, df):
-        """Call the respective prepare() method for the individual predicates.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        if self.is_prepared():
-            # Return a new object instance where all predicates are prepared.
-            return LogicOperator(*[f.prepare(df) for f in self.predicates])
-        return self
-
-
-# -- Operator instances for basic logic operations ----------------------------
-
-class And(LogicOperator):
-    """Logical conjunction of predicates."""
-    def __init__(self, *args):
-        """Initialize the list of predicates in the proposition. Raises a
-        ValueError if the elements in the predicate list are not evaluation
-        functions or callables.
-
-        Parameters
-        ----------
-        args: callable, openclean.function.eval.base.EvalFunction, or list
-            Single callable or evaluation function, or a list of callables or
-            evaluation functions.
-
-        Raises
-        ------
-        ValueError
-        """
-        super(And, self).__init__(*args)
+            self.predicates.append(to_eval(f))
 
     def eval(self, values):
         """Evaluate the predicates. Returns True if all predicates in the
@@ -109,8 +48,22 @@ class And(LogicOperator):
                 return False
         return True
 
+    def prepare(self, df):
+        """Call the respective prepare() method for the individual predicates.
 
-class Not(LogicOperator):
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        return And(*[f.prepare(df) for f in self.predicates])
+
+
+class Not(EvalFunction):
     """Logical negation of a predicate(s)."""
     def __init__(self, predicate):
         """Initialize the predicate that is being negated. Raises a ValueError
@@ -121,7 +74,7 @@ class Not(LogicOperator):
         predicate: callable or openclean.function.eval.base.EvalFunction
             Single callable or evaluation function.
         """
-        super(Not, self).__init__(*[predicate])
+        self.predicate = to_eval(predicate)
 
     def eval(self, values):
         """Return the negated result from evaluating the associated predicate
@@ -136,21 +89,40 @@ class Not(LogicOperator):
         -------
         bool
         """
-        return not self.predicates[0](values)
+        return not self.predicate.eval(values)
 
-
-class Or(LogicOperator):
-    """Logical disjunction of predicates."""
-    def __init__(self, *args):
-        """Initialize the list of predicates in the proposition.
+    def prepare(self, df):
+        """Call the respective prepare() method for the predicate.
 
         Parameters
         ----------
-        args: callable, openclean.function.eval.base.EvalFunction, or list
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        return Not(self.predicate.prepare(df))
+
+
+class Or(EvalFunction):
+    """Logical disjunction of predicates."""
+    def __init__(self, *args):
+        """Initialize the list of predicates in the disjunction.
+
+        Parameters
+        ----------
+        args: callable, openclean.function.eval.base.EvalFunction, or
+                list
             Single callable or evaluation function, or a list of callables or
             evaluation functions.
         """
-        super(Or, self).__init__(*args)
+        # Convert all elements in the list of predicates to evaluation
+        # functions.
+        self.predicates = list()
+        for f in args:
+            self.predicates.append(to_eval(f))
 
     def eval(self, values):
         """Evaluate the predicates. Returns True if at least one of the
@@ -169,3 +141,17 @@ class Or(LogicOperator):
             if f.eval(values):
                 return True
         return False
+
+    def prepare(self, df):
+        """Call the respective prepare() method for the individual predicates.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        return Or(*[f.prepare(df) for f in self.predicates])

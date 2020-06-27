@@ -10,8 +10,7 @@
 import pandas as pd
 import pytest
 
-from openclean.function.eval.base import Const
-from openclean.function.eval.column import Col
+from openclean.function.eval.base import Col, Const
 from openclean.function.eval.list import Get, List
 
 

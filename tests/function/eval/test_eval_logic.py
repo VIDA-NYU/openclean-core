@@ -7,27 +7,23 @@
 
 """Unit tests for predicate logic operators."""
 
-from openclean.function.eval.column import Col
-from openclean.function.eval.predicate.comp import Eq, Gt
-from openclean.function.eval.predicate.logic import And, Not, Or
+from openclean.function.eval.base import Eq, Col, Gt
+from openclean.function.eval.logic import And, Not, Or
 
 
 def test_predicate_logic(employees):
     """Test functionality of logic operators."""
     # -- And ------------------------------------------------------------------
-    f = And(Gt(Col('Name'), 'Claudia'), Gt(Col('Age'), 30))
-    f.prepare(employees)
+    f = And(Gt(Col('Name'), 'Claudia'), Gt(Col('Age'), 30)).prepare(employees)
     assert not f(employees.iloc[0])
     assert not f(employees.iloc[1])
     assert f(employees.iloc[5])
     # -- Or -------------------------------------------------------------------
-    f = Or(Gt(Col('Name'), 'Claudia'), Gt(Col('Age'), 30))
-    f.prepare(employees)
+    f = Or(Gt(Col('Name'), 'Claudia'), Gt(Col('Age'), 30)).prepare(employees)
     assert not f(employees.iloc[0])
     assert f(employees.iloc[1])
     assert f(employees.iloc[5])
     # Not ---------------------------------------------------------------------
-    f = Not(Eq(Col('Name'), 'Alice'))
-    f.prepare(employees)
+    f = Not(Eq(Col('Name'), 'Alice')).prepare(employees)
     assert not f(employees.iloc[0])
     assert f(employees.iloc[1])

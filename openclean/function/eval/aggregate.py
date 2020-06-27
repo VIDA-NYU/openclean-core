@@ -12,7 +12,7 @@ one or more data frame columns for all data frame rows.
 import numpy as np
 
 from openclean.data.column import select_clause
-from openclean.function.eval.base import EvalFunction
+from openclean.function.eval.base import Const, EvalFunction
 
 import openclean.util as util
 
@@ -20,11 +20,11 @@ import openclean.util as util
 # -- Generic prepared statistics function -------------------------------------
 
 class ColumnAggregator(EvalFunction):
-    """Evaluation functin that computes a statistic value over one or more
+    """Evaluation function that computes a statistic value over one or more
     columns in a data frame and returns this value as result for all calls to
     the eval() method.
     """
-    def __init__(self, func, columns=None, value=None):
+    def __init__(self, func, columns=None):
         """Initialize the statistics function and the list of columns on which
         the function will be applied.
 
@@ -43,7 +43,6 @@ class ColumnAggregator(EvalFunction):
         # This will raise a ValueError if the function is not callable.
         self.func = util.ensure_callable(func)
         self.columns = columns
-        self._value = value
 
     def eval(self, values):
         """The execute method for the evaluation functon returns the computed
@@ -58,16 +57,7 @@ class ColumnAggregator(EvalFunction):
         -------
         scalar
         """
-        return self._value
-
-    def is_prepared(self):
-        """The function needs preparation if the constant return value is None.
-
-        Returns
-        -------
-        bool
-        """
-        return self._value is not None
+        raise RuntimeError('column aggregator not prepared')
 
     def prepare(self, df):
         """Prepare the evaluation function by computing the statistics value
@@ -100,11 +90,7 @@ class ColumnAggregator(EvalFunction):
             value = self.func(values)
         else:
             value = self.func(list(df.iloc[:, colidx[0]]))
-        return ColumnAggregator(
-            func=self.func,
-            columns=self.columns,
-            value=value
-        )
+        return Const(value)
 
 
 # -- Shortcuts for common statistics methods ----------------------------------

@@ -9,29 +9,30 @@
 regular expression.
 """
 
-from openclean.function.eval.base import All, Eval, One, is_var_func
+from openclean.function.base import All, One
+from openclean.function.eval.base import Eval
 from openclean.function.value.regex import IsMatch as is_match
 from openclean.function.value.regex import IsNotMatch as is_not_match
 
 
-class IsMatch(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values match a regular expression. For value lists the for_all
-    flag determines whether all values have to match the expression or at least
-    one of them.
+class IsMatch(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from a data frame row match a regular expression. For value lists the for
+    all flag determines whether all values have to match the expression or at
+    least one of them.
     """
-    def __new__(
-        cls, columns, pattern, fullmatch=False, as_string=True, for_all=True
+    def __init__(
+        self, columns, pattern, fullmatch=False, as_string=True, for_all=True
     ):
         """Create an instance of an evaluation function that checks whether
-        a value matches a regular expression. The base class of the returned
-        object depends on whether a single column or a list of columns is
-        given.
+        a value matches a regular expression.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         pattern: string
             Regular expression.
         fullmatch: bool, optional
@@ -49,29 +50,34 @@ class IsMatch(object):
             fullmatch=fullmatch,
             as_string=as_string
         )
-        if is_var_func(columns):
-            if for_all:
-                func = All(predicate=func)
-            else:
-                func = One(predicate=func)
-        return Eval(func=func, columns=columns)
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsMatch, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )
 
 
-class IsNotMatch(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values don't match a regular expression. For value lists the
-    for_all flag determines whether all values have to match the expression or
+class IsNotMatch(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from a data frame row don't match a regular expression. For value lists the
+    for all flag determines whether all values have to match the expression or
     at least one of them.
     """
-    def __new__(
-        cls, columns, pattern, fullmatch=False, as_string=True, for_all=True
+    def __init__(
+        self, columns, pattern, fullmatch=False, as_string=True, for_all=True
     ):
         """Create an instance of a single column or multi-column predicate.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         pattern: string
             Regular expression.
         fullmatch: bool, optional
@@ -89,9 +95,12 @@ class IsNotMatch(object):
             fullmatch=fullmatch,
             as_string=as_string
         )
-        if is_var_func(columns):
-            if for_all:
-                func = All(func)
-            else:
-                func = One(func)
-        return Eval(func=func, columns=columns)
+        if for_all:
+            func = All(func)
+        else:
+            func = One(func)
+        super(IsNotMatch, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )

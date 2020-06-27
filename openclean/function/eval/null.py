@@ -9,27 +9,30 @@
 value is defined as empty if it is None or the empty string.
 """
 
-from openclean.function.eval.base import All, Eval, One, is_var_func
+from openclean.function.base import All, One
+from openclean.function.eval.base import Eval
 from openclean.function.value.null import is_empty, is_not_empty
 
 
-class IsEmpty(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values is None or the empty string. For value lists the for_all
-    flag determines whether all values have to be empty or at least one.
+class IsEmpty(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    extracted from data frame cplumns is None or the empty string. For value
+    lists the for_all flag determines whether all values have to be empty or
+    at least one.
 
     For any value that is not a string and not None the result should always be
     False.
     """
-    def __new__(cls, columns, for_all=True, ignore_whitespace=False):
+    def __init__(self, columns, for_all=True, ignore_whitespace=False):
         """Create an instance of an evaluation function that checks for empty
-        values. The base class of the returned object depends on whether a
-        single column or a list of columns is given.
+        values.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         for_all: bool, optional
             Determines the 'is empty' semantics for predicates that take more
             than one argument value. If Ture, all values have to be empty.
@@ -38,35 +41,42 @@ class IsEmpty(object):
         ignore_whitespace: bool, optional
             Trim non-None values if the flag is set to True.
         """
+        # Create instance of single value predicate.
+
         def func(value):
             return is_empty(value, ignore_whitespace=ignore_whitespace)
 
-        if is_var_func(columns):
-            if for_all:
-                func = All(predicate=func)
-            else:
-                func = One(predicate=func)
-        return Eval(func=func, columns=columns)
+        # Wrap sigle value predicate with quantifier function.
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsEmpty, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )
 
 
-class IsNotEmpty(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values is not None or the empty string. For value lists the
-    for_all flag determines whether all values have to be non-empty or at least
-    one.
+class IsNotEmpty(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from cells in a data frame row are not None or the empty string. For value
+    lists the for_all flag determines whether all values have to be non-empty
+    or at least one.
 
     For any value that is not a string and not None the result should always be
     True.
     """
-    def __new__(cls, columns, for_all=True, ignore_whitespace=False):
+    def __init__(self, columns, for_all=True, ignore_whitespace=False):
         """Create an instance of an evaluation function that checks for non-
-        empty values. The base class of the returned object depends on whether
-        a single column or a list of columns is given.
+        empty values.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         for_all: bool, optional
             Determines the 'is not empty' semantics for predicates that take
             more than one argument value. If Ture, all values have to be not
@@ -75,12 +85,18 @@ class IsNotEmpty(object):
         ignore_whitespace: bool, optional
             Trim non-None values if the flag is set to True.
         """
+        # Create instance of single value predicate.
+
         def func(value):
             return is_not_empty(value, ignore_whitespace=ignore_whitespace)
 
-        if is_var_func(columns):
-            if for_all:
-                func = All(func)
-            else:
-                func = One(func)
-        return Eval(func=func, columns=columns)
+        # Wrap sigle value predicate with quantifier function.
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsNotEmpty, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )

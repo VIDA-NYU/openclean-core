@@ -9,21 +9,17 @@
 
 from collections import Counter
 
-from openclean.function.eval.predicate.datatype import (
-    IsDatetime, IsInt, IsFloat, IsNaN
-)
+from openclean.function.eval.datatype import IsDatetime, IsInt, IsFloat, IsNaN
 
 
-def test_predicate_datatype(employees):
-    """Test data type detection predicates."""
+def test_predicate_datatype_for_single_column(employees):
+    """Test data type detection predicates for values from a single column."""
     predicates = [
-        IsDatetime(formats='%m/%d/%y', columns='Name'),
-        IsInt('Salary'),
-        IsFloat('Salary'),
-        IsNaN('Age')
+        IsDatetime(formats='%m/%d/%y', columns='Name').prepare(employees),
+        IsInt('Salary').prepare(employees),
+        IsFloat('Salary').prepare(employees),
+        IsNaN('Age').prepare(employees)
     ]
-    for f in predicates:
-        f.prepare(employees)
     counts = Counter()
     for rowid, values in employees.iterrows():
         for i in range(len(predicates)):
@@ -33,30 +29,29 @@ def test_predicate_datatype(employees):
     assert counts[1] == 3
     assert counts[2] == 3
     assert counts[3] == 1
-    # Multiple columns
-    f = IsInt(['Age', 'Salary'], for_all=True)
-    f.prepare(employees)
+
+
+def test_predicate_datatype_for_multi_column(employees):
+    """Test data type detection predicates for values from multiple columns."""
+    f = IsInt(['Age', 'Salary'], for_all=True).prepare(employees)
     count = 0
     for rowid, values in employees.iterrows():
         if f(values):
             count += 1
     assert count == 0
-    f = IsInt(['Age', 'Salary'], for_all=False)
-    f.prepare(employees)
+    f = IsInt(['Age', 'Salary'], for_all=False).prepare(employees)
     count = 0
     for rowid, values in employees.iterrows():
         if f(values):
             count += 1
     assert count == 3
-    f = IsFloat(['Age', 'Salary'], for_all=True)
-    f.prepare(employees)
+    f = IsFloat(['Age', 'Salary'], for_all=True).prepare(employees)
     count = 0
     for rowid, values in employees.iterrows():
         if f(values):
             count += 1
     assert count == 3
-    f = IsFloat(['Age', 'Salary'], for_all=False)
-    f.prepare(employees)
+    f = IsFloat(['Age', 'Salary'], for_all=False).prepare(employees)
     count = 0
     for rowid, values in employees.iterrows():
         if f(values):

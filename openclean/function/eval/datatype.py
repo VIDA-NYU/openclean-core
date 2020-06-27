@@ -9,27 +9,29 @@
 given data type constraint.
 """
 
-from openclean.function.eval.base import All, Eval, One, is_var_func
+from openclean.function.base import All, One
+from openclean.function.eval.base import Eval
 from openclean.function.value.datatype import (
     is_datetime, is_float, is_int, is_nan
 )
 
 
-class IsDatetime(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values is of type date or can be converted to a date. For value
-    lists the for_all flag determines whether all values have to be dates or at
-    least one.
+class IsDatetime(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from a data frame row are of type date or can be converted to a date. For
+    value lists the for all flag determines whether all values have to be dates
+    or at least one.
     """
-    def __new__(cls, columns, formats=None, typecast=True, for_all=True):
+    def __init__(self, columns, formats=None, typecast=True, for_all=True):
         """Create an instance of an evaluation function that checks whether
-        values are dates. The base class of the returned object depends on
-        whether a single column or a list of columns is given.
+        values are dates.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         typecast: bool, default=True
             Attempt to parse string values as dates if True.
         formats: string or list(string)
@@ -43,29 +45,34 @@ class IsDatetime(object):
         def func(value):
             return is_datetime(value, formats=formats, typecast=typecast)
 
-        if is_var_func(columns):
-            if for_all:
-                func = All(predicate=func)
-            else:
-                func = One(predicate=func)
-        return Eval(func=func, columns=columns)
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsDatetime, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )
 
 
-class IsInt(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values is of type integer or can be converted to an integer. For
-    value lists the for_all flag determines whether all values have to be
-    integer or at least one.
+class IsInt(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from a data frame row are of type integer or can be converted to an
+    integer. For value lists the for all flag determines whether all values
+    have to be integer or at least one.
     """
-    def __new__(cls, columns, typecast=True, for_all=True):
+    def __init__(self, columns, typecast=True, for_all=True):
         """Create an instance of an evaluation function that checks whether
-        values are integer. The base class of the returned object depends on
+        values are integer.
         whether a single column or a list of columns is given.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         typecast: bool, default=True
             Cast string values to integer if True.
         for_all: bool, optional
@@ -76,29 +83,33 @@ class IsInt(object):
         def func(value):
             return is_int(value, typecast=typecast)
 
-        if is_var_func(columns):
-            if for_all:
-                func = All(predicate=func)
-            else:
-                func = One(predicate=func)
-        return Eval(func=func, columns=columns)
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsInt, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )
 
 
-class IsFloat(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values is of type float or can be converted to a float value.
-    For value lists the for_all flag determines whether all values have to be
-    floats or at least one.
+class IsFloat(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from a data frame row are of type float or can be converted to a float
+    value. For value lists the for all flag determines whether all values have
+    to be floats or at least one.
     """
-    def __new__(cls, columns, typecast=True, for_all=True):
+    def __init__(self, columns, typecast=True, for_all=True):
         """Create an instance of an evaluation function that checks whether
-        values are floats. The base class of the returned object depends on
-        whether a single column or a list of columns is given.
+        values are floats.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         typecast: bool, default=True
             Cast string values to float if True.
         for_all: bool, optional
@@ -109,38 +120,45 @@ class IsFloat(object):
         def func(value):
             return is_float(value, typecast=typecast)
 
-        if is_var_func(columns):
-            if for_all:
-                func = All(predicate=func)
-            else:
-                func = One(predicate=func)
-        return Eval(func=func, columns=columns)
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsFloat, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )
 
 
-class IsNaN(object):
-    """Factory pattern for Boolean predicates that tests whether a given value
-    or list of values are of the special type NaN (not a number). For value
+class IsNaN(Eval):
+    """Boolean predicate that tests whether a given value or list of values
+    from a data frame row are of the special type NaN (not a number). For value
     lists the for_all flag determines whether all values have to be NaN or at
     least one.
     """
-    def __new__(cls, columns, for_all=True):
+    def __init__(self, columns, for_all=True):
         """Create an instance of an evaluation function that checks whether
-        values are of type NaN. The base class of the returned object depends
-        on whether a single column or a list of columns is given.
+        values are of type NaN.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string)
+        columns: int, string, openclean.function,.base.EvalFunction, or list
             Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
         for_all: bool, optional
             Determines semantics for predicates that take more than one
             argument value. If Ture, all values have to evaluate to True.
             Otherwise, at least one value has to evaluate to True.
         """
         func = is_nan
-        if is_var_func(columns):
-            if for_all:
-                func = All(predicate=func)
-            else:
-                func = One(predicate=func)
-        return Eval(func=func, columns=columns)
+        if for_all:
+            func = All(predicate=func)
+        else:
+            func = One(predicate=func)
+        super(IsNaN, self).__init__(
+            func=func,
+            columns=columns,
+            is_unary=False
+        )
