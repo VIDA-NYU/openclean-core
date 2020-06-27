@@ -9,7 +9,7 @@
 
 from openclean.data.sequence import Sequence
 from openclean.function.eval.base import Col
-from openclean.function.value.domain import IsInDomain
+from openclean.function.eval.domain import IsIn
 from openclean.operator.transform.filter import delete, filter
 
 
@@ -26,8 +26,11 @@ def test_filter_operator(agencies):
     # There are two rows with empty values in attribute Age
     d1 = filter(
         agencies,
-        columns=['borough', 'state'],
-        predicate=IsInDomain([('bk', 'Ny'), ('Bx', 'NY')], ignore_case=True)
+        IsIn(
+            columns=('borough', 'state'),
+            domain=[('bk', 'Ny'), ('Bx', 'NY')],
+            ignore_case=True
+        )
     )
     assert d1.shape == (7, 3)
     d1 = filter(agencies, Col('agency') > Col('state'))

@@ -105,9 +105,8 @@ class ValueFunction(ProfilingFunction, metaclass=ABCMeta):
 
         Parameters
         ----------
-        values: dict
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
+        values: list
+            List of scalar values or tuples of scalar values.
 
         Returns
         -------
@@ -155,9 +154,8 @@ class ValueFunction(ProfilingFunction, metaclass=ABCMeta):
 
         Parameters
         ----------
-        values: dict
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
+        values: list
+            List of scalar values or tuples of scalar values.
 
         Returns
         -------

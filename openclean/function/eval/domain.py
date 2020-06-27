@@ -18,7 +18,7 @@ class IsIn(Eval):
     """Boolean predicate to tests whether a value (or list of values) belong(s)
     to a domain of known values.
     """
-    def __init__(self, columns, domain):
+    def __init__(self, columns, domain, ignore_case=False):
         """Create an instance of an evaluation function that checks for domain
         inclusion.
 
@@ -31,12 +31,14 @@ class IsIn(Eval):
         domain: pandas.DataFrame, pandas.Series, or object
             Data frame or series, or any object that implements the
             __contains__ method.
+        ignore_case: bool, default=False
+            Ignore case for domain inclusion checking
         """
         # Convert pandas data frames or series into a set of values.
         if type(domain) in [pd.DataFrame, pd.Series]:
             domain = to_set(domain)
         super(IsIn, self).__init__(
-            func=IsInDomain(domain),
+            func=IsInDomain(domain, ignore_case=ignore_case),
             columns=columns,
             is_unary=True
         )
@@ -46,7 +48,7 @@ class IsNotIn(Eval):
     """Boolean predicate that tests whether a value (or list of values) dos not
     belong to a domain of knwon values.
     """
-    def __init__(self, columns, domain):
+    def __init__(self, columns, domain, ignore_case=False):
         """Create an instance of an evaluation function that checks for domain
         exclusion.
 
@@ -59,12 +61,14 @@ class IsNotIn(Eval):
         domain: pandas.DataFrame, pandas.Series, or object
             Data frame or series, or any object that implements the
             __contains__ method.
+        ignore_case: bool, default=False
+            Ignore case for domain inclusion checking
         """
         # Convert pandas data frames or series into a set of values.
         if type(domain) in [pd.DataFrame, pd.Series]:
             domain = to_set(domain)
         super(IsNotIn, self).__init__(
-            func=IsNotInDomain(domain),
+            func=IsNotInDomain(domain, ignore_case=ignore_case),
             columns=columns,
             is_unary=True
         )
