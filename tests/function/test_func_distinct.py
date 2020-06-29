@@ -23,7 +23,7 @@ def test_distinct_all_columns(schools):
 
 def test_distinct_multi_columns(schools):
     """Test getting distinct values for a multiple columns."""
-    boro_grade = distinct(schools, columns=['borough', 'grade'])
+    boro_grade = distinct(schools, columns=('borough', 'grade'))
     assert len(boro_grade) == 37
     assert boro_grade[('K', '09-12')] == 14
     assert sum(v for v in boro_grade.values()) == 100

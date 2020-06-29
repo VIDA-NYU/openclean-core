@@ -11,8 +11,8 @@ of values.
 
 from collections import Counter
 
-from openclean.data.sequence import Sequence
-from openclean.function.value.base import normalize
+from openclean.function.eval.base import Eval
+from openclean.function.value.base import normalize, scalar_pass_through
 
 
 def distinct(
@@ -31,9 +31,10 @@ def distinct(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int or string or list(int or string), optional
-        List of column index or column name for columns for which distinct
-        value combinations are computed.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
@@ -58,7 +59,15 @@ def distinct(
         keep_original=keep_original,
         labels=labels
     )
-    return op.exec(Sequence(df=df, columns=columns))
+    # Use an evaluation function to handle value extraction from columns.
+    if columns is None:
+        columns = tuple(df.columns)
+    f = Eval(columns=columns, func=scalar_pass_through, is_unary=True)
+    f = f.prepare(df)
+    values = list()
+    for _, row in df.iterrows():
+        values.append(f.eval(row))
+    return op.exec(values)
 
 
 class Distinct(object):
