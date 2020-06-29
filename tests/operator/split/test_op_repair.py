@@ -10,7 +10,7 @@
 import pytest
 
 from openclean.data.column import Column
-from openclean.function.value.lookup import Lookup
+from openclean.function.value.mapping import Lookup
 from openclean.operator.split.repair import repair
 
 

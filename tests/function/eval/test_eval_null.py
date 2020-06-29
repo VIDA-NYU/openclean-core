@@ -7,7 +7,7 @@
 
 """Unit tests for is empty predicates for data frame rows."""
 
-from openclean.function.eval.base import Col, Const
+from openclean.function.eval.base import Col
 from openclean.function.eval.null import IsEmpty, IsNotEmpty
 
 
@@ -20,22 +20,6 @@ def test_predicate_isempty(employees):
     # NaN is not empty
     f = IsEmpty(columns=Col('Age')).prepare(employees)
     assert not f.eval(employees.iloc[3])
-    # Apply on multiple columns
-    f = IsEmpty(columns=['Age', 'Salary'], for_all=True).prepare(employees)
-    assert not f.eval(employees.iloc[0])
-    assert not f.eval(employees.iloc[1])
-    f = IsEmpty(columns=['Age', 'Salary'], for_all=False).prepare(employees)
-    assert not f.eval(employees.iloc[0])
-    assert f.eval(employees.iloc[1])
-    # Test mix of column and eval archuments
-    columns = [Col('Age'), 'Salary']
-    f = IsEmpty(columns=columns, for_all=False).prepare(employees)
-    assert not f.eval(employees.iloc[0])
-    assert f.eval(employees.iloc[1])
-    columns = [Col('Age'), 'Salary', Const('')]
-    f = IsEmpty(columns=columns, for_all=False).prepare(employees)
-    assert f.eval(employees.iloc[0])
-    assert f.eval(employees.iloc[1])
 
 
 def test_predicate_isnotempty(employees):
@@ -47,10 +31,3 @@ def test_predicate_isnotempty(employees):
     # NaN is not empty
     f = IsNotEmpty(columns='Age').prepare(employees)
     assert f.eval(employees.iloc[3])
-    # Apply on multiple columns
-    f = IsNotEmpty(columns=['Age', 'Salary'], for_all=True).prepare(employees)
-    assert f.eval(employees.iloc[0])
-    assert not f.eval(employees.iloc[1])
-    f = IsNotEmpty(columns=['Age', 'Salary'], for_all=False).prepare(employees)
-    assert f.eval(employees.iloc[0])
-    assert f.eval(employees.iloc[1])

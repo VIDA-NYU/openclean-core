@@ -8,6 +8,7 @@
 """Base class for value function. Collection of basic helper functions."""
 
 from abc import ABCMeta, abstractmethod
+from collections import Counter
 
 import openclean.util as util
 
@@ -51,7 +52,7 @@ class ProfilingFunction(metaclass=ABCMeta):
         -------
         scalar or list or dict
         """
-        return self.exec_distinct(Distinct().exec(values))
+        return self.exec_distinct(Counter(values))
 
     @abstractmethod
     def profile_distinct(self, values):
@@ -301,6 +302,34 @@ class CallableWrapper(PreparedFunction):
         return self.func(value)
 
 
+def ConstantValue(PreparedFunction):
+    """Value function that returns a given constant value for all inputs."""
+    def __init__(self, value):
+        """Initialize the constant return values for the function.
+
+        Parameters
+        ----------
+        value: any
+            Function result value for all input values.
+        """
+        super(ConstantValue, self).__init__(name='constant')
+        self.value = value
+
+    def eval(self, value):
+        """Return the constant result value.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        any
+        """
+        return self.value
+
+
 # -- Helper classes and functions ---------------------------------------------
 
 def extract(values, label, raise_error=True, default_value=None):
@@ -487,3 +516,24 @@ def scalar_pass_through(value):
     scalar
     """
     return value
+
+
+def to_value_function(arg):
+    """Ensure that a given argument is a ValueFunction. If the arg is callable
+    it will be wrapped. Otherwise, a constant value function is returned.
+
+    Parameters
+    ----------
+    arg: any
+        Argument that is tested for being a ValueFunction.
+
+    Returns
+    -------
+    openclean.function.value.base.ValueFunction
+    """
+    if not isinstance(arg, ValueFunction):
+        if callable(arg):
+            arg = CallableWrapper(func=arg)
+        else:
+            arg = ConstantValue(value=arg)
+    return arg

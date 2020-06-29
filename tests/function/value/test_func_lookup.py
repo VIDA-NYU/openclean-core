@@ -10,7 +10,7 @@
 import pytest
 
 from openclean.function.value.base import scalar_pass_through
-from openclean.function.value.lookup import Lookup
+from openclean.function.value.mapping import Lookup
 
 
 def test_lookup_table():

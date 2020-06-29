@@ -13,7 +13,7 @@ return either a scalar value or a tuple of scalar values.
 from abc import ABCMeta, abstractmethod
 
 from openclean.data.column import select_clause
-from openclean.function.value.base import ValueFunction
+from openclean.function.value.base import CallableWrapper, ValueFunction
 
 import openclean.util as util
 
@@ -342,7 +342,11 @@ class Eval(EvalFunction):
         else:
             producer = columns
             is_unary = True if is_unary is None else is_unary
-        self.func = util.ensure_callable(func)
+        # If the function is an unary function we ensure that it is a
+        # ValueFunction.
+        if is_unary and not isinstance(func, ValueFunction):
+            func = CallableWrapper(func)
+        self.func = func
         self.producer = producer
         self.is_unary = is_unary
 
@@ -364,10 +368,12 @@ class Eval(EvalFunction):
             args = [f.eval(values) for f in self.producer]
         else:
             args = self.producer.eval(values)
-        if not self.is_unary and util.is_list_or_tuple(args):
-            return self.func(*args)
-        else:
+        if self.is_unary:
+            return self.func.eval(args)
+        elif not util.is_list_or_tuple(args):
             return self.func(args)
+        else:
+            return self.func(*args)
 
     def prepare(self, df):
         """Since the function is prepared it can return a reference to itself.

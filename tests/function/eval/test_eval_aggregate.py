@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 
 from openclean.function.eval.aggregate import Avg, Max, Min, Sum
+from openclean.function.eval.datatype import Float
 
 
 @pytest.fixture
@@ -27,3 +28,10 @@ def test_statistics_functions(dataset, op, result):
     f = op('B').prepare(dataset)
     for _, values in dataset.iterrows():
         assert f.eval(values) == result
+
+
+def test_aggregate_nested_function(employees):
+    """Test aggregate values from a nested evaluation function."""
+    f = Max(Float('Salary', default_value=0)).prepare(employees)
+    for _, row in employees.iterrows():
+        assert f.eval(row) == 120050.5

@@ -29,31 +29,3 @@ def test_predicate_datatype_for_single_column(employees):
     assert counts[1] == 3
     assert counts[2] == 3
     assert counts[3] == 1
-
-
-def test_predicate_datatype_for_multi_column(employees):
-    """Test data type detection predicates for values from multiple columns."""
-    f = IsInt(['Age', 'Salary'], for_all=True).prepare(employees)
-    count = 0
-    for rowid, values in employees.iterrows():
-        if f(values):
-            count += 1
-    assert count == 0
-    f = IsInt(['Age', 'Salary'], for_all=False).prepare(employees)
-    count = 0
-    for rowid, values in employees.iterrows():
-        if f(values):
-            count += 1
-    assert count == 3
-    f = IsFloat(['Age', 'Salary'], for_all=True).prepare(employees)
-    count = 0
-    for rowid, values in employees.iterrows():
-        if f(values):
-            count += 1
-    assert count == 3
-    f = IsFloat(['Age', 'Salary'], for_all=False).prepare(employees)
-    count = 0
-    for rowid, values in employees.iterrows():
-        if f(values):
-            count += 1
-    assert count == 7

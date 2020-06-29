@@ -11,8 +11,9 @@ one or more data frame columns for all data frame rows.
 
 import numpy as np
 
-from openclean.data.column import select_clause
-from openclean.function.eval.base import Const, EvalFunction
+from openclean.function.eval.base import (
+    Col, Const, EvalFunction, to_column_eval
+)
 
 import openclean.util as util
 
@@ -42,6 +43,13 @@ class ColumnAggregator(EvalFunction):
         """
         # This will raise a ValueError if the function is not callable.
         self.func = util.ensure_callable(func)
+        # Ensure that columns contains only evaluation functions.
+        if isinstance(columns, tuple):
+            columns = tuple([to_column_eval(c) for c in columns])
+        elif isinstance(columns, list):
+            columns = [to_column_eval(c) for c in columns]
+        elif not isinstance(columns, EvalFunction):
+            columns = Col(columns)
         self.columns = columns
 
     def eval(self, values):
@@ -73,24 +81,20 @@ class ColumnAggregator(EvalFunction):
         -------
         openclean.function.eval.base.EvalFunction
         """
-        # Determine the list of column indices over which the statistics will
-        # be computed
-        if self.columns is None:
-            colidx = range(len(df.columns))
+        values = list()
+        if isinstance(self.columns, tuple):
+            producer = tuple([f.prepare(df) for f in self.columns])
+            for _, row in df.iterrows():
+                values.append(tuple([f.eval(row) for f in producer]))
         elif isinstance(self.columns, list):
-            _, colidx = select_clause(df, columns=self.columns)
+            producer = [f.prepare(df) for f in self.columns]
+            for _, row in df.iterrows():
+                values.append([f.eval(row) for f in producer])
         else:
-            _, colidx = select_clause(df, columns=[self.columns])
-        # If we have more than one column create a list of values that
-        # concatenates the values from the individual columns.
-        if len(colidx) > 1:
-            values = list()
-            for c in colidx:
-                values.extend(list(df.iloc[:, c]))
-            value = self.func(values)
-        else:
-            value = self.func(list(df.iloc[:, colidx[0]]))
-        return Const(value)
+            producer = self.columns.prepare(df)
+            for _, row in df.iterrows():
+                values.append(producer.eval(row))
+        return Const(self.func(values))
 
 
 # -- Shortcuts for common statistics methods ----------------------------------

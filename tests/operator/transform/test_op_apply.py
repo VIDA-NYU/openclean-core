@@ -9,8 +9,8 @@
 
 import numpy as np
 
-from openclean.function.value.replace import replace
 from openclean.function.value.datatype import is_nan
+from openclean.function.value.mapping import replace
 from openclean.function.value.normalize import DivideByTotal
 from openclean.function.value.string import to_upper
 from openclean.operator.transform.apply import apply
