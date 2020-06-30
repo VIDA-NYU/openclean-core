@@ -7,12 +7,12 @@
 
 """Abstract base class for anomaly and outlier detection operators."""
 
-from abc import ABCMeta, abstractmethod
+from collections import Counter
 
-from openclean.function.value.base import ProfilingFunction
+from openclean.profiling.base import ProfilingFunction
 
 
-class AnomalyDetector(ProfilingFunction, metaclass=ABCMeta):
+class AnomalyDetector(ProfilingFunction):
     """Interface for generic anomaly and outlier detectors. Each implementation
     should take a stream of distinct values (e.g., from a column in a data
     frame or a metadata object) as input and return a list of values that were
@@ -27,20 +27,18 @@ class AnomalyDetector(ProfilingFunction, metaclass=ABCMeta):
             Unique function name.
         """
         super(AnomalyDetector, self).__init__(name=name)
-        
-    @abstractmethod
+
     def find(self, values):
-        """Identify values in a given stream of (distinct) values that are
-        classified as outliers or anomalities. Returns a list of identified
-        values.
+        """Identify values in a given set of values that are classified as
+        outliers or anomalities. Returns a list of identified values.
 
         Parameters
         ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
+        values: list
+            List of input values.
 
         Returns
         -------
         list
         """
-        raise NotImplementedError()
+        return list(self.run(Counter(values)).keys())

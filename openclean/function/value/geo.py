@@ -102,7 +102,6 @@ class WKTType(PreparedFunction):
             Default label that is returned for values that cannot be parsed
             using the WKT parser.
         """
-        super(WKTType, self).__init__(name=label)
         self.label = label
         self.include_type = include_type
         self.delim = delim

@@ -10,7 +10,8 @@
 import pandas as pd
 import pytest
 
-from openclean.function.eval.aggregate import Avg, Max, Min, Sum
+from openclean.function.eval.aggregate import Avg, Count, Max, Min, Sum
+from openclean.function.eval.base import Gt
 from openclean.function.eval.datatype import Float
 
 
@@ -32,6 +33,6 @@ def test_statistics_functions(dataset, op, result):
 
 def test_aggregate_nested_function(employees):
     """Test aggregate values from a nested evaluation function."""
-    f = Max(Float('Salary', default_value=0)).prepare(employees)
+    f = Count(Gt(Float('Salary', default_value=0), 10000)).prepare(employees)
     for _, row in employees.iterrows():
-        assert f.eval(row) == 120050.5
+        assert f.eval(row) == 4

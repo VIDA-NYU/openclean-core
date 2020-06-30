@@ -9,8 +9,8 @@
 data type for the column.
 """
 
-from openclean.data.sequence import Sequence
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.profiling.base import profile
 
 
 def datatype_outliers(df, columns, classifier, domain):
@@ -24,8 +24,10 @@ def datatype_outliers(df, columns, classifier, domain):
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     classifier: callable
         Classifier that assigns data type class labels to column values.
     domain: scalar or list
@@ -34,10 +36,10 @@ def datatype_outliers(df, columns, classifier, domain):
 
     Returns
     -------
-    list
+    dict
     """
     op = DatatypeOutliers(classifier=classifier, domain=domain)
-    return op.find(values=set(Sequence(df=df, columns=columns)))
+    return profile(df, columns=columns, profilers=op)[op.name]
 
 
 class DatatypeOutliers(ConditionalOutliers):
@@ -87,4 +89,4 @@ class DatatypeOutliers(ConditionalOutliers):
         """
         type_label = self.classifier(value)
         if type_label not in self.domain:
-            return {'value': value, 'label': type_label}
+            return type_label

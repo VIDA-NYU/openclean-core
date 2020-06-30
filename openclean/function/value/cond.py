@@ -32,7 +32,6 @@ class ConditionalStatement(PreparedFunction):
             Statement that is evaluated for values that do not satisfy the
             predicate.
         """
-        super(ConditionalStatement, self).__init__(name='ifthenelse')
         self.predicate = to_value_function(predicate)
         self.stmt = to_value_function(stmt)
         self.elsestmt = to_value_function(elsestmt)

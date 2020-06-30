@@ -9,10 +9,12 @@
 clustering algorithms.
 """
 
-from openclean.data.sequence import Sequence
-from openclean.profiling.anomalies.base import AnomalyDetector
 from openclean.embedding.base import Embedding
 from openclean.embedding.feature.default import StandardEmbedding
+from openclean.profiling.anomalies.base import AnomalyDetector
+from openclean.profiling.base import profile
+
+import openclean.util as util
 
 
 class SklearnOutliers(AnomalyDetector):
@@ -34,54 +36,37 @@ class SklearnOutliers(AnomalyDetector):
         features: openclean.profiling.embedding.base.ValueEmbedder, optional
             Feature vector generator for values in a data stream.
         """
+        super(SklearnOutliers, self).__init__(
+            name='sklearn:' + util.funcname(algorithm)
+        )
         self.algorithm = algorithm
         self.features = StandardEmbedding() if features is None else features
 
-    def exec(self, values):
-        """Return list of values that are identified as outliers. This anomaly
+    def run(self, values):
+        """Return set of values that are identified as outliers. This anomaly
         detector does not provide any additional provenance for the detected
-        outlier values.
+        outlier values (other than the name of the used algorithm).
 
         Parameters
         ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
+        values: dict
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
 
         Returns
         -------
-        list
+        dict
         """
-        return self.find(values)
-
-    def find(self, values):
-        """Identify values in a given list of distinct values that satisfy the
-        outlier condition. Starts by crating an embedding for the given values.
-        Then uses the fit_predict() method of the estimator to get labels for
-        all values. Values that are assigned a label of -1 are considered
-        outliers.
-
-        Parameters
-        ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
-
-        Returns
-        -------
-        list
-        """
-        # Make sure that values is a reusable list and not just an iterator.
-        if not isinstance(values, list):
-            values = list(values)
         # Get the vector embedding for all values in the data stream
         vec = Embedding(features=self.features).exec(values)
         # Get labels using the fit_predict() metod of the estimator
         labels = self.algorithm.fit_predict(vec.data)
         # Return values that were assigned label -1.
-        result = list()
+        result = dict()
         keys = list(vec.keys())
         for i in range(len(keys)):
             if labels[i] == -1:
-                result.append(keys[i])
+                result[keys[i]] = self.name
         return result
 
 
@@ -99,8 +84,10 @@ def dbscan(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     features: openclean.profiling.embedding.base.ValueEmbedder, optional
         Generator for feature vectors that computes a vector of numeric values
         for a given scalar value (or tuple).
@@ -162,7 +149,7 @@ def dbscan(
     # Run the scikit-learn outlier detection algoritm with DBSCAN as the
     # estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Sequence(df=df, columns=columns))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
 
 
 def isolation_forest(
@@ -178,8 +165,10 @@ def isolation_forest(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     features: openclean.profiling.embedding.base.ValueEmbedder, optional
         Generator for feature vectors that computes a vector of numeric values
         for a given scalar value (or tuple).
@@ -247,7 +236,7 @@ def isolation_forest(
     # Run the scikit-learn outlier detection algoritm with IsolationForest as
     # the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Sequence(df=df, columns=columns))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
 
 
 def local_outlier_factor(
@@ -263,8 +252,10 @@ def local_outlier_factor(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     features: openclean.profiling.embedding.base.ValueEmbedder
         Generator for feature vectors that computes a vector of numeric values
         for a given scalar value (or tuple).
@@ -354,7 +345,7 @@ def local_outlier_factor(
     # Run the scikit-learn outlier detection algoritm with LocalOutlierFactor
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Sequence(df=df, columns=columns))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
 
 
 def one_class_svm(
@@ -370,8 +361,10 @@ def one_class_svm(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     features: openclean.profiling.embedding.base.ValueEmbedder
         Generator for feature vectors that computes a vector of numeric values
         for a given scalar value (or tuple).
@@ -434,7 +427,7 @@ def one_class_svm(
     # Run the scikit-learn outlier detection algoritm with OneClassSVM
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Sequence(df=df, columns=columns))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
 
 
 def robust_covariance(
@@ -450,8 +443,10 @@ def robust_covariance(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     features: openclean.profiling.embedding.base.ValueEmbedder
         Generator for feature vectors that computes a vector of numeric values
         for a given scalar value (or tuple).
@@ -494,4 +489,4 @@ def robust_covariance(
     # Run the scikit-learn outlier detection algoritm with EllipticEnvelope
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.find(values=Sequence(df=df, columns=columns))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())

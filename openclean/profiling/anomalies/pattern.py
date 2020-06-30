@@ -10,9 +10,9 @@ general are considered values that do not match a (list of) pattern(s) that
 the values in a list (e.g., data frame column) are expected to satisfy.
 """
 
-from openclean.function.distinct import distinct
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.profiling.base import profile
 from openclean.profiling.util import always_false, eval_all
 
 
@@ -25,8 +25,10 @@ def regex_outliers(df, columns, patterns, fullmatch=True):
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     patterns: list(string)
         List if regular expression patterns.
     fullmatch: bool, default=True
@@ -38,7 +40,7 @@ def regex_outliers(df, columns, patterns, fullmatch=True):
     list
     """
     op = RegExOutliers(patterns=patterns, fullmatch=fullmatch)
-    return op.find(values=distinct(df=df, columns=columns))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
 
 
 class RegExOutliers(ConditionalOutliers):
@@ -92,4 +94,4 @@ class RegExOutliers(ConditionalOutliers):
         bool
         """
         if self.predicate(value):
-            return {'value': value}
+            return True

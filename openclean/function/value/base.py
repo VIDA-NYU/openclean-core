@@ -8,94 +8,14 @@
 """Base class for value function. Collection of basic helper functions."""
 
 from abc import ABCMeta, abstractmethod
-from collections import Counter
-
-import openclean.util as util
-
-
-# -- Profiling function ------------------------------------------------------
-
-class ProfilingFunction(metaclass=ABCMeta):
-    """Profiler for a set of distinct values. Profiling functions compute
-    statistics or informative summaries over a set of (distinct) values.
-
-    Each profiler implements the exec_distinct() method. The method consumes a
-    dictionary of distinct values mapped to their respective frequency counts.
-    The result type of each profiler is implementation dependent. It should
-    either be a scalar value (e.g. for aggregators) or a dictionary.
-
-    Each profiling function has a (unique) name. The name is used as the key
-    value in a dictionary that composes the results of multiple profiling
-    functions.
-    """
-    def __init__(self, name=None):
-        """Initialize the function name.
-
-        Parameters
-        ----------
-        name: string, default=None
-            Unique function name.
-        """
-        self.name = name if name else util.funcname(self)
-
-    def profile(self, values):
-        """Compute one or more features over a list of values. Converts the
-        given list into a dictionary of distinct values and returns the result
-        of applying the exec_distinct() method on that dctionary.
-
-        Parameters
-        ----------
-        values: list
-            List of scalar values or tuples.
-
-        Returns
-        -------
-        scalar or list or dict
-        """
-        return self.exec_distinct(Counter(values))
-
-    @abstractmethod
-    def profile_distinct(self, values):
-        """Compute one or more features over a set of distinct values. This is
-        the main profiling function that computes statistics or informative
-        summaries over the given data values. It operates on a compact form of
-        a value list that only contains the distinct values and their frequency
-        counts.
-
-        The return type of this function is implementation dependend.
-
-        Parameters
-        ----------
-        values: dict
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
-
-        Returns
-        -------
-        scalar or list or dict
-        """
-        raise NotImplementedError()
 
 
 # -- Abstract base class for value functions ----------------------------------
 
-class ValueFunction(ProfilingFunction, metaclass=ABCMeta):
+class ValueFunction(metaclass=ABCMeta):
     """The abstract class for value functions defines the interface for methods
     that need to be implemented for preparing and evaluating the function.
     """
-    def __init__(self, name=None):
-        """Initialize the function name.
-
-        Parameters
-        ----------
-        name: string, default=None
-            Unique function name.
-        to_dict: callable, default=None
-            Function that accepts a value and a feature as arguments and that
-            returns a dictionary.
-        """
-        super(ValueFunction, self).__init__(name=name)
-
     def apply(self, values):
         """Apply the function to each value in a given set. Returns a list of
         values that are the result of the eval method for the respective input
@@ -190,38 +110,12 @@ class ValueFunction(ProfilingFunction, metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def profile_distinct(self, values):
-        """By default the result of the map() function is used as the result
-        if the value function is used as a data profiler.
-
-        Parameters
-        ----------
-        values: dict
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
-
-        Returns
-        -------
-        scalar or list or dict
-        """
-        return self.map(values)
-
 
 class PreparedFunction(ValueFunction):
     """Abstract base class for value functions that do not make use of the
     prepare method. These functions are considered as initialized and ready
     to operate without the need for calling the prepare method first.
     """
-    def __init__(self, name=None):
-        """Initialize the function name.
-
-        Parameters
-        ----------
-        name: string, default=None
-            Unique function name.
-        """
-        super(PreparedFunction, self).__init__(name=name)
-
     def __call__(self, value):
         """Make the function callable for individual values.
 
@@ -261,7 +155,7 @@ class CallableWrapper(PreparedFunction):
     """Wrapper for callable functions as value functions. This value function
     does not prepare the wrapped callable.
     """
-    def __init__(self, func, name=None):
+    def __init__(self, func):
         """Initialize the wrapped callable function. Raises a ValueError if the
         function is not a callable.
 
@@ -269,9 +163,6 @@ class CallableWrapper(PreparedFunction):
         ----------
         func: callable
             Function that is wrapped as a value finction.
-        name: string, default=None
-            Unique function name. Uses the function name as default if not
-            given.
 
         Raises
         ------
@@ -281,9 +172,6 @@ class CallableWrapper(PreparedFunction):
         if not callable(func):
             raise ValueError('not a callable function')
         self.func = func
-        super(CallableWrapper, self).__init__(
-            name=name if name else util.funcname(self.func)
-        )
 
     def eval(self, value):
         """Evaluate the wrapped function on a given value. The value may either
@@ -302,7 +190,7 @@ class CallableWrapper(PreparedFunction):
         return self.func(value)
 
 
-def ConstantValue(PreparedFunction):
+class ConstantValue(PreparedFunction):
     """Value function that returns a given constant value for all inputs."""
     def __init__(self, value):
         """Initialize the constant return values for the function.
@@ -312,7 +200,6 @@ def ConstantValue(PreparedFunction):
         value: any
             Function result value for all input values.
         """
-        super(ConstantValue, self).__init__(name='constant')
         self.value = value
 
     def eval(self, value):

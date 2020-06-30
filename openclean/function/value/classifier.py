@@ -11,8 +11,6 @@ data frames that have class labels assigned to their data rows.
 
 from openclean.function.value.base import CallableWrapper, ValueFunction
 
-import openclean.util as util
-
 
 class ClassLabel(ValueFunction):
     """Classifier for a single type. Assigns a pre-defined class label to
@@ -42,7 +40,6 @@ class ClassLabel(ValueFunction):
         ------
         ValueError
         """
-        super(ClassLabel, self).__init__(name=util.funcname(predicate))
         # Ensure that the predicate is a ValueFunction
         if not isinstance(predicate, ValueFunction):
             # Wrap the predicate inside a ValueFunction. This will raise a
@@ -129,9 +126,6 @@ class ValueClassifier(ValueFunction):
             Raise an error instead of returning the default label if no
             classifier was satisfied by a given value.
         """
-        super(ValueClassifier, self).__init__(
-            name=kwargs.get('name', 'valueClassifier')
-        )
         self.classifiers = list()
         for f in args:
             if not isinstance(f, ValueFunction):

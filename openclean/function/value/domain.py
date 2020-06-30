@@ -101,5 +101,6 @@ def to_lower(value):
     """
     if util.is_list_or_tuple(value):
         return tuple([v.lower() for v in value])
-    else:
+    elif isinstance(value, str):
         return value.lower()
+    return value

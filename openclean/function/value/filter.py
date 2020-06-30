@@ -5,9 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Functions that filter values in a given list. Implements the ListFunction
-interface from the base module.
-"""
+"""Functions that filter values in a given list."""
 
 from openclean.function.value.base import CallableWrapper, ValueFunction
 

@@ -75,6 +75,131 @@ class eval_all(object):
         return True
 
 
+# -- Thresholds ---------------------------------------------------------------
+
+def is_one(value):
+    """Threshold constraint that test is a value is 1.
+
+    Parameters
+    ----------
+    value: float
+        Value that is tested for being 1.
+
+    Returns
+    -------
+    bool
+    """
+    return value == 1
+
+
+class geq(object):
+    """Helper class for greater or equal than thresholds."""
+    def __init__(self, threshold):
+        """Initialize the threshold value.
+
+        Parameters
+        ----------
+        threshold: float
+            Threshold value.
+        """
+        self.threshold = threshold
+
+    def __call__(self, value):
+        """Evaluate the threshold constraint.
+
+        Parameters
+        ----------
+        value: float
+            Value that is compared against the threshold value.
+
+        Returns
+        -------
+        bool
+        """
+        return value >= self.threshold
+
+
+class gt(object):
+    """Helper class for greater than thresholds."""
+    def __init__(self, threshold):
+        """Initialize the threshold value.
+
+        Parameters
+        ----------
+        threshold: float
+            Threshold value.
+        """
+        self.threshold = threshold
+
+    def __call__(self, value):
+        """Evaluate the threshold constraint.
+
+        Parameters
+        ----------
+        value: float
+            Value that is compared against the threshold value.
+
+        Returns
+        -------
+        bool
+        """
+        return value > self.threshold
+
+
+class leq(object):
+    """Helper class for less or equal than thresholds."""
+    def __init__(self, threshold):
+        """Initialize the threshold value.
+
+        Parameters
+        ----------
+        threshold: float
+            Threshold value.
+        """
+        self.threshold = threshold
+
+    def __call__(self, value):
+        """Evaluate the threshold constraint.
+
+        Parameters
+        ----------
+        value: float
+            Value that is compared against the threshold value.
+
+        Returns
+        -------
+        bool
+        """
+        return value <= self.threshold
+
+
+class lt(object):
+    """Helper class for less than thresholds."""
+    def __init__(self, threshold):
+        """Initialize the threshold value.
+
+        Parameters
+        ----------
+        threshold: float
+            Threshold value.
+        """
+        self.threshold = threshold
+
+    def __call__(self, value):
+        """Evaluate the threshold constraint.
+
+        Parameters
+        ----------
+        value: float
+            Value that is compared against the threshold value.
+
+        Returns
+        -------
+        bool
+        """
+        return value < self.threshold
+
+
 def get_threshold(threshold):
     """Ensure that the given threshold is a callable.
 
@@ -100,17 +225,9 @@ def get_threshold(threshold):
     # using the value (unless the value is 1 in which case we use eq).
     if type(threshold) in [int, float]:
         if threshold == 1:
-
-            def is_one(value):
-                return value == 1
-
             threshold = is_one
         else:
-
-            def gt(value):
-                return value > threshold
-
-            threshold = gt
+            threshold = gt(threshold)
     elif not callable(threshold):
         raise ValueError('invalid threshold constraint')
     return threshold

@@ -25,7 +25,7 @@ class ColumnAggregator(EvalFunction):
     columns in a data frame and returns this value as result for all calls to
     the eval() method.
     """
-    def __init__(self, func, columns=None):
+    def __init__(self, func, columns):
         """Initialize the statistics function and the list of columns on which
         the function will be applied.
 
@@ -35,7 +35,7 @@ class ColumnAggregator(EvalFunction):
         ----------
         func: callable
             Function that accepts values from one or more columns as input.
-        columns: int, string, or list(int or string), default=None
+        columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
         value: int, float, or tuple, default=None
             Constant value that will be returned by the eval() method. This
@@ -103,29 +103,55 @@ class Avg(ColumnAggregator):
     """Evaluation function that returns the mean of values for one or more
     columns in a data frame.
     """
-    def __init__(self, columns=None):
+    def __init__(self, columns):
         """Initialize the statistics function in the super class as well as the
         list of columns on which the function will be applied.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string), optional
+        columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
         """
         super(Avg, self).__init__(func=np.mean, columns=columns)
+
+
+class Count(ColumnAggregator):
+    """Evaluation function that counts the number of values in one or more
+    columns that match a given value.
+    """
+    def __init__(self, columns, value=True):
+        """Initialize the statistics function in the super class as well as the
+        list of columns on which the function will be applied.
+
+        Parameters
+        ----------
+        columns: int, string, or list(int or string)
+            Single column or list of column index positions or column names.
+        value: any, default=True
+            Value whose frequency is counted.
+        """
+
+        def count(values):
+            counter = 0
+            for val in values:
+                if val == value:
+                    counter += 1
+            return counter
+
+        super(Count, self).__init__(func=count, columns=columns)
 
 
 class Max(ColumnAggregator):
     """Evaluation function that returns the maximum of values for one or more
     columns in a data frame.
     """
-    def __init__(self, columns=None):
+    def __init__(self, columns):
         """Initialize the statistics function in the super class as well as the
         list of columns on which the function will be applied.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string), optional
+        columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
         """
         super(Max, self).__init__(func=max, columns=columns)
@@ -135,13 +161,13 @@ class Min(ColumnAggregator):
     """Evaluation function that returns the minimum of values for one or more
     columns in a data frame.
     """
-    def __init__(self, columns=None):
+    def __init__(self, columns):
         """Initialize the statistics function in the super class as well as the
         list of columns on which the function will be applied.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string), optional
+        columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
         """
         super(Min, self).__init__(func=min, columns=columns)
@@ -151,13 +177,13 @@ class Sum(ColumnAggregator):
     """Evaluation function that returns the sum over values for one or more
     columns in a data frame.
     """
-    def __init__(self, columns=None):
+    def __init__(self, columns):
         """Initialize the statistics function in the super class as well as the
         list of columns on which the function will be applied.
 
         Parameters
         ----------
-        columns: int, string, or list(int or string), optional
+        columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
         """
         super(Sum, self).__init__(func=sum, columns=columns)

@@ -66,7 +66,10 @@ def distinct(
     f = f.prepare(df)
     values = list()
     for _, row in df.iterrows():
-        values.append(f.eval(row))
+        val = f.eval(row)
+        if isinstance(val, list):
+            val = tuple(val)
+        values.append(val)
     return op.exec(values)
 
 

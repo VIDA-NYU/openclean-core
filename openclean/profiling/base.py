@@ -15,9 +15,11 @@ values. That is, they filter values based on some condition computed over the
 value features. Profilers can also compute new 'value', for example, when
 discovering patterns in the data.
 """
+from abc import ABCMeta, abstractmethod
 
-from openclean.data.sequence import Sequence
-from openclean.function.value.base import ProfilingFunction
+from openclean.function.distinct import distinct
+
+import openclean.util as util
 
 
 # -- Column profiling operator ------------------------------------------------
@@ -30,14 +32,67 @@ def profile(df, columns=None, profilers=None):
     ----------
     df: pandas.DataFramee
         Input data frame.
-    columns: int, string, or list(int or string), default=None
-        Single column or list of column index positions or column names.
-        Defines the list of value (pairs) for which profiles are computed.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     profilers: list(openclean.function.value.base.ProfilingFunction)
         List of profiling functions,
     """
-    values = Sequence(df=df, columns=columns)
-    return Profiler(profilers=profilers).exec(values=values)
+    if columns is None:
+        # If no columns are given we use the full data frame schema.
+        columns = tuple(df.columns)
+    # Compute set of distinct values with their frequency counts.
+    values = distinct(df, columns=columns)
+    return Profiler(profilers=profilers).run(values=values)
+
+
+# --Profler base classes ------------------------------------------------------
+
+class ProfilingFunction(metaclass=ABCMeta):
+    """Profiler for a set of distinct values. Profiling functions compute
+    statistics or informative summaries over a set of (distinct) values.
+
+    Each profiler implements the exec_distinct() method. The method consumes a
+    dictionary of distinct values mapped to their respective frequency counts.
+    The result type of each profiler is implementation dependent. It should
+    either be a scalar value (e.g. for aggregators) or a dictionary.
+
+    Each profiling function has a (unique) name. The name is used as the key
+    value in a dictionary that composes the results of multiple profiling
+    functions.
+    """
+    def __init__(self, name=None):
+        """Initialize the function name.
+
+        Parameters
+        ----------
+        name: string, default=None
+            Unique function name.
+        """
+        self.name = name if name else util.funcname(self)
+
+    @abstractmethod
+    def run(self, values):
+        """Compute one or more features over a set of distinct values. This is
+        the main profiling function that computes statistics or informative
+        summaries over the given data values. It operates on a compact form of
+        a value list that only contains the distinct values and their frequency
+        counts.
+
+        The return type of this function is implementation dependend.
+
+        Parameters
+        ----------
+        values: dict
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
+
+        Returns
+        -------
+        scalar value, list, set, or dict
+        """
+        raise NotImplementedError()
 
 
 class Profiler(ProfilingFunction):
@@ -70,7 +125,7 @@ class Profiler(ProfilingFunction):
         for f in profilers:
             if not isinstance(f, ProfilingFunction):
                 raise ValueError("invalid profiler type '{}'".format(type(f)))
-            fname = f.name()
+            fname = f.name
             if not fname:
                 raise ValueError("invalid profiler name '{}'".format(fname))
             if fname in names:
@@ -79,15 +134,16 @@ class Profiler(ProfilingFunction):
         self.profilers = profilers
         super(Profiler, self).__init__(name=name if name else 'profiler')
 
-    def exec(self, values):
+    def run(self, values):
         """Combine the results from the different profiler functions in a
         single dictionary. Raises a ValueError if the names of the profilers
         are not unique.
 
         Parameters
         ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
+        values: dict
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
 
         Returns
         -------
@@ -95,7 +151,7 @@ class Profiler(ProfilingFunction):
         """
         results = dict()
         for f in self.profilers:
-            if f.name() in results:
+            if f.name in results:
                 raise ValueError('duplicate profiler name {}'.format(f.name()))
-            results[f.name()] = f.exec(values)
+            results[f.name] = f.run(values)
         return results
