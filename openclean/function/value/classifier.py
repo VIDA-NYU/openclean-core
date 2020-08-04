@@ -9,9 +9,7 @@
 data frames that have class labels assigned to their data rows.
 """
 
-from openclean.function.base import CallableWrapper, ValueFunction
-
-import openclean.util as util
+from openclean.function.value.base import CallableWrapper, ValueFunction
 
 
 class ClassLabel(ValueFunction):
@@ -42,7 +40,6 @@ class ClassLabel(ValueFunction):
         ------
         ValueError
         """
-        super(ClassLabel, self).__init__(name=util.funcname(predicate))
         # Ensure that the predicate is a ValueFunction
         if not isinstance(predicate, ValueFunction):
             # Wrap the predicate inside a ValueFunction. This will raise a
@@ -116,7 +113,7 @@ class ValueClassifier(ValueFunction):
 
         Parameters
         ----------
-        args: list of callable or openclean.function.base.ValueFunction
+        args: list of callable or openclean.function.value.base.ValueFunction
             List of functions that accept a scalar value as input and that
             return a class label as output.
         none_label: string, default=None
@@ -129,9 +126,6 @@ class ValueClassifier(ValueFunction):
             Raise an error instead of returning the default label if no
             classifier was satisfied by a given value.
         """
-        super(ValueClassifier, self).__init__(
-            name=kwargs.get('name', 'valueClassifier')
-        )
         self.classifiers = list()
         for f in args:
             if not isinstance(f, ValueFunction):

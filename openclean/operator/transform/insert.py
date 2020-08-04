@@ -11,8 +11,9 @@ data frame.
 
 import pandas as pd
 
-from openclean.function.eval.base import EvalFunction, FullRowEval
-from openclean.function.eval.constant import Const
+from openclean.function.eval.base import (
+    Const, EvalFunction, PreparedFullRowEval
+)
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -165,7 +166,7 @@ class InsCol(DataFrameTransformer):
                     values = Const(values)
             elif not isinstance(values, EvalFunction):
                 # Wrap the callable in a full row evaluation function
-                values = FullRowEval(values)
+                values = PreparedFullRowEval(func=values)
         else:
             # Initialize a function that returns a single None or a list of
             # None values (one for each inserted column)
@@ -202,8 +203,7 @@ class InsCol(DataFrameTransformer):
             inspos = len(df.columns)
         # Call the prepare method of the value generator function if it is an
         # evaluation function.
-        if isinstance(self.values, EvalFunction):
-            self.values.prepare(df)
+        f = self.values.prepare(df)
         # Create a modified data frame where rows are modified by the update
         # function.
         data = list()
@@ -211,13 +211,13 @@ class InsCol(DataFrameTransformer):
         # updates.
         if len(self.names) == 1:
             for rowid, values in df.iterrows():
-                val = self.values(values)
+                val = f.eval(values)
                 values = list(values)
                 data.append(values[:inspos] + [val] + values[inspos:])
         else:
             col_count = len(self.names)
             for rowid, values in df.iterrows():
-                vals = self.values(values)
+                vals = f.eval(values)
                 if len(vals) != col_count:
                     msg = 'expected {} values instead of {}'
                     raise ValueError(msg.format(col_count, vals))

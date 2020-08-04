@@ -85,30 +85,6 @@ def to_datetime(value, default_value=None, raise_error=False):
     return default_value
 
 
-def to_int(value, default_value=None, raise_error=False):
-    """Convert a given value to integer. Raises an error if the given value
-    cannot be converted to integer and the raise error flag is True. If the
-    flag is False, a given default value will be returned for thoses values
-    that cannot be converted to integer.
-
-    Parameters
-    ----------
-    value: scalar
-        Scalar value that is being converted to integer.
-    default_value: scalar, default=None
-        Default value that is being returned for values that cannot be cast to
-        integer if the raise_error flag is False.
-    raise_error: bool, default=False
-        Raise ValueError if the value cannot be cast to integer.
-    """
-    return cast(
-        value,
-        func=int,
-        default_value=default_value,
-        raise_error=raise_error
-    )
-
-
 def to_float(value, default_value=None, raise_error=False):
     """Convert a given value to float. Raises an error if the given value
     cannot be converted to float and the raise error flag is True. If the
@@ -128,6 +104,30 @@ def to_float(value, default_value=None, raise_error=False):
     return cast(
         value,
         func=float,
+        default_value=default_value,
+        raise_error=raise_error
+    )
+
+
+def to_int(value, default_value=None, raise_error=False):
+    """Convert a given value to integer. Raises an error if the given value
+    cannot be converted to integer and the raise error flag is True. If the
+    flag is False, a given default value will be returned for thoses values
+    that cannot be converted to integer.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value that is being converted to integer.
+    default_value: scalar, default=None
+        Default value that is being returned for values that cannot be cast to
+        integer if the raise_error flag is False.
+    raise_error: bool, default=False
+        Raise ValueError if the value cannot be cast to integer.
+    """
+    return cast(
+        value,
+        func=int,
         default_value=default_value,
         raise_error=raise_error
     )

@@ -12,9 +12,8 @@ The classes in this module implement different strategies for assigning a
 datatype to a list of values (e.g., a column in a data frame).
 """
 
-from openclean.data.sequence import Sequence
-from openclean.function.base import DictionaryFunction
 from openclean.function.value.normalize import divide_by_total
+from openclean.profiling.base import profile, ProfilingFunction
 from openclean.profiling.classifier.base import DISTINCT, TOTAL
 from openclean.profiling.classifier.datatype import Datatypes
 from openclean.profiling.util import get_threshold
@@ -39,10 +38,10 @@ def majority_typepicker(
     ----------
     df: pandas.DataFramee
         Input data frame.
-    columns: int, string, or list(int or string), default=None
-        Single column or list of column index positions or column names.
-        Defines the list of value (pairs) that are considered by the type
-        picker.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     classifier: openclean.function.value.classifier.ValueClassifier
             , default=None
         Classifier that assigns data type class labels for scalar column
@@ -55,7 +54,12 @@ def majority_typepicker(
         frequencies.
     at_most_one: bool, default=False
         Ensure that at most one data type is returned in the result. If the
-        flag is True and multiple types have the maximum frequency, an
+        flag is True and multiple types have the maximum frequency, an empty
+        dictionary will be returned.
+
+    Returns
+    -------
+    dict
     """
     picker = MajorityTypePicker(
         classifier=classifier,
@@ -63,10 +67,10 @@ def majority_typepicker(
         use_total_counts=use_total_counts,
         at_most_one=at_most_one
     )
-    return picker.map(Sequence(df=df, columns=columns))
+    return profile(df, columns=columns, profilers=picker)[picker.name]
 
 
-class MajorityTypePicker(DictionaryFunction):
+class MajorityTypePicker(ProfilingFunction):
     """Pick the most frequent type assigned by a given classifier to the values
     in a given list. Generates a dictionary containing the most frequent
     type(s) as key(s) and their normalized frequency as the associated value.
@@ -103,13 +107,15 @@ class MajorityTypePicker(DictionaryFunction):
         name: string, default='majorityTypePicker'
             Unique function name.
         """
+        super(MajorityTypePicker, self).__init__(
+            name=name if name else 'majorityTypePicker'
+        )
         self.classifier = classifier
         self.threshold = get_threshold(threshold)
         self.use_total_counts = use_total_counts
         self.at_most_one = at_most_one
-        self._name = name if name else 'majorityTypePicker'
 
-    def map(self, values):
+    def run(self, values):
         """Select one or more type labels based on data type statistics that
         are computed over the given list of values using the associated
         classifier.
@@ -121,9 +127,9 @@ class MajorityTypePicker(DictionaryFunction):
 
         Parameters
         ----------
-        values: list
-            List of scalar values or tuples of scalar values that are first
-            typed to then select the most frequent type.
+        values: dict
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
 
         Returns
         -------
@@ -133,7 +139,7 @@ class MajorityTypePicker(DictionaryFunction):
             classifier=self.classifier,
             features=TOTAL if self.use_total_counts else DISTINCT,
             normalizer=divide_by_total
-        ).map(values)
+        ).run(values)
         # Return an empty dictionary if the list of returned types is empty.
         if not types:
             return dict()
@@ -151,15 +157,6 @@ class MajorityTypePicker(DictionaryFunction):
         if self.at_most_one and len(result) > 1:
             return dict()
         return result
-
-    def name(self):
-        """Unique function name.
-
-        Returns
-        -------
-        string
-        """
-        return self._name
 
 
 # -- Threshold type picker ----------------------------------------------------
@@ -179,10 +176,10 @@ def threshold_typepicker(
     ----------
     df: pandas.DataFramee
         Input data frame.
-    columns: int, string, or list(int or string), default=None
-        Single column or list of column index positions or column names.
-        Defines the list of value (pairs) that are considered by the type
-        picker.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     classifier: openclean.function.value.classifier.ValueClassifier
             , default=None
         Classifier that assigns data type class labels for scalar column
@@ -199,10 +196,10 @@ def threshold_typepicker(
         threshold=threshold,
         use_total_counts=use_total_counts
     )
-    return picker.map(Sequence(df=df, columns=columns))
+    return profile(df, columns=columns, profilers=picker)[picker.name]
 
 
-class ThresholdTypePicker(DictionaryFunction):
+class ThresholdTypePicker(ProfilingFunction):
     """Identify all types assigned by a given classifier to the values in a
     list having a frequency that exceeds a specified threshold. Generates a
     dictionary containing the types as keys and their normalized frequency as
@@ -233,12 +230,14 @@ class ThresholdTypePicker(DictionaryFunction):
         name: string, default='thresholdTypePicker'
             Unique function name.
         """
+        super(ThresholdTypePicker, self).__init__(
+            name=name if name else 'thresholdTypePicker'
+        )
         self.classifier = classifier
         self.threshold = get_threshold(threshold)
         self.use_total_counts = use_total_counts
-        self._name = name if name else 'thresholdTypePicker'
 
-    def map(self, values):
+    def run(self, values):
         """Select one or more type labels based on data type statistics that
         are computed over the given list of values using the associated
         classifier.
@@ -250,9 +249,9 @@ class ThresholdTypePicker(DictionaryFunction):
 
         Parameters
         ----------
-        values: list
-            List of scalar values or tuples of scalar values that are first
-            typed to then select the most frequent type.
+        values: dict
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
 
         Returns
         -------
@@ -262,7 +261,7 @@ class ThresholdTypePicker(DictionaryFunction):
             classifier=self.classifier,
             features=TOTAL if self.use_total_counts else DISTINCT,
             normalizer=divide_by_total
-        ).map(values)
+        ).run(values)
         # Return an empty dictionary if the list of returned types is empty.
         if not types:
             return dict()
@@ -272,12 +271,3 @@ class ThresholdTypePicker(DictionaryFunction):
             if self.threshold(freq):
                 result[label] = freq
         return result
-
-    def name(self):
-        """Unique function name.
-
-        Returns
-        -------
-        string
-        """
-        return self._name

@@ -5,13 +5,9 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Functions that filter values in a given list. Implements the ListFunction
-interface from the base module.
-"""
+"""Functions that filter values in a given list."""
 
-from openclean.function.base import (
-    CallableWrapper, ListFunction, ValueFunction
-)
+from openclean.function.value.base import CallableWrapper, ValueFunction
 
 
 def filter(values, predicate, truth_value=True):
@@ -22,7 +18,7 @@ def filter(values, predicate, truth_value=True):
     ----------
     values: list
         List of scalar values or tuples of scalar values.
-    predicate: openclean.function.base.ValueFunction or callable
+    predicate: openclean.function.value.base.ValueFunction or callable
         Callable or value function that is used to filter values in a given
         list.
     truth_value: scalar, defaut=True
@@ -32,14 +28,14 @@ def filter(values, predicate, truth_value=True):
     return Filter(predicate).apply(values)
 
 
-class Filter(ListFunction):
+class Filter(object):
     """Filter values in a list based on a given predicate function."""
     def __init__(self, predicate, truth_value=True):
         """Initialize the predicate that is used to filter values in a list.
 
         Parameters
         ----------
-        predicate: openclean.function.base.ValueFunction or callable
+        predicate: openclean.function.value.base.ValueFunction or callable
             Callable or value function that is used to filter values in a given
             list.
         truth_value: scalar, defaut=True

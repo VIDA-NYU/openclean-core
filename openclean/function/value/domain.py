@@ -10,8 +10,9 @@
 import pandas as pd
 
 from openclean.data.util import to_set
-from openclean.function.base import PreparedFunction, scalar_pass_through
-from openclean.function.value.string import Lower
+from openclean.function.value.base import PreparedFunction
+
+import openclean.util as util
 
 
 class IsInDomain(PreparedFunction):
@@ -38,13 +39,8 @@ class IsInDomain(PreparedFunction):
             domain = to_set(domain)
         self.negated = negated
         self.ignore_case = ignore_case
-        if ignore_case:
-            # Convert all string values in the domain to lower cases.
-            self.valfunc = Lower()
-            self.domain = [self.valfunc(v) for v in domain]
-        else:
-            self.valfunc = scalar_pass_through
-            self.domain = domain
+        # Convert all string values in the domain to lower cases.
+        self.domain = [to_lower(v) for v in domain] if ignore_case else domain
 
     def eval(self, value):
         """Test if a given value is a member of the domain of known values.
@@ -58,7 +54,9 @@ class IsInDomain(PreparedFunction):
         -------
         bool
         """
-        is_in = self.valfunc(value) in self.domain
+        if self.ignore_case:
+            value = to_lower(value)
+        is_in = value in self.domain
         return is_in != self.negated
 
 
@@ -84,3 +82,25 @@ class IsNotInDomain(IsInDomain):
             ignore_case=ignore_case,
             negated=True
         )
+
+
+# -- Helper funcitons ---------------------------------------------------------
+
+def to_lower(value):
+    """Convert a given value to lower case. Handles the case where the value is
+    a list or tuple.
+
+    Parameters
+    ----------
+    value: string, list, or tuple
+        Value that is transformed to lower case.
+
+    Returns
+    -------
+    string, list, or tuple
+    """
+    if util.is_list_or_tuple(value):
+        return tuple([v.lower() for v in value])
+    elif isinstance(value, str):
+        return value.lower()
+    return value

@@ -7,13 +7,17 @@
 
 """Operators for frequency outlier detection."""
 
-from openclean.function.distinct import distinct
 from openclean.function.value.normalize import DivideByTotal
-from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.profiling.anomalies.base import AnomalyDetector
+from openclean.profiling.base import profile
 from openclean.profiling.util import get_threshold
 
 
-def frequency_outliers(df, columns, threshold):
+ABSOLUTE = 'absolute'
+NORMALIZED = 'normalized'
+
+
+def frequency_outliers(df, columns, threshold, normalize=DivideByTotal()):
     """Detect frequency outliers for values (or value combinations) in one or
     more columns of a data frame. A value (combination) is considered an
     outlier if the relative frequency satisfies the given threshold predicate.
@@ -22,16 +26,21 @@ def frequency_outliers(df, columns, threshold):
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     threshold: callable
         Function that accepts a float (i.e., the relative frequency) and that
         returns a Boolean value. True indicates that the value (frequency)
         satisfies the value outlier condition.
+    normalize: openclean.function.value.normalize.NormalizeFunction
+        Function used to normalize frequency values befor evaluating the
+        threshold constraint.
 
     Returns
     -------
-    list
+    dict
 
     Raises
     ------
@@ -39,55 +48,56 @@ def frequency_outliers(df, columns, threshold):
     """
     # Create the predicate as a lookup over the normalized frequencies of
     # values in the given columns.
-    values = distinct(df=df, columns=columns, normalizer=DivideByTotal())
-    op = FrequencyOutliers(
-        frequency=values,
-        threshold=threshold
-    )
-    return op.find(values=values)
+    op = FrequencyOutliers(threshold=threshold, normalize=normalize)
+    return profile(df, columns=columns, profilers=op)[op.name]
 
 
-class FrequencyOutliers(ConditionalOutliers):
+class FrequencyOutliers(AnomalyDetector):
     """Detect frequency outliers for values in a given list. A value is
     considered an outlier if its relative frequency in the list satisfies the
     given threshold predicate.
     """
-    def __init__(self, frequency, threshold):
-        """Initialize the frequency function for list values and the threshold.
+    def __init__(self, threshold, normalize=DivideByTotal()):
+        """Initialize the frequency threshold.
 
         Parameters
         ----------
-        frequency: dict
-            Dictionary that allows to lookup the relative frequency of a given
-            value.
         threshold: callable
             Function that accepts a float (i.e., the relative frequency) and
             that returns a Boolean value. True indicates that the value
             (frequency) satisfies the value outlier condition.
+        normalize: openclean.function.value.normalize.NormalizeFunction
+            Function used to normalize frequency values befor evaluating the
+            threshold constraint.
         """
         super(FrequencyOutliers, self).__init__(name='frequencyOutlier')
-        # If the threshold is an integer or float create a greater than
-        # threshold using the value (unless the value is 1 in which case we
-        # use eq).
         self.threshold = get_threshold(threshold)
-        self.frequency = frequency
+        self.normalize = normalize
 
-    def outlier(self, value):
-        """Test if the relative frequency of a given value satisfies the
-        outlier predicate. Returns a dictionary containing the value and
-        frequency for those values that have a frequency satisfying the
-        threshold and that are therefore considered outliers.
-        outlier.
+    def run(self, values):
+        """Normalize the frequency counts in the given mapping. Returns all
+        values that satisfy the threshold constraint together with their
+        normalized (and absolute) frequencies.
 
         Parameters
         ----------
-        value: scalar or tuple
-            Value that is being tested for the outlier condition.
+        values: dict
+            Set of distinct scalar values or tuples of scalar values that are
+            mapped to their respective frequency count.
 
         Returns
         -------
-        bool
+        dict
         """
-        freq = self.frequency.get(value)
-        if self.threshold(freq):
-            return {'value': value, 'frequency': freq}
+        result = dict()
+        if self.normalize is not None:
+            f = self.normalize.prepare(values.values())
+            for value, count in values.items():
+                freq = f.eval(count)
+                if self.threshold(freq):
+                    result[value] = {'count': count, 'frequency': freq}
+        else:
+            for value, count in values.items():
+                if self.threshold(count):
+                    result[value] = count
+        return result

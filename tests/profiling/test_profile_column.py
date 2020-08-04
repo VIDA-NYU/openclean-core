@@ -7,12 +7,11 @@
 
 """Unit tests for the column profiler."""
 
-from openclean.function.distinct import Distinct
 from openclean.function.value.datatype import is_int, is_float
 from openclean.function.value.normalize import divide_by_total
 from openclean.profiling.base import profile
 from openclean.profiling.classifier.datatype import Datatypes
-from openclean.profiling.count import Counts
+from openclean.profiling.count import Counts, Values
 
 
 def test_profile_single_column(schools):
@@ -24,8 +23,8 @@ def test_profile_single_column(schools):
         columns='grade',
         profilers=[
             Datatypes(features='both'),
-            Distinct(name='distinct'),
-            Counts([is_int, is_float])
+            Values(name='distinct'),
+            Counts(is_int, is_float)
         ]
     )
     assert len(metadata) == 3
@@ -35,10 +34,7 @@ def test_profile_single_column(schools):
         'text': {'distinct': 5, 'total': 70}
     }
     assert 'distinct' in metadata
-    assert len(metadata['distinct']) == 13
-    for obj in metadata['distinct']:
-        assert 'value' in obj
-        assert 'count' in obj
+    assert metadata['distinct'] == {'distinct': 13, 'total': 100}
     assert 'counts' in metadata
     assert metadata['counts'] == {'is_int': 30, 'is_float': 30}
     # Use normalized column count.
@@ -47,8 +43,8 @@ def test_profile_single_column(schools):
         columns='grade',
         profilers=[
             Datatypes(features='both'),
-            Distinct(name='distinct', normalizer=divide_by_total),
-            Counts([is_int, is_float])
+            Values(name='values'),
+            Counts(is_int, is_float)
         ]
     )
     assert len(metadata) == 3
@@ -57,11 +53,7 @@ def test_profile_single_column(schools):
         'int': {'distinct': 8, 'total': 30},
         'text': {'distinct': 5, 'total': 70}
     }
-    assert 'distinct' in metadata
-    assert len(metadata['distinct']) == 13
-    for obj in metadata['distinct']:
-        assert 'value' in obj
-        assert 'frequency' in obj
-        assert 0 < obj['frequency'] < 1
+    assert 'values' in metadata
+    assert metadata['values'] == {'distinct': 13, 'total': 100}
     assert 'counts' in metadata
     assert metadata['counts'] == {'is_int': 30, 'is_float': 30}

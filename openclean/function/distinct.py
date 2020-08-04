@@ -5,15 +5,14 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Data profiling function that generates counts for distinct values in a given
-sequence of values.
+"""Funciton to compute set of distinct values and their frequencies from a list
+of values.
 """
 
 from collections import Counter
 
-from openclean.data.sequence import Sequence
-from openclean.function.base import DictionaryFunction, DefaultDictSerializer
-from openclean.function.util import normalize
+from openclean.function.eval.base import Eval
+from openclean.function.value.base import normalize, scalar_pass_through
 
 
 def distinct(
@@ -32,10 +31,11 @@ def distinct(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int or string or list(int or string), optional
-        List of column index or column name for columns for which distinct
-        value combinations are computed.
-    normalizer: callable or openclean.function.base.ValueFunction,
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
+    normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
         frequency counts in the returned dictionary.
@@ -59,10 +59,21 @@ def distinct(
         keep_original=keep_original,
         labels=labels
     )
-    return op.map(Sequence(df=df, columns=columns))
+    # Use an evaluation function to handle value extraction from columns.
+    if columns is None:
+        columns = tuple(df.columns)
+    f = Eval(columns=columns, func=scalar_pass_through, is_unary=True)
+    f = f.prepare(df)
+    values = list()
+    for _, row in df.iterrows():
+        val = f.eval(row)
+        if isinstance(val, list):
+            val = tuple(val)
+        values.append(val)
+    return op.exec(values)
 
 
-class Distinct(DictionaryFunction):
+class Distinct(object):
     """Compute the set of distinct values in a given sequence together with
     their value frequency counts.
     """
@@ -79,7 +90,7 @@ class Distinct(DictionaryFunction):
 
         Parameters
         ----------
-        normalizer: callable or openclean.function.base.ValueFunction,
+        normalizer: callable or openclean.function.value.base.ValueFunction,
                 default=None
             Optional normalization function that will be used to normalize the
             frequency counts in the returned dictionary.
@@ -96,24 +107,24 @@ class Distinct(DictionaryFunction):
         name: string, default=None
             Unique function name.
         """
-        super(Distinct, self).__init__(
-            to_dict=DefaultDictSerializer(
-                feature_label='frequency' if normalizer else 'count'
-            )
-        )
+        if name is None:
+            name = 'distinctValueCount'
+            if normalizer is not None:
+                name += 'Normalized'
+        self.name = name
         self.normalizer = normalizer
         self.keep_original = keep_original
         self.labels = labels
         self._name = name
 
-    def map(self, values):
+    def exec(self, values):
         """Compute distinct values and their frequency counts for elements in
         the given sequence of scalar values or tuples of scalar values.
 
         Parameters
         ----------
-        values: iterable
-            Iterable of scalar values or tuples of scalar values.
+        values: list (or iterable)
+            List of scalar values or tuples of scalar values.
 
         Returns
         -------
@@ -131,17 +142,3 @@ class Distinct(DictionaryFunction):
                 labels=self.labels
             )
         return counts
-
-    def name(self):
-        """Get the unique function name.
-
-        Returns
-        -------
-        string
-        """
-        if not self._name:
-            name = 'distinctValueCount'
-            if self.normalizer:
-                name += 'Normalized'
-            return name
-        return self._name

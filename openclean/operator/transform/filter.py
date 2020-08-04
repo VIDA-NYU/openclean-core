@@ -7,12 +7,9 @@
 
 """Functions and classes that implement the filter operators in openclean."""
 
-from openclean.function.eval.base import Eval, EvalFunction
-from openclean.function.eval.column import Col
-from openclean.function.eval.constant import Const
-from openclean.function.eval.predicate.comp import Eq
-from openclean.function.eval.predicate.domain import IsIn
-from openclean.function.base import CallableWrapper, ValueFunction
+from openclean.function.eval.base import Col, Const, Eval, EvalFunction, Eq
+from openclean.function.eval.domain import IsIn
+from openclean.function.value.base import CallableWrapper, ValueFunction
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -128,14 +125,13 @@ class Filter(DataFrameTransformer):
         pandas.DataFrame
         """
         # Prepare the predicate if it is an evaluation function.
-        if isinstance(self.predicate, EvalFunction):
-            self.predicate.prepare(df)
+        f = self.predicate.prepare(df)
         # Create a Boolean array to maintain information about the rows that
         # satisfy the predicate.
         smap = [False] * len(df.index)
         index = 0
         for rowid, values in df.iterrows():
-            smap[index] = self.predicate(values)
+            smap[index] = f.eval(values)
             index += 1
         # Negate the satisfy array if the negated flag is True.
         if self.negated:

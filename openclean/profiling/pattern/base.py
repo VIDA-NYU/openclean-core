@@ -9,7 +9,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.function.base import ProfilingFunction
+from openclean.function.value.base import ProfilingFunction
 
 import openclean.util as util
 
@@ -43,7 +43,7 @@ class Pattern(metaclass=ABCMeta):
             those that are accepeted.
         Returns
         -------
-        openclean.function.base.ValueFunction
+        openclean.function.value.base.ValueFunction
         """
         raise NotImplementedError()
 

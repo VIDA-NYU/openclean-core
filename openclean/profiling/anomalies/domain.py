@@ -7,9 +7,9 @@
 
 """Domain outlier detector."""
 
-from openclean.data.sequence import Sequence
 from openclean.function.value.domain import IsNotInDomain
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.profiling.base import profile
 
 
 def domain_outliers(df, columns, domain, ignore_case=False):
@@ -20,8 +20,10 @@ def domain_outliers(df, columns, domain, ignore_case=False):
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string)
-        Single column or list of column index positions or column names.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     domain: pandas.DataFrame, pandas.Series, or object
         Data frame or series, or any object that implements the
         __contains__ method.
@@ -33,7 +35,7 @@ def domain_outliers(df, columns, domain, ignore_case=False):
     list
     """
     op = DomainOutliers(domain=domain, ignore_case=ignore_case)
-    return op.find(values=set(Sequence(df=df, columns=columns)))
+    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
 
 
 class DomainOutliers(ConditionalOutliers):
@@ -71,4 +73,4 @@ class DomainOutliers(ConditionalOutliers):
         bool
         """
         if self.predicate.eval(value):
-            return {'value': value}
+            return True

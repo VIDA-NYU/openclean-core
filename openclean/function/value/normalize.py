@@ -11,7 +11,7 @@ column).
 
 from abc import abstractmethod
 
-from openclean.function.base import ValueFunction, scalar_pass_through
+from openclean.function.value.base import ValueFunction, scalar_pass_through
 from openclean.function.value.datatype import is_numeric_type
 from openclean.function.value.filter import filter
 
@@ -99,8 +99,8 @@ def divide_by_total(
 
     Parameters
     ----------
-    value: scalar
-        Scalar value from the list that was used to prepare the function.
+    values: list
+        List of scalar values.
     raise_error: bool, optional
         Raise ValueError if the list contains values that are not integer
         or float. If False, non-numeric values are ignored.
@@ -138,7 +138,7 @@ class DivideByTotal(NormalizeFunction):
             raise_error=raise_error,
             default_value=default_value
         )
-        self.sum = sum
+        self._sum = sum
 
     def compute(self, value):
         """Divide given value by the pre-computed sum over all values in the
@@ -158,7 +158,7 @@ class DivideByTotal(NormalizeFunction):
         """
         # Divide the value by the _sum that was initialized in the prepare
         # call. If the sum is zero or not defined we return 0.
-        return float(value) / self.sum if self.sum else 0
+        return float(value) / self._sum if self._sum else 0
 
     def is_prepared(self):
         """The function requires preparation if the sum is not set..
@@ -167,7 +167,7 @@ class DivideByTotal(NormalizeFunction):
         -------
         bool
         """
-        return self.sum is not None
+        return self._sum is not None
 
     def prepare(self, values):
         """Compute the total sum over all values in the given list.
@@ -194,8 +194,8 @@ def max_abs_scale(values, raise_error=True, default_value=scalar_pass_through):
 
     Parameters
     ----------
-    value: scalar
-        Scalar value from the list that was used to prepare the function.
+    values: list
+        List of scalar values.
     raise_error: bool, optional
         Raise ValueError if the list contains values that are not integer
         or float. If False, non-numeric values are ignored.
@@ -235,7 +235,7 @@ class MaxAbsScale(NormalizeFunction):
         )
         # The maximum value in the list is unknown at construction time. The
         # value will be calculated by the prepare method.
-        self.maximum = maximum
+        self._maximum = maximum
 
     def compute(self, value):
         """Divide given value by the pre-computed sum over all values in the
@@ -255,7 +255,7 @@ class MaxAbsScale(NormalizeFunction):
         """
         # Divide the value by the maximum that was initialized in the prepare
         # call. If the maximum is zero or not defined we return 0.
-        return float(value) / self.maximum if self.maximum else 0
+        return float(value) / self._maximum if self._maximum else 0
 
     def is_prepared(self):
         """The function requires preparation if the sum is not set..
@@ -264,7 +264,7 @@ class MaxAbsScale(NormalizeFunction):
         -------
         bool
         """
-        return self.maximum is not None
+        return self._maximum is not None
 
     def prepare(self, values):
         """Compute the maximum value over all values in the given list.
@@ -291,8 +291,8 @@ def min_max_scale(values, raise_error=True, default_value=scalar_pass_through):
 
     Parameters
     ----------
-    value: scalar
-        Scalar value from the list that was used to prepare the function.
+    values: list
+        List of scalar values.
     raise_error: bool, optional
         Raise ValueError if the list contains values that are not integer
         or float. If False, non-numeric values are ignored.
@@ -336,8 +336,8 @@ class MinMaxScale(NormalizeFunction):
         )
         # The minimum and maximum value in the list are unknown at construction
         # time. The values will be calculated by the prepare method.
-        self.minimum = minimum
-        self.maximum = maximum
+        self._minimum = minimum
+        self._maximum = maximum
 
     def compute(self, value):
         """Normalize value using min-max feature scaling. If the pre-computed
@@ -353,9 +353,9 @@ class MinMaxScale(NormalizeFunction):
         -------
         float
         """
-        if self.minimum == self.maximum:
+        if self._minimum == self._maximum:
             return 0
-        return (float(value) - self.minimum) / (self.maximum - self.minimum)
+        return (float(value) - self._minimum) / (self._maximum - self._minimum)
 
     def is_prepared(self):
         """The function requires preparation if the sum is not set..
@@ -364,7 +364,7 @@ class MinMaxScale(NormalizeFunction):
         -------
         bool
         """
-        return self.minimum is not None and self.maximum is not None
+        return self._minimum is not None and self._maximum is not None
 
     def prepare(self, values):
         """Compute the total sum over all values in the givem list.

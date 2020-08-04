@@ -9,14 +9,15 @@
 assignments for columns in a data frame.
 """
 
-from openclean.data.sequence import Sequence
+from openclean.function.value.classifier import ValueClassifier
 from openclean.function.value.datatype import Datetime, Float, Int
+from openclean.profiling.base import profile
 from openclean.profiling.classifier.base import Classifier
 
 
 def datatypes(
     df, columns=None, classifier=None, normalizer=None, features=None,
-    labels=None, none_label=None, default_label=None, raise_error=False
+    labels=None
 ):
     """Compute list of raw data types and their counts for each distinct value
     (pair) in the specified column(s). Type labels are assigned by the given
@@ -40,14 +41,15 @@ def datatypes(
     ----------
     df: pandas.DataFramee
         Input data frame.
-    columns: int, string, or list(int or string), default=None
-        Single column or list of column index positions or column names.
-        Defines the list of value (pairs) for which types are computed.
+    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+        Evaluation function to extract values from data frame rows. This
+        can also be a list or tuple of evaluation functions or a list of
+        column names or index positions.
     classifier: openclean.function.value.classifier.ValueClassifier
             , default=None
         Classifier that assigns data type class labels for scalar column
         values. Uses the standard classifier if not specified.
-    normalizer: callable or openclean.function.base.ValueFunction,
+    normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
         frequency counts in the returned dictionary.
@@ -58,37 +60,25 @@ def datatypes(
         used if the features argument is 'both'. The first element is the
         label for the distinct countsin the returned nested dictionary and
         the second element is the label for the total counts.
-    none_label: string, default=None
-        Label that is returned by the associated value functions to signal
-        that a value did not satisfy the condition of the classifier.
-    default_label: scalar, default=None
-        Default label that is returned for values that do not satisfy the
-        predicate.
-    raise_error: bool, default=False
-        Raise an error instead of returning the default label if no
-        classifier was satisfied by a given value.
 
     Returns
     -------
-    list
+    dict
     """
     op = Datatypes(
         classifier=classifier,
         normalizer=normalizer,
         features=features,
-        labels=labels,
-        none_label=none_label,
-        default_label=default_label,
-        raise_error=raise_error
+        labels=labels
     )
-    return op.map(Sequence(df=df, columns=columns))
+    return profile(df, columns=columns, profilers=op)[op.name]
 
 
 class Datatypes(Classifier):
     """Compute data type frequency counts for values in a given list."""
     def __init__(
         self, classifier=None, name=None, normalizer=None, features=None,
-        labels=None, none_label=None, default_label=None, raise_error=False
+        labels=None
     ):
         """Initialize the associated classifier and optional normalizer.
 
@@ -98,7 +88,7 @@ class Datatypes(Classifier):
                 , default=None
             Classifier that assigns data type class labels for scalar column
             values. Uses the standard classifier if not specified.
-        normalizer: callable or openclean.function.base.ValueFunction,
+        normalizer: callable or openclean.function.value.base.ValueFunction,
                 default=None
             Optional normalization function that will be used to normalize the
             frequency counts in the returned dictionary.
@@ -116,15 +106,6 @@ class Datatypes(Classifier):
             used if the features argument is 'both'. The first element is the
             label for the distinct counts in the returned nested dictionary and
             the second element is the label for the total counts.
-        none_label: string, default=None
-            Label that is returned by the associated value functions to signal
-            that a value did not satisfy the condition of the classifier.
-        default_label: scalar, default=None
-            Default label that is returned for values that do not satisfy the
-            predicate.
-        raise_error: bool, default=False
-            Raise an error instead of returning the default label if no
-            classifier was satisfied by a given value.
 
         Raises
         ------
@@ -134,16 +115,16 @@ class Datatypes(Classifier):
         # given. The default label for unclassified values in the default
         # classifier is 'text'
         if classifier is None:
-            classifier = [Datetime(), Int(), Float()]
-            if default_label is None:
-                default_label = 'text'
+            classifier = ValueClassifier(
+                Datetime(),
+                Int(),
+                Float(),
+                default_label='text'
+            )
         super(Datatypes, self).__init__(
             classifier=classifier,
             name=name if name else 'datatypes',
             normalizer=normalizer,
             features=features,
-            labels=labels,
-            none_label=none_label,
-            default_label=default_label,
-            raise_error=raise_error
+            labels=labels
         )

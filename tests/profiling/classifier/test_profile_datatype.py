@@ -84,7 +84,7 @@ def test_datatypes_error_cases():
         Datatypes(features='both', labels=['only-one'])
     # Manipulate features.
     dt = Datatypes(features='both')
-    assert dt.map_distinct({'A': 1}) == {'text': {'distinct': 1, 'total': 1}}
+    assert dt.run({'A': 1}) == {'text': {'distinct': 1, 'total': 1}}
     dt.features = 'unknown'
     with pytest.raises(ValueError):
-        dt.map_distinct({'A': 1})
+        dt.run({'A': 1})
