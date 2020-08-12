@@ -1,0 +1,23 @@
+Operators
+|---> Transformer: df -> df
+|---> Mapper: df -> dict(key, df)
+|---> Reducer: dict(key, df) | list(df) -> df
+|---> Filter(?): dict(key, df) -> dict(key, df)
+
+
+ValueFunction: *scalar -> *scalar
+|---> MappingGenerator
+
+
+Eval
+|---> RowEval: Series|list(scalar) -> scalar
+|     |---> Predicate: Series|list(scalar) -> bool
+|---> DafaFrameEval: df -> scalar
+
+
+Profiler: list|counter -> dict
+AnomalyDetector: list|counter -> list (what about metadata?)
+FDDiscovery, KeyDiscovery, DenialConstraint, CFD(?)
+PatternDiscovery
+
+Mappings <- Function

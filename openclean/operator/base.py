@@ -1,18 +1,26 @@
-"""Abstract classes for pipeline operators. There are four main operator types:
+# This file is part of the Data Cleaning Library (openclean).
+#
+# Copyright (C) 2018-2020 New York University.
+#
+# openclean is released under the Revised BSD License. See file LICENSE for
+# full license details.
+
+"""Abstract classes for openclean pipeline operators. There are four primary
+types of operators:
 
 - DataFrameTransformer: The data frame transformer takes a DataFrame as input
   and generates a DataFrame as output.
 
 - DataFrameMapper: The group generator takes as input a DataFrame and outputs
-  a DataFrameGroupBy.
+  a GroupBy.
 
-- DataGroupReducer: The group reducer takes a  DataFrameGroupBy as input and
+- DataGroupReducer: The group reducer takes a  GroupBy as input and
   outputs a DataFrame.
 
-- DataGroupTransformer: The group transformers takes aa DataFrameGroupBy as
-input and outputs a DataFrameGroupBy.
+- DataGroupTransformer: The group transformers takes aa GroupBy as
+input and outputs a GroupBy.
 
-In addition to the output DatFrame's or DataFrameGroupBy object, each operator
+In addition to the output DatFrame's or GroupBy object, each operator
 can output a stage state object.
 """
 
@@ -73,178 +81,131 @@ class PipelineStage(metaclass=ABCMeta):
 
 
 class DataGroupReducer(PipelineStage):
-    """Abstract class for pipeline components that take a data frame as input
-    and return a transformed data frame as output. In addition to transforming
-    the data frame, the operator can add to the global state of the pipeline.
+    """Abstract class for pipeline components that take a group of data frames
+    as input and return a single data frame as output.
     """
-    def __init__(self, stage_label=None):
-        """Initialize the stage label in the super class.
+    def __call__(self, df):
+        """Make the operator callable. Executes the reduce method.
 
         Parameters
         ----------
-        stage_label: string, optional
-            User-provided stage label.
-        """
-        super(DataGroupReducer, self).__init__(stage_label=stage_label)
-
-    def __call__(self, df, state):
-        """Make the operator callable. Executes the apply method.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        state: openclean.pipeline.state.GlobalState
-            Global pipeline state object
+        groups: pd.GroupBy
+            Grouping of pandas data frames.
 
         Returns
         -------
-        (pandas.DataFrame, dict)
+        pd.DataFrame
         """
-        return self.apply(df, state)
+        return self.reduce(df)
 
     @abstractmethod
-    def apply(self, df, state):
-        """This is the main method that each subclass of the transformer has to
-        implement. The input is a pandas data frame and the current global
-        pipeline state. The output is a modified data frame and a optional
-        stage state object (dictionary).
+    def reduce(self, groups):
+        """This is the main method that each subclass of the group reducer has
+        to implement. The input is a pandas data frame grouping. The output is
+        a single data frame.
 
         Parameters
         ----------
-        df: pandas.DataFrame
-            Input data frame.
-        state: openclean.pipeline.state.GlobalState
-            Global pipeline state object
+        groups: pd.GroupBy
+            Grouping of pandas data frames.
 
         Returns
         -------
-        (pandas.DataFrame, dict)
+        pd.DataFrame
         """
         raise NotImplementedError()
 
 
 class DataGroupTransformer(PipelineStage):
-    """Abstract class for pipeline components that take a data frame as input
-    and return a transformed data frame as output. In addition to transforming
-    the data frame, the operator can add to the global state of the pipeline.
-    """
-    def __init__(self, stage_label=None):
-        """Initialize the stage label in the super class.
-
-        Parameters
-        ----------
-        stage_label: string, optional
-            User-provided stage label.
-        """
-        super(DataGroupTransformer, self).__init__(stage_label=stage_label)
-
-    def __call__(self, df, state):
-        """Make the operator callable. Executes the apply method.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        state: openclean.pipeline.state.GlobalState
-            Global pipeline state object
-
-        Returns
-        -------
-        (pandas.DataFrame, dict)
-        """
-        return self.apply(df, state)
-
-    @abstractmethod
-    def apply(self, df, state):
-        """This is the main method that each subclass of the transformer has to
-        implement. The input is a pandas data frame and the current global
-        pipeline state. The output is a modified data frame and a optional
-        stage state object (dictionary).
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        state: openclean.pipeline.state.GlobalState
-            Global pipeline state object
-
-        Returns
-        -------
-        (pandas.DataFrame, dict)
-        """
-        raise NotImplementedError()
-
-
-class DataFrameMapper(PipelineStage):
-    """Abstract class for pipeline components that take a data frame as input
-    and return a transformed data frame as output. In addition to transforming
-    the data frame, the operator can add to the global state of the pipeline.
-    """
-    def __init__(self, stage_label=None):
-        """Initialize the stage label in the super class.
-
-        Parameters
-        ----------
-        stage_label: string, optional
-            User-provided stage label.
-        """
-        super(DataFrameMapper, self).__init__(stage_label=stage_label)
-
-    def __call__(self, df, state):
-        """Make the operator callable. Executes the apply method.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        state: openclean.pipeline.state.GlobalState
-            Global pipeline state object
-
-        Returns
-        -------
-        (pandas.DataFrame, dict)
-        """
-        return self.apply(df, state)
-
-    @abstractmethod
-    def apply(self, df, state):
-        """This is the main method that each subclass of the transformer has to
-        implement. The input is a pandas data frame and the current global
-        pipeline state. The output is a modified data frame and a optional
-        stage state object (dictionary).
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        state: openclean.pipeline.state.GlobalState
-            Global pipeline state object
-
-        Returns
-        -------
-        (pandas.DataFrame, dict)
-        """
-        raise NotImplementedError()
-
-
-class DataFrameSplitter(PipelineStage):
-    """Abstract class for pipeline components that take a data frame as input
-    and returns two data frames as output.
+    """Abstract class for pipeline components that take a data frame grouping
+    as input and return a transformed grouping.
     """
     def __call__(self, df):
         """Make the operator callable. Executes the transform method.
 
         Parameters
         ----------
-        df: pandas.DataFrame
+        groups: pd.GroupBy
+            Grouping of pandas data frames.
+
+        Returns
+        -------
+        pd.GroupBy
+        """
+        return self.transform(df)
+
+    @abstractmethod
+    def transform(self, groups):
+        """This is the main method that each subclass of the transformer has to
+        implement. The input is a pandas data frame grouping. The output is a
+        modified data frame grouping.
+
+        Parameters
+        ----------
+        groups: pd.GroupBy
+            Grouping of pandas data frames.
+
+        Returns
+        -------
+        pd.GroupBy
+        """
+        raise NotImplementedError()
+
+
+class DataFrameMapper(PipelineStage):
+    """Abstract class for pipeline components that take a data frame as input
+    and return a data frame grouping as output.
+    """
+    def __call__(self, df):
+        """Make the operator callable. Executes the map method.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
             Input data frame.
 
         Returns
         -------
-        pandas.DataFrame
+        pd.GroupBy
         """
-        return self.transform(df)
+        return self.map(df)
+
+    @abstractmethod
+    def map(self, df):
+        """This is the main method that each subclass of the mapper has to
+        implement. The input is a pandas data frame. The output is a group of
+        pandas data frames.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        pd.GroupBy
+        """
+        raise NotImplementedError()
+
+
+class DataFrameSplitter(PipelineStage):
+    """Abstract class for pipeline components that take a data frame as input
+    and returns two data frames as output. This is a special case of the data
+    frame mapper.
+    """
+    def __call__(self, df):
+        """Make the operator callable. Executes the split method.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        pd.DataFrame, pd.DataFrame
+        """
+        return self.split(df)
 
     @abstractmethod
     def split(self, df):
@@ -254,12 +215,12 @@ class DataFrameSplitter(PipelineStage):
 
         Parameters
         ----------
-        df: pandas.DataFrame
+        df: pd.DataFrame
             Input data frame.
 
         Returns
         -------
-        pandas.DataFrame, pandas.DataFrame
+        pd.DataFrame, pd.DataFrame
         """
         raise NotImplementedError()
 
@@ -273,12 +234,12 @@ class DataFrameTransformer(PipelineStage):
 
         Parameters
         ----------
-        df: pandas.DataFrame
+        df: pd.DataFrame
             Input data frame.
 
         Returns
         -------
-        pandas.DataFrame
+        pd.DataFrame
         """
         return self.transform(df)
 
@@ -290,11 +251,11 @@ class DataFrameTransformer(PipelineStage):
 
         Parameters
         ----------
-        df: pandas.DataFrame
+        df: pd.DataFrame
             Input data frame.
 
         Returns
         -------
-        pandas.DataFrame
+        pd.DataFrame
         """
         raise NotImplementedError()
