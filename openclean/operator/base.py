@@ -89,7 +89,7 @@ class DataGroupReducer(PipelineStage):
 
         Parameters
         ----------
-        groups: pd.GroupBy
+        groups: openclean.data.groupby.DataFrameGrouping
             Grouping of pandas data frames.
 
         Returns
@@ -106,7 +106,7 @@ class DataGroupReducer(PipelineStage):
 
         Parameters
         ----------
-        groups: pd.GroupBy
+        groups: openclean.data.groupby.DataFrameGrouping
             Grouping of pandas data frames.
 
         Returns
@@ -125,12 +125,12 @@ class DataGroupTransformer(PipelineStage):
 
         Parameters
         ----------
-        groups: pd.GroupBy
+        groups: openclean.data.groupby.DataFrameGrouping
             Grouping of pandas data frames.
 
         Returns
         -------
-        pd.GroupBy
+        openclean.data.groupby.DataFrameGrouping
         """
         return self.transform(df)
 
@@ -142,12 +142,12 @@ class DataGroupTransformer(PipelineStage):
 
         Parameters
         ----------
-        groups: pd.GroupBy
+        groups: openclean.data.groupby.DataFrameGrouping
             Grouping of pandas data frames.
 
         Returns
         -------
-        pd.GroupBy
+        openclean.data.groupby.DataFrameGrouping
         """
         raise NotImplementedError()
 
@@ -166,7 +166,7 @@ class DataFrameMapper(PipelineStage):
 
         Returns
         -------
-        pd.GroupBy
+        openclean.data.groupby.DataFrameGrouping
         """
         return self.map(df)
 
@@ -183,7 +183,7 @@ class DataFrameMapper(PipelineStage):
 
         Returns
         -------
-        pd.GroupBy
+        openclean.data.groupby.DataFrameGrouping
         """
         raise NotImplementedError()
 
