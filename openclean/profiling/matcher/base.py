@@ -111,8 +111,7 @@ class StringMatcherResults:
                     The list of tuples (score, match) to crete a class object from
             """
             smri = cls.__new__(cls)
-            for m in matches:
-                smri.add(score=m[0], value=m[1])
+            smri.matches = matches
             return smri
 
         def to_list(self):
