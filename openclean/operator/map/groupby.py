@@ -29,7 +29,7 @@ class GroupBy(DataFrameMapper):
         self.func = ensure_callable(func) if func is not None else None
 
     def _transform(self, df):
-        """Initialize the column names and an optional function.
+        """Applies the groupby function and returns a pandas.groupby object.
 
         Parameters
         ----------
