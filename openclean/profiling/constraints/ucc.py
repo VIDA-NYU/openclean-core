@@ -64,6 +64,6 @@ class UniqueColumnCombinationFinder(metaclass=ABCMeta):
 
         Returns
         -------
-        UniqueColumnSet
+        list of UniqueColumnSet
         """
         raise NotImplementedError()  # pragma: noqa
