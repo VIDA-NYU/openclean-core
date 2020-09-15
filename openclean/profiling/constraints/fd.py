@@ -40,6 +40,10 @@ class FunctionalDependency(object):
         self.lhs = lhs
         self.rhs = rhs
 
+    def __str__(self):
+        """String representation for the functional dependency."""
+        return '[{}] -> [{}]'.format(','.join(self.lhs), ','.join(self.rhs))
+
     @property
     def dependant(self) -> UniqueColumnSet:
         """Get the dependant (right-hand-side) of the functional dependency.
