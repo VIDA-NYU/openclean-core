@@ -7,11 +7,11 @@
 
 """Unit tests for FDViolation operator."""
 
-from openclean.operator.map.fd import FDViolation
+from openclean.operator.map.fd import FDViolations
 
 def test_fdviolation_operator(agencies):
     """ Test fd violation works correctly"""
-    fd = FDViolation(
+    fd = FDViolations(
         lhs=['borough','state'],
         rhs='agency'
     ).map(agencies)

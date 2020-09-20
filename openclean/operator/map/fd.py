@@ -8,12 +8,17 @@
 """Class that implements the DataframeMapper abstract class to identify FDViolations in a pandas dataframe."""
 
 from openclean.data.groupby import DataFrameGrouping
-from openclean.operator.base import DataFrameMapper
+from openclean.operator.map.groupby import GroupBy
 
-class FDViolation(DataFrameMapper):
+def fdViolations(df, lhs, rhs=None):
+    fdv = FDViolations(lhs=lhs, rhs=rhs)
+    return fdv.map(df=df)
+
+
+class FDViolations(GroupBy):
     """FDViolation class that takes the left side and right side column names. identifies any tuples involved in
-    FDViolations and returns them as a DataFrameGrouping object"""
-    def __init__(self, lhs, rhs):
+    FDViolations and returns them as a GroupBy object"""
+    def __init__(self, lhs, rhs=None):
         """
         Initializes the FDViolation class with the left and right hand side column names.
 
@@ -24,27 +29,9 @@ class FDViolation(DataFrameMapper):
         rhs: string
             column name of the dependent set
         """
-        super(FDViolation, self).__init__()
-        self.lhs = lhs
+        super(FDViolations, self).__init__(columns=lhs)
         self.rhs = rhs
 
-    def _transform(self, df):
-        """Identifies FDViolations in a pandas DataFrame and returns a pandas.groupby object.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Dataframe to find violations in
-
-        Returns
-        _______
-        pandas.groupby
-        """
-        # Keep groups that have more than one distinct value for the attributes
-        # of the right-hand-size of the FD.
-        fgroups = df[df[self.lhs].duplicated(keep=False)]
-        # Group dataframe by columns in the left-hand-side of the FD.
-        return fgroups.groupby(self.lhs)
 
     def map(self, df):
         """Identifies FD violations and maps the pandas DataFrame into a DataFrameGrouping object.
@@ -58,8 +45,11 @@ class FDViolation(DataFrameMapper):
         _______
         DataFrameGrouping
         """
-        violations = self._transform(df=df).groups
+        # Keep groups that have more than one distinct value on the left side for the attributes
+        # of the right-hand-size of the FD.
+        groups = self._transform(df=df)
         grouping = DataFrameGrouping(df=df)
-        for violation in violations:
-            grouping.add(key=violation, rows=violations[violation])
+        for key, rows in groups.items():
+            if len(rows) > 1:
+                grouping.add(key=key, rows=rows)
         return grouping

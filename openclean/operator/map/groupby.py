@@ -10,7 +10,7 @@
 from openclean.data.groupby import DataFrameGrouping
 from openclean.operator.base import DataFrameMapper
 from openclean.function.eval.base import (
-    Col, EvalFunction, CallableWrapper, Eval
+    Col, EvalFunction, Eval
 )
 
 
