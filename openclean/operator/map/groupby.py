@@ -95,8 +95,10 @@ class GroupBy(DataFrameMapper):
         _______
         openclean.data.groupby.DataFrameGrouping
         """
-        groupedby = self._transform(df=df)
-        grouping = DataFrameGrouping(df=df)
+        # unpack any user set indices to default pandas representations
+        df_reindexed = df.reset_index() if df.index.duplicated().any() or df.index.dtype != int else df
+        groupedby = self._transform(df=df_reindexed)
+        grouping = DataFrameGrouping(df=df_reindexed)
         for gby in groupedby:
             grouping.add(key=gby, rows=groupedby[gby])
         return grouping
@@ -127,10 +129,6 @@ def get_eval_func(columns=None, func=None):
     ------
     ValueError
     """
-    # Raise a ValueError if no useful inputs found.
-    if func is None and columns is None:
-        raise ValueError('missing inputs')
-
     # If columns is a callable or eval function and func is None we
     # flip the columns and func values.
     if func is None and columns is not None:
@@ -140,17 +138,21 @@ def get_eval_func(columns=None, func=None):
         else:
             columns = [columns] if not isinstance(columns, list) else columns
             func = Col(columns=columns)
-        return func
 
     # If one or more columns and func both are specified
-    if columns is not None:
+    elif columns is not None:
         # Ensure that columns is a list.
         if not isinstance(columns, list):
             columns = [columns]
         # Convert func to an evaluation function.
         if callable(func):
-            func = Eval(func=CallableWrapper(func=func), columns=columns)
+            func = Eval(func=func, columns=columns)
 
     elif not isinstance(func, EvalFunction):
         func = Eval(func=func, columns=columns)
+
+    # Raise a ValueError if function isnt recognized found.
+    if func is None:
+        raise ValueError('func not acceptable')
+
     return func
