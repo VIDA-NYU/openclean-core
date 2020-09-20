@@ -12,7 +12,7 @@ from openclean.profiling.matcher.fuzzy import FuzzyStringMatcher
 def test_match(zipcodes):
     """" Test match works correctly """
     masterdata = ['Brooklyn','Manhattan','Queens','Staten Island','Bronx']
-    fsm = FuzzyStringMatcher(data=masterdata)
+    fsm = FuzzyStringMatcher(masterdata=masterdata)
     matches = fsm.match(zipcodes['Borough'])
     assert {'Brooklyn', 'Manhattan', 'Queens', 'Broooklyn', 'Quees'} == set(matches.results.keys())
 
