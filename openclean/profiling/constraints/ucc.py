@@ -14,23 +14,16 @@ from typing import List, Union
 
 import pandas as pd
 
-from openclean.data.column import Column
+from openclean.data.column import Column, ColumnSet
 
 
-class UniqueColumnSet(set):
+class UniqueColumnSet(ColumnSet):
     """Unique column combinations are lists of column names of identifiable
     column objects.
-
-    For now, this is a simple wrapper around a Python set. In the future we may
-    want to add additional functionality to maintain metadata for a column
-    combination.
     """
-    def __init__(
-        self, columns: List[Union[str, Column]] = None,
-        duplicate_ok: bool = True
-    ):
+    def __init__(self, columns: List[Union[str, Column]] = None):
         """Initialize the set of unique columns. Raises a ValueError if the
-        elements in the list are not unique and the duplicate_ok flag is False.
+        elements in the list are not unique.
 
         Parameters
         ----------
@@ -40,11 +33,10 @@ class UniqueColumnSet(set):
             Raise a ValueError if the flag is True and the given column list
             contains duplicate entries.
         """
-        if columns is not None:
-            for col in columns:
-                if col in self and not duplicate_ok:
-                    raise ValueError('duplicate column {}'.format(col))
-                self.add(col)
+        super(UniqueColumnSet, self).__init__(
+            columns=columns,
+            duplicate_ok=False
+        )
 
 
 class UniqueColumnCombinationFinder(metaclass=ABCMeta):

@@ -19,7 +19,8 @@ install_requires = [
     'python-dateutil',
     'requests',
     'Shapely>=1.7.0',
-    'histore>=0.1.3'
+    'histore>=0.1.4',
+    'fuzzyset==0.0.19'
 ]
 
 

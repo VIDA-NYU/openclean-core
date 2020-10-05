@@ -14,7 +14,6 @@ from openclean.profiling.constraints.ucc import UniqueColumnSet
 
 def test_init_unique_column_sets():
     """Test initialization of unique column sets."""
-    assert UniqueColumnSet(columns=['A', 'B', 'C']) == {'A', 'B', 'C'}
-    assert UniqueColumnSet(columns=['A', 'B', 'B']) == {'A', 'B'}
+    assert UniqueColumnSet(columns=['A', 'B', 'C']) == ['A', 'B', 'C']
     with pytest.raises(ValueError):
-        UniqueColumnSet(columns=['A', 'B', 'B'], duplicate_ok=False)
+        UniqueColumnSet(columns=['A', 'B', 'B'])

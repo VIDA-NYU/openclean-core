@@ -14,7 +14,7 @@ rows and one that contains the rows for which the update failed.
 
 import pandas as pd
 
-from openclean.data.column import select_clause
+from openclean.data.select import select_clause
 from openclean.operator.base import DataFrameSplitter
 from openclean.operator.transform.update import get_update_function
 

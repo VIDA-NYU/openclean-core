@@ -13,7 +13,7 @@ constraint and are therefore candidates for data repair.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 
@@ -26,7 +26,7 @@ class FunctionalDependency(object):
     and dependant (right-hand-size).
 
     """
-    def __init__(self, lhs: UniqueColumnSet, rhs: UniqueColumnSet):
+    def __init__(self, lhs: List[str], rhs: Union[str, List[str]]):
         """Initialize the determinant (left-hand-size) and dependant
         (right-hand-size) of the functional dependency.
 

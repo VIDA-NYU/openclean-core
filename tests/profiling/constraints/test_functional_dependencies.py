@@ -17,7 +17,7 @@ def test_init_functional_dependency():
         lhs=UniqueColumnSet(columns=['A', 'B']),
         rhs=UniqueColumnSet(columns=['C', 'D'])
     )
-    assert fd.lhs == {'A', 'B'}
-    assert fd.rhs == {'C', 'D'}
+    assert fd.lhs == ['A', 'B']
+    assert fd.rhs == ['C', 'D']
     assert fd.lhs == fd.determinant
     assert fd.rhs == fd.dependant
