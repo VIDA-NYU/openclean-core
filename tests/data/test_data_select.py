@@ -7,16 +7,8 @@
 
 import pytest
 
-from openclean.data.column import Column, ColumnSet
+from openclean.data.column import Column
 from openclean.data.select import select_clause
-
-
-def test_column_sets():
-    """Test initialization of column sets."""
-    assert ColumnSet(columns=['A', 'B', 'C']) == ['A', 'B', 'C']
-    assert ColumnSet(columns=['A', 'B', 'B']) == ['A', 'B', 'B']
-    with pytest.raises(ValueError):
-        ColumnSet(columns=['A', 'B', 'B'], duplicate_ok=False)
 
 
 def test_select_clause_without_duplicates(employees):

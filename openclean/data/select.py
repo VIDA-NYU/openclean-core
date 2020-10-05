@@ -14,11 +14,10 @@ from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 
-from openclean.data.column import Column
-from openclean.data.types import Columns
+from openclean.data.column import Column, Columns
 
 
-def as_list(columns: Columns) -> List[Union[int, str]]:
+def as_list(columns: Columns) -> List[Union[int, str, Column]]:
     """Ensure that the given columns argument is a list.
 
     Parameters

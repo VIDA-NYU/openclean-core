@@ -10,33 +10,11 @@ prerequisite for unique constraints and keys.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import List, Union
+from typing import List
 
 import pandas as pd
 
-from openclean.data.column import Column, ColumnSet
-
-
-class UniqueColumnSet(ColumnSet):
-    """Unique column combinations are lists of column names of identifiable
-    column objects.
-    """
-    def __init__(self, columns: List[Union[str, Column]] = None):
-        """Initialize the set of unique columns. Raises a ValueError if the
-        elements in the list are not unique.
-
-        Parameters
-        ----------
-        columns: list, default=None
-            List of column names or identifiable columns.
-        duplicate_ok: bool, default=True
-            Raise a ValueError if the flag is True and the given column list
-            contains duplicate entries.
-        """
-        super(UniqueColumnSet, self).__init__(
-            columns=columns,
-            duplicate_ok=False
-        )
+from openclean.data.column import Columns
 
 
 class UniqueColumnCombinationFinder(metaclass=ABCMeta):
@@ -44,7 +22,7 @@ class UniqueColumnCombinationFinder(metaclass=ABCMeta):
     a given data frame.
     """
     @abstractmethod
-    def run(self, df: pd.DataFrame) -> List[UniqueColumnSet]:
+    def run(self, df: pd.DataFrame) -> List[Columns]:
         """Run the implemented unique column combination discovery algorithm on
         the given data frame. Returns a list of all discovered unique column
         sets.
@@ -56,6 +34,6 @@ class UniqueColumnCombinationFinder(metaclass=ABCMeta):
 
         Returns
         -------
-        list of UniqueColumnSet
+        list
         """
-        raise NotImplementedError()  # pragma: noqa
+        raise NotImplementedError()  # pragma: no cover

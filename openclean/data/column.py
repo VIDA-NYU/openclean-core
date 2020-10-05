@@ -17,29 +17,8 @@ from typing import List, Union
 from histore.document.schema import Column as Column  # noqa: F401
 
 
-class ColumnSet(list):
-    """List of columns (objects or strings) from a data frame schema. This is a
-    simple wrapper around a Python list that allows to ensure that the names of
-    all columns are unique. The set is also aware of columns that are objects
-    of the identifiable column type.
-    """
-    def __init__(
-        self, columns: List[Union[str, Column]] = None,
-        duplicate_ok: bool = True
-    ):
-        """Initialize the set of columns. Raises a ValueError if the elements
-        in the list are not unique and the duplicate_ok flag is False.
-
-        Parameters
-        ----------
-        columns: list, default=None
-            List of column names or identifiable columns.
-        duplicate_ok: bool, default=True
-            Raise a ValueError if the flag is True and the given column list
-            contains duplicate entries.
-        """
-        if columns is not None:
-            for col in columns:
-                if col in self and not duplicate_ok:
-                    raise ValueError('duplicate column {}'.format(col))
-                self.append(col)
+"""Type alias for column lists."""
+# List of columns that are identified either by their name or index position,
+# or represented as a Column object. A single index (int) or column name (str)
+# are also accepted as 'a list with a single element'.
+Columns = Union[int, str, List[Union[int, str, Column]]]

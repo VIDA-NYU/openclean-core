@@ -13,11 +13,11 @@ constraint and are therefore candidates for data repair.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import List, Union
+from typing import List
 
 import pandas as pd
 
-from openclean.profiling.constraints.ucc import UniqueColumnSet
+from openclean.data.column import Columns
 
 
 class FunctionalDependency(object):
@@ -26,15 +26,15 @@ class FunctionalDependency(object):
     and dependant (right-hand-size).
 
     """
-    def __init__(self, lhs: List[str], rhs: Union[str, List[str]]):
+    def __init__(self, lhs: Columns, rhs: Columns):
         """Initialize the determinant (left-hand-size) and dependant
         (right-hand-size) of the functional dependency.
 
         Parameters
         ----------
-        lhs: openclean.profiling.constraints.ucc.UniqueColumnSet
+        lhs: int, string, or list of int or string of Column
             Left-hand-side of the functional dependency (determinant).
-        rhs: openclean.profiling.constraints.ucc.UniqueColumnSet
+        rhs: int, string, or listof int or string
             Right-hand-side of the functional dependency (dependant).
         """
         self.lhs = lhs
@@ -45,22 +45,22 @@ class FunctionalDependency(object):
         return '[{}] -> [{}]'.format(','.join(self.lhs), ','.join(self.rhs))
 
     @property
-    def dependant(self) -> UniqueColumnSet:
+    def dependant(self) -> Columns:
         """Get the dependant (right-hand-side) of the functional dependency.
 
         Returns
         -------
-        openclean.profiling.constraints.ucc.UniqueColumnSet
+        int, string, or list of int or string of Column
         """
         return self.rhs
 
     @property
-    def determinant(self) -> UniqueColumnSet:
+    def determinant(self) -> Columns:
         """Get the determinant (left-hand-side) of the functional dependency.
 
         Returns
         -------
-        openclean.profiling.constraints.ucc.UniqueColumnSet
+        int, string, or list of int or string of Column
         """
         return self.lhs
 
@@ -84,4 +84,4 @@ class FunctionalDependencyFinder(metaclass=ABCMeta):
         -------
         list of FunctionalDependency
         """
-        raise NotImplementedError()  # pragma: noqa
+        raise NotImplementedError()  # pragma: no cover
