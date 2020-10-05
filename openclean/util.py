@@ -62,3 +62,20 @@ def is_list_or_tuple(value):
     bool
     """
     return isinstance(value, list) or isinstance(value, tuple)
+
+
+def get_indexes(x, items):
+    """Searches a list for items and returns the indices
+
+    Parameters
+    ----------
+    x : str or int
+        value to search
+    items : list
+
+
+    Returns
+    -------
+    list
+    """
+    return [i for (y, i) in zip(items, range(len(items))) if x == y]
