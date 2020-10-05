@@ -8,16 +8,15 @@
 """Unit tests for the functional dependency base class."""
 
 from openclean.profiling.constraints.fd import FunctionalDependency
-from openclean.profiling.constraints.ucc import UniqueColumnSet
 
 
 def test_init_functional_dependency():
     """Test initialization of functional dependency objects."""
     fd = FunctionalDependency(
-        lhs=UniqueColumnSet(columns=['A', 'B']),
-        rhs=UniqueColumnSet(columns=['C', 'D'])
+        lhs=['A', 'B'],
+        rhs=['C', 'D']
     )
-    assert fd.lhs == {'A', 'B'}
-    assert fd.rhs == {'C', 'D'}
+    assert fd.lhs == ['A', 'B']
+    assert fd.rhs == ['C', 'D']
     assert fd.lhs == fd.determinant
     assert fd.rhs == fd.dependant

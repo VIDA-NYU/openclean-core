@@ -12,7 +12,7 @@ return either a scalar value or a tuple of scalar values.
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.data.column import select_clause
+from openclean.data.select import select_clause
 from openclean.function.value.base import CallableWrapper, ValueFunction
 
 import openclean.util as util

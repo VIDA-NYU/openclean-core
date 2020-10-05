@@ -11,7 +11,7 @@ frame.
 
 import pandas as pd
 
-from openclean.data.column import select_clause, select_by_id
+from openclean.data.select import select_clause, select_by_id
 from openclean.function.eval.base import Col, Const, EvalFunction, Eval
 from openclean.function.value.base import ValueFunction, scalar_pass_through
 from openclean.function.value.mapping import Lookup

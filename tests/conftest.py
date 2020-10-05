@@ -45,7 +45,7 @@ def dupcols():
         ['Frank', 34, 198],
         ['Gertrud', 44, 177]
     ]
-    columns = [Column(0, 'Name'), Column(1, 'A'), Column(2, 'A')]
+    columns = [Column(0, 'Name', 0), Column(1, 'A', 1), Column(2, 'A', 2)]
     return pd.DataFrame(data=data, columns=columns)
 
 

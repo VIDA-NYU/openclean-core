@@ -9,7 +9,8 @@
 openclean.
 """
 
-from openclean.data.column import Column, as_list, select_by_id
+from openclean.data.column import Column
+from openclean.data.select import as_list, select_by_id
 from openclean.operator.base import DataFrameTransformer
 
 
