@@ -27,7 +27,7 @@ def test_filter_operator(agencies):
     d1 = filter(
         agencies,
         IsIn(
-            columns=('borough', 'state'),
+            columns=['borough', 'state'],
             domain=[('bk', 'Ny'), ('Bx', 'NY')],
             ignore_case=True
         )

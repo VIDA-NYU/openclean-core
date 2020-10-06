@@ -11,9 +11,7 @@ data frame.
 
 import pandas as pd
 
-from openclean.function.eval.base import (
-    Const, EvalFunction, PreparedFullRowEval
-)
+from openclean.function.eval.base import Const, EvalFunction, FullRowEval
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -166,7 +164,7 @@ class InsCol(DataFrameTransformer):
                     values = Const(values)
             elif not isinstance(values, EvalFunction):
                 # Wrap the callable in a full row evaluation function
-                values = PreparedFullRowEval(func=values)
+                values = FullRowEval(func=values)
         else:
             # Initialize a function that returns a single None or a list of
             # None values (one for each inserted column)

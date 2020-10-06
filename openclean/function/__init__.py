@@ -6,7 +6,7 @@
 # full license details.
 
 from openclean.function.eval.aggregate import Avg, Max, Min, Sum  # noqa: F401, E501
-from openclean.function.eval.base import Col, Cols, Const, Eval  # noqa: F401
+from openclean.function.eval.base import Col, Const, Eval  # noqa: F401
 from openclean.function.eval.base import Eq, EqIgnoreCase, Geq, Gt, Neq, Leq, Lt  # noqa: F401, E501
 from openclean.function.eval.base import Add, Divide, FloorDivide, Multiply, Subtract  # noqa: F401, E501
 from openclean.function.eval.datatype import IsDatetime, IsInt, IsFloat, IsNaN, Int, Float  # noqa: F401, E501

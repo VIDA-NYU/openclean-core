@@ -41,19 +41,6 @@ def test_aggregate_over_scalar_values(dataset, op, results):
 
 @pytest.mark.parametrize(
     'op,results',
-    [(Least, [[1, 2], [3, 3], [1, 4]]), (Greatest, [[3, 3], [5, 6], [4, 5]])]
-)
-def test_aggregate_over_list_values(dataset, op, results):
-    """Test computing min and max over lists of values from multiple columns
-    in a data frame row.
-    """
-    f = op(Col(['A', 'B']), Col(['B', 'C']), [3, 3]).prepare(dataset)
-    for i in range(3):
-        assert f.eval(dataset.iloc[i]) == results[i]
-
-
-@pytest.mark.parametrize(
-    'op,results',
     [(Least, [(1, 2), (3, 3), (1, 4)]), (Greatest, [(3, 3), (5, 6), (4, 5)])]
 )
 def test_aggregate_over_tuple_values(dataset, op, results):

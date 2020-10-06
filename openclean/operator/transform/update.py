@@ -12,7 +12,7 @@ frame.
 import pandas as pd
 
 from openclean.data.select import select_clause, select_by_id
-from openclean.function.eval.base import Col, Const, EvalFunction, Eval
+from openclean.function.eval.base import Const, EvalFunction, Eval
 from openclean.function.value.base import ValueFunction, scalar_pass_through
 from openclean.function.value.mapping import Lookup
 from openclean.operator.base import DataFrameTransformer
@@ -125,7 +125,11 @@ def swap(df, col1, col2):
         if not type(c) in [int, str]:
             raise ValueError('invalid column {}'.format(c))
     # Swap is a special case of the update operator
-    return update(df, columns=columns, func=Col(columns=columns[::-1]))
+
+    def _swap(col_1, col_2):
+        return col_2, col_1
+
+    return update(df, columns=columns, func=_swap)
 
 
 # -- Operators ----------------------------------------------------------------

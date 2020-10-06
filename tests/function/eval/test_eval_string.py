@@ -46,14 +46,14 @@ def test_string_format(people):
     """Test formating strings using one or more values extracted from data
     frame columns.
     """
-    f = Format(Col('Name'), 'My name is {}').prepare(people)
+    f = Format('My name is {}', 'Name').prepare(people)
     assert f.eval(people.iloc[0]) == 'My name is alice davies'
-    f = Format(Capitalize(Split(Col('Name'))), '{1}, {0}').prepare(people)
+    f = Format('{1}, {0}', Capitalize(Split('Name'))).prepare(people)
     assert f.eval(people.iloc[0]) == 'Davies, Alice'
-    f = Format(Col(['Name', 'Age']), '{} is {}').prepare(people)
+    f = Format('{} is {}', Col('Name'), Col('Age')).prepare(people)
     assert f.eval(people.iloc[0]) == 'alice davies is 23'
     # Use a list of producers.
-    f = Format([Col('Age'), Col('Name')], '{1} is {0}').prepare(people)
+    f = Format('{1} is {0}', Col('Age'), Col('Name')).prepare(people)
     assert f.eval(people.iloc[0]) == 'alice davies is 23'
 
 

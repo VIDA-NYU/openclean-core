@@ -69,7 +69,7 @@ class Format(Eval):
     """Function that returns a formated string based on a given format template
     and a variable list of input values from a data frame row.
     """
-    def __init__(self, columns, template):
+    def __init__(self, template, *args):
         """Initialize the format template and the value generation function.
 
         Parameters
@@ -87,11 +87,17 @@ class Format(Eval):
         """
 
         def format_string(*args):
+            if len(args) == 1:
+                arg = args[0]
+                if isinstance(arg, tuple):
+                    args = arg
+                elif isinstance(arg, list):
+                    args = tuple(arg)
             return template.format(*args)
 
         super(Format, self).__init__(
+            columns=list(args),
             func=format_string,
-            columns=columns,
             is_unary=False
         )
 

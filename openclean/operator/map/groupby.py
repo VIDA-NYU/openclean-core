@@ -5,47 +5,48 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Class that implements the DataframeMapper abstract class to perform groupby operations on a pandas dataframe."""
+"""Class that implements the DataframeMapper abstract class to perform groupby
+operations on a pandas dataframe.
+"""
 
 from openclean.data.groupby import DataFrameGrouping
 from openclean.operator.base import DataFrameMapper
-from openclean.function.eval.base import (
-    Col, EvalFunction, Eval
-)
+from openclean.function.eval.base import Cols, EvalFunction, Eval
 
 
 def groupby(df, columns, func=None):
-    """Groupby function for data frames. Evaluates a new index based on the rows of the dataframe
-        using the input function (optional). The output comprises of a openclean.data.groupby.DataFrameGrouping
-        object.
+    """Groupby function for data frames. Evaluates a new index based on the
+    rows of the dataframe using the input function (optional). The output
+    comprises of a openclean.data.groupby.DataFrameGrouping object.
 
 
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-        columns: int, string, or list(int or string), optional
-            Single column or list of column index positions or column names.
-        func: (
-                openclean.function.eval.base.EvalFunction,
-                openclean.function.eval.base.value.ValueFunction,
-                callable,
-            )
-            Evaluation function or callable that accepts a data frame row as the
-            only argument (if columns is None). ValueFunction or callable if one
-            or more columns are specified.
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Input data frame.
+    columns: int, string, or list(int or string), optional
+        Single column or list of column index positions or column names.
+    func: (
+            openclean.function.eval.base.EvalFunction,
+            openclean.function.eval.base.value.ValueFunction,
+            callable,
+        )
+        Evaluation function or callable that accepts a data frame row as the
+        only argument (if columns is None). ValueFunction or callable if one
+        or more columns are specified.
 
-        Returns
-        -------
-        openclean.data.groupby.DataFrameGrouping
-        """
+    Returns
+    -------
+    openclean.data.groupby.DataFrameGrouping
+    """
     gpby = GroupBy(columns=columns, func=func)
     return gpby.map(df=df)
 
 
 class GroupBy(DataFrameMapper):
-    """GroupBy class that takes in the column names to group on and a function (optional),
-    performs the groupby and returns a DataFrameGrouping object"""
+    """GroupBy class that takes in the column names to group on and a function
+    (optional), performs the groupby and returns a DataFrameGrouping object.
+    """
     def __init__(self, columns, func=None):
         """Initialize the column names and an optional function.
 
@@ -96,7 +97,7 @@ class GroupBy(DataFrameMapper):
         openclean.data.groupby.DataFrameGrouping
         """
         # unpack any user set indices to default pandas representations
-        df_reindexed = df.reset_index() if df.index.duplicated().any() or df.index.dtype != int else df
+        df_reindexed = df.reset_index() if df.index.duplicated().any() or df.index.dtype != int else df  # noqa: E501
         groupedby = self._transform(df=df_reindexed)
         grouping = DataFrameGrouping(df=df_reindexed)
         for gby in groupedby:
@@ -137,7 +138,7 @@ def get_eval_func(columns=None, func=None):
             columns = None
         else:
             columns = [columns] if not isinstance(columns, list) else columns
-            func = Col(columns=columns)
+            func = Cols(*columns)
 
     # If one or more columns and func both are specified
     elif columns is not None:

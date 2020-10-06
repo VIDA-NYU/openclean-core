@@ -32,5 +32,5 @@ def test_sequence_filter():
     values = Filter(is_positive, truth_value=False).apply([1, -1, 2, 0, 3])
     assert values == [-1, 0]
     # Error case when passing a non-callable as function argument to Filter.
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Filter('not a callable')
