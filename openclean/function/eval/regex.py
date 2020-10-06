@@ -54,11 +54,7 @@ class IsMatch(Eval):
             func = All(predicate=func)
         else:
             func = One(predicate=func)
-        super(IsMatch, self).__init__(
-            func=func,
-            columns=columns,
-            is_unary=False
-        )
+        super(IsMatch, self).__init__(columns=columns, func=func)
 
 
 class IsNotMatch(Eval):
@@ -99,8 +95,4 @@ class IsNotMatch(Eval):
             func = All(func)
         else:
             func = One(func)
-        super(IsNotMatch, self).__init__(
-            func=func,
-            columns=columns,
-            is_unary=False
-        )
+        super(IsNotMatch, self).__init__(columns=columns, func=func)

@@ -11,7 +11,7 @@ import math
 import pytest
 
 from openclean.data.column import Column
-from openclean.function.eval.base import Col
+from openclean.function.eval.base import Col, Cols
 from openclean.function.eval.string import Upper
 
 from openclean.operator.transform.insert import inscol, insrow
@@ -37,7 +37,7 @@ def test_insert_multiple_columns(employees):
         employees,
         names=['Height', 'Weight'],
         pos=1,
-        values=Col(['Name', 'Age'])
+        values=Cols('Name', 'Age')
     )
     assert df.shape == (7, 5)
     for _, values in df.iterrows():

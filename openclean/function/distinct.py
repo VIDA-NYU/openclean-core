@@ -61,7 +61,7 @@ def distinct(
     )
     # Use an evaluation function to handle value extraction from columns.
     if columns is None:
-        columns = tuple(df.columns)
+        columns = list(df.columns)
     f = Eval(columns=columns, func=scalar_pass_through, is_unary=True)
     f = f.prepare(df)
     values = list()

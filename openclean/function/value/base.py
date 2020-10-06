@@ -16,6 +16,20 @@ class ValueFunction(metaclass=ABCMeta):
     """The abstract class for value functions defines the interface for methods
     that need to be implemented for preparing and evaluating the function.
     """
+    def __call__(self, value):
+        """Make the function callable for individual values.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        return self.eval(value)
+
     def apply(self, values):
         """Apply the function to each value in a given set. Returns a list of
         values that are the result of the eval method for the respective input
@@ -116,20 +130,6 @@ class PreparedFunction(ValueFunction):
     prepare method. These functions are considered as initialized and ready
     to operate without the need for calling the prepare method first.
     """
-    def __call__(self, value):
-        """Make the function callable for individual values.
-
-        Parameters
-        ----------
-        value: scalar or tuple
-            Value from the list that was used to prepare the function.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.eval(value)
-
     def is_prepared(self):
         """Instances of this class do not need to be further prepared.
 
@@ -166,11 +166,11 @@ class CallableWrapper(PreparedFunction):
 
         Raises
         ------
-        ValueError
+        TypeError
         """
         # Ensure that the given function is actually a callable.
         if not callable(func):
-            raise ValueError('not a callable function')
+            raise TypeError('not a callable function')
         self.func = func
 
     def eval(self, value):

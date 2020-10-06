@@ -37,7 +37,7 @@ def test_predicate_notin_domain(employees):
     assert f.eval(employees.iloc[2])
     # Tuple lookup over multiple columns
     f = IsNotIn(
-        domain=[['Alice', '23'], ['Bob', 32.0]],
+        domain=[('Alice', '23'), ('Bob', 32.0)],
         columns=['Name', 'Age']
     )
     f = f.prepare(employees)

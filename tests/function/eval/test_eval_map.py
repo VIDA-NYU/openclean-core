@@ -23,11 +23,11 @@ def test_dataframe_lookup(agencies):
         ['BX', 'NY', 'Bronx', 'New York']
     ])
     # Replace unknown values with None.
-    f = Map((Col('borough'), Col('state')), df).prepare(agencies)
+    f = Map([Col('borough'), Col('state')], df).prepare(agencies)
     boroughs = set([f.eval(row) for _, row in agencies.iterrows()])
     assert boroughs == {('Bronx', 'New York'), ('Brooklyn', 'New York'), None}
     # Use pass-through for unknown value.
-    f = Map((Col('borough'), Col('state')), df, default_value=pass_through)
+    f = Map([Col('borough'), Col('state')], df, default_value=pass_through)
     f = f.prepare(agencies)
     boroughs = set([f.eval(row) for _, row in agencies.iterrows()])
     assert boroughs == {
@@ -37,7 +37,7 @@ def test_dataframe_lookup(agencies):
         ('BX', 'NJ')
     }
     # Raise error for unknown values.
-    f = Map((Col('borough'), Col('state')), df, raise_error=True)
+    f = Map([Col('borough'), Col('state')], df, raise_error=True)
     f = f.prepare(agencies)
     with pytest.raises(KeyError):
         [f.eval(row) for _, row in agencies.iterrows()]

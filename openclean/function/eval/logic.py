@@ -9,7 +9,7 @@
 for data frame rows.
 """
 
-from openclean.function.eval.base import EvalFunction, to_eval
+from openclean.function.eval.base import EvalFunction, FullRowEval
 
 
 class And(EvalFunction):
@@ -155,3 +155,23 @@ class Or(EvalFunction):
         openclean.function.eval.base.EvalFunction
         """
         return Or(*[f.prepare(df) for f in self.predicates])
+
+
+# -- Helper Methods -----------------------------------------------------------
+
+def to_eval(value):
+    """Convert a value into an evaluation function. If the value s not already
+    an evaluation function, a full row evaluation function is returned.
+
+    Parameters
+    ----------
+    values: string, int, or openclean.function.eval.base.EvalFunction
+        Value that is converted to an evaluation function.
+
+    Returns
+    -------
+    openclean.function.eval.base.EvalFunction
+    """
+    if not isinstance(value, EvalFunction):
+        return FullRowEval(func=value)
+    return value

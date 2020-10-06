@@ -8,7 +8,7 @@
 import pytest
 
 from openclean.data.column import Column
-from openclean.function.eval.base import Col
+from openclean.function.eval.base import Col, Cols
 from openclean.function.value.mapping import Lookup
 from openclean.operator.transform.update import swap, update
 
@@ -74,7 +74,7 @@ def test_update_multiple_columns(nyc311):
     df = update(
         df=nyc311,
         columns=['borough', 'descriptor'],
-        func=Col(['descriptor', 'borough'])
+        func=Cols('descriptor', 'borough')
     )
     # Ensure that the columns are instances of the Column class
     for col in df.columns:
