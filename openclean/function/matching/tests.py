@@ -32,5 +32,5 @@ class DummyStringMatcher(StringMatcher):
         -------
         float
         """
-        length = [len(val1), len(val2)]
+        length = [len(str(val1)), len(str(val2))]
         return min(length)/max(length)

@@ -229,7 +229,7 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
 
         Returns
         -------
-        list of (string, float) pairs
+        list of tuples (string, float)
         """
         # Lookup results in the cache first.
         if self._cache and query in self._cache:
