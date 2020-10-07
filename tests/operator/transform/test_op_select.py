@@ -91,3 +91,30 @@ def test_select_with_rename(employees):
     # Ensure that all columns are of type Columns and not strings
     for col in d1.columns:
         assert isinstance(col, Column)
+
+
+def test_select_with_shuffle(agencies):
+    """Test selecting columns and changing their order in the resulting data
+    frame (issue #3).
+    """
+    # Select columns in original order.
+    df = select(agencies, ['borough', 'state'])
+    assert list(df.columns) == ['borough', 'state']
+    # Select columns in different order than in the original data frame.
+    df = select(agencies, ['state', 'borough'])
+    assert list(df.columns) == ['state', 'borough']
+    states = set(df['state'].value_counts().index)
+    assert len(states) == 2
+    assert 'NJ' in states
+    assert 'NY' in states
+    # Shuffle columns with renaming.
+    df = select(
+        agencies,
+        columns=['state', 'borough', 'agency'],
+        names=['US State', 'Boro', 'Agency Name']
+    )
+    assert list(df.columns) == ['US State', 'Boro', 'Agency Name']
+    states = set(df['US State'].value_counts().index)
+    assert len(states) == 2
+    assert 'NJ' in states
+    assert 'NY' in states
