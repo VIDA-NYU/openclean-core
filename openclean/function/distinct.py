@@ -11,8 +11,9 @@ of values.
 
 from collections import Counter
 
+from openclean.function.base import scalar_pass_through
 from openclean.function.eval.base import Eval
-from openclean.function.value.base import normalize, scalar_pass_through
+from openclean.function.value.base import normalize
 
 
 def distinct(

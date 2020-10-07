@@ -21,7 +21,8 @@ install_requires = [
     'jsonschema>=3.2.0',
     'Shapely>=1.7.0',
     'histore>=0.1.4',
-    'fuzzyset==0.0.19'
+    'fuzzyset==0.0.19',
+    'jellyfish'
 ]
 
 

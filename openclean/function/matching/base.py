@@ -8,8 +8,9 @@
 """Base classes and types for string matching functions."""
 
 from abc import ABCMeta, abstractmethod
-from typing import Iterable, List, Optional, Tuple
+from typing import Callable, Iterable, List, Optional, Tuple
 
+from openclean.function.base import scalar_pass_through
 from openclean.function.string import to_lower
 
 
@@ -59,21 +60,33 @@ class StringMatcher(metaclass=ABCMeta):
 
 class ExactMatch(StringMatcher):
     """Implementation of the string matcher class that performs exact matches
-    for string. The returned score is one for identical string and 0 for non-
-    identical strings. The ignore_case flag allows to compare two strings
-    ignoring their case.
+    for string arguments. Allows to transform values before comparing them
+    using a simple callable fiunction that expects a single argument.
+
+    The returned score is one for identical string and 0 for non-identical
+    strings. The ignore_case flag allows to compare two strings ignoring their
+    case.
     """
-    def __init__(self, ignore_case: Optional[bool] = False):
-        """Set the ignore case flag for the matcher. If the ignore_case flag is
-        True comapred values are converted to lower case before comparing the
-        values for equality.
+    def __init__(
+        self,
+        transformer: Optional[Callable] = scalar_pass_through,
+        ignore_case: Optional[bool] = False
+    ):
+        """Set the value transformer and the ignore case flag for the matcher.
+        If the ignore_case flag is True comapred values are converted to lower
+        case before comparing the values (i.e., the transformer results) for
+        equality.
 
         Parameters
         ----------
+        transformer: callable, default=scalar_pass_through
+            Transform values using the given function before comparing the
+            results for equality.
         ignore_case: bool, default=False
             Convert compared values to lower case before comparison if this
             flag is True.
         """
+        self.transformer = transformer
         self.ignore_case = ignore_case
 
     def match(self, val1: str, val2: str) -> float:
@@ -92,9 +105,9 @@ class ExactMatch(StringMatcher):
         float
         """
         if self.ignore_case:
-            return 1. if to_lower(val1) == to_lower(val2) else 0.
-        else:
-            return 1. if val1 == val2 else 0.
+            val1 = to_lower(val1)
+            val2 = to_lower(val2)
+        return 1. if self.transformer(val1) == self.transformer(val2) else 0.
 
 
 # -- Similarity-based vocabulary lookups --------------------------------------

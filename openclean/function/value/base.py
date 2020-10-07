@@ -390,21 +390,6 @@ def normalize(values, normalizer, keep_original=False, labels=None):
     return counts
 
 
-def scalar_pass_through(value):
-    """Pass-through method for single scalar values.
-
-    Parameters
-    ----------
-    value: scalar
-        Scalar cell value from a data frame row.
-
-    Returns
-    -------
-    scalar
-    """
-    return value
-
-
 def to_value_function(arg):
     """Ensure that a given argument is a ValueFunction. If the arg is callable
     it will be wrapped. Otherwise, a constant value function is returned.
