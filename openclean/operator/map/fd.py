@@ -25,7 +25,8 @@ class FDViolations(GroupBy):
     """
     def __init__(self, lhs, rhs=None):
         """
-        Initializes the FDViolation class with the left and right hand side column names.
+        Initializes the FDViolation class with the left and right hand side
+        column names.
 
         Parameters
         __________
@@ -38,7 +39,8 @@ class FDViolations(GroupBy):
         self.rhs = rhs
 
     def map(self, df):
-        """Identifies FD violations and maps the pandas DataFrame into a DataFrameGrouping object.
+        """Identifies FD violations and maps the pandas DataFrame into a
+        DataFrameGrouping object.
 
         Parameters
         ----------
@@ -49,8 +51,8 @@ class FDViolations(GroupBy):
         _______
         DataFrameGrouping
         """
-        # Keep groups that have more than one distinct value on the left side for the attributes
-        # of the right-hand-size of the FD.
+        # Keep groups that have more than one distinct value on the left side
+        # for the attributes of the right-hand-size of the FD.
         groups = self._transform(df=df)
         grouping = DataFrameGrouping(df=df)
         for key, rows in groups.items():

@@ -7,7 +7,6 @@
 
 """Functions and classes that implement the split operator in openclean."""
 
-from openclean.function.eval.base import EvalFunction
 from openclean.operator.base import DataFrameSplitter
 from openclean.operator.transform.filter import get_predicate
 
