@@ -5,22 +5,28 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Class that implements the DataframeMapper abstract class to identify FDViolations in a pandas dataframe."""
+"""Class that implements the DataframeMapper abstract class to identify
+violations of functional dependencies in a pandas dataframe.
+"""
 
 from openclean.data.groupby import DataFrameGrouping
 from openclean.operator.map.groupby import GroupBy
 
-def fdViolations(df, lhs, rhs=None):
+
+def fd_violations(df, lhs, rhs=None):
     fdv = FDViolations(lhs=lhs, rhs=rhs)
     return fdv.map(df=df)
 
 
 class FDViolations(GroupBy):
-    """FDViolation class that takes the left side and right side column names. identifies any tuples involved in
-    FDViolations and returns them as a GroupBy object"""
+    """FDViolation class that takes the left side and right side column names.
+    Identifies any tuples involved in FDViolations and returns them as a
+    GroupBy object.
+    """
     def __init__(self, lhs, rhs=None):
         """
-        Initializes the FDViolation class with the left and right hand side column names.
+        Initializes the FDViolation class with the left and right hand side
+        column names.
 
         Parameters
         __________
@@ -32,9 +38,9 @@ class FDViolations(GroupBy):
         super(FDViolations, self).__init__(columns=lhs)
         self.rhs = rhs
 
-
     def map(self, df):
-        """Identifies FD violations and maps the pandas DataFrame into a DataFrameGrouping object.
+        """Identifies FD violations and maps the pandas DataFrame into a
+        DataFrameGrouping object.
 
         Parameters
         ----------
@@ -45,8 +51,8 @@ class FDViolations(GroupBy):
         _______
         DataFrameGrouping
         """
-        # Keep groups that have more than one distinct value on the left side for the attributes
-        # of the right-hand-size of the FD.
+        # Keep groups that have more than one distinct value on the left side
+        # for the attributes of the right-hand-size of the FD.
         groups = self._transform(df=df)
         grouping = DataFrameGrouping(df=df)
         for key, rows in groups.items():

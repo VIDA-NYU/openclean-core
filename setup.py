@@ -14,10 +14,11 @@ from setuptools import setup, find_packages
 
 
 install_requires = [
-    'pandas>=1.0.0',
-    'jsonschema>=3.2.0',
     'python-dateutil',
     'requests',
+    'pandas>=1.0.0',
+    'scikit-learn',
+    'jsonschema>=3.2.0',
     'Shapely>=1.7.0',
     'histore>=0.1.4',
     'fuzzyset==0.0.19'
@@ -32,12 +33,16 @@ tests_require = [
 ]
 
 
+dev_require = ['flake8'] + tests_require
+
+
 extras_require = {
     'docs': [
         'Sphinx',
         'sphinx-rtd-theme'
     ],
     'tests': tests_require,
+    'dev': dev_require
 }
 
 

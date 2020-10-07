@@ -98,12 +98,8 @@ class DataFrameGrouping(object):
         # The result is None if no group associated with the given key.
         if key not in self._groups:
             return None
-        # Create a data frame for the rows in the group. Ensure to maintain the
-        # original row identifier from the data frame's row index.
-        groupmap = [False] * len(self.df.index)
-        for rowidx in self._groups[key]:
-            groupmap[rowidx] = True
-        return self.df[groupmap]
+        # Create a data frame for the rows in the group.
+        return self.df.loc[self.df.index.isin(self._groups[key])]
 
     def groups(self):
         """Synonym for items(). Allows to iterate over the groups (and thier
