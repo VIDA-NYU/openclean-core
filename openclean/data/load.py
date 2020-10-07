@@ -73,6 +73,32 @@ class DataStream(object):
         # Close the CSV file when done streaming.
         self.csvfile.close()
 
+    def limit(self, count: int) -> pd.DataFrame:
+        """Return a data frame from the stream that contains the first n
+        rows.
+
+        Parameters
+        ----------
+        count: int
+            Maximum number of rows in the returned data frame.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        data = list()
+        index = list()
+        for rowid, values in self.iterrows():
+            data.append(values)
+            index.append(rowid)
+            if len(data) >= count:
+                break
+        return pd.DataFrame(
+            data=data,
+            columns=self.columns,
+            index=index
+        )
+
     def select(self, *args):
         """Select a given list of columns from the data frame. Columns may
         either be referenced by their index position or their name.
