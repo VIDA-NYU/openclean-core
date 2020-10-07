@@ -25,6 +25,15 @@ can output a stage state object.
 """
 
 from abc import ABCMeta, abstractmethod
+from typing import List, Union
+
+
+"""Type alias definition for parameters and return values of different
+operators in openclean.
+"""
+ColumnRef = Union[int, str]
+Columns = Union[ColumnRef, List[Union[ColumnRef]]]
+Names = Union[str, List[str]]
 
 
 class PipelineStage(metaclass=ABCMeta):

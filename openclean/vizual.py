@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Collection of openclean operators that represent (or are similar) to VizUAL
+"""Collection of openclean operators that represent (or are similar to) VizUAL
 operators.
 """
 

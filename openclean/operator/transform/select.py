@@ -9,14 +9,21 @@
 openclean.
 """
 
+from typing import List, Optional, Union
+
+import pandas as pd
+
 from openclean.data.column import Column
 from openclean.data.select import as_list, select_clause, select_by_id
-from openclean.operator.base import DataFrameTransformer
+from openclean.operator.base import Columns, DataFrameTransformer, Names
 
 
 # -- Functions ----------------------------------------------------------------
 
-def filter_columns(df, colids, names=None):
+def filter_columns(
+    df: pd.DataFrame, colids: Union[int, List[int]],
+    names: Optional[Names] = None
+) -> pd.DataFrame:
     """Filter columns by their identifier. Returns a data frame that contains
     the columns whose identifier are included in the given list. Raises a
     ValueError if the column identifier list contains values that do not
@@ -44,7 +51,9 @@ def filter_columns(df, colids, names=None):
     return Select(columns=columns, names=names).transform(df)
 
 
-def select(df, columns, names=None):
+def select(
+    df: pd.DataFrame, columns: Columns, names: Optional[Names] = None
+) -> pd.DataFrame:
     """Projection operator that selects a list of columns from a data frame.
     Returns a data frame that contains only thoses columns that are included in
     the given select clause. The optional list of names allows to rename the
@@ -78,7 +87,7 @@ class Select(DataFrameTransformer):
     The output is a data frame that contains all rows from an input data frame
     but only those columns that are included in a given select clause.
     """
-    def __init__(self, columns, names=None):
+    def __init__(self, columns: Columns, names: Optional[Names] = None):
         """Initialize the list of columns that are being selected. The optional
         list of names allows to rename columns. If the list of names is given
         it has to be of the same length as the list of columns.
@@ -105,7 +114,7 @@ class Select(DataFrameTransformer):
         else:
             self.names = None
 
-    def transform(self, df):
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Return a data frame that contains all rows but only those columns
         from the given input data frame that are included in the select clause.
 
