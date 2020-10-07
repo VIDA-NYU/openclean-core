@@ -8,7 +8,7 @@
 """Base classes and types for string matching functions."""
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Iterable, List, Optional, Tuple
 
 from openclean.function.string import to_lower
 
@@ -105,12 +105,22 @@ query string are represented as (matches-string, score)-pairs.
 StringMatchResult = Tuple[str, float]
 
 
-class VocabularyMatcher(metaclass=ABCMeta):
+class VocabularyMatcher(set, metaclass=ABCMeta):
     """Abstract base class for functions that find matches for a query string
     in a given vocabulary (set of strings). Instances of this class are
     associated with a vocabulary. They return one or more matches from that
     vocabulary for a given query string.
     """
+    def __init__(self, terms: Iterable[str]):
+        """Initialize the terms in the vocabulary.
+
+        Parameters
+        ----------
+        terms: iterable of string
+            List of terms in the vocabulary.
+        """
+        super(VocabularyMatcher, self).__init__(terms)
+
     @abstractmethod
     def find_matches(self, query: str) -> List[StringMatchResult]:
         """Find matches for a given query string in the associated vocabulary.
@@ -168,8 +178,10 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
     disabled using the cache_results flag.
     """
     def __init__(
-        self, vocabulary: Union[List[str], Set[str], Dict],
-        matcher: StringMatcher, best_matches_only: Optional[bool] = True,
+        self,
+        vocabulary: Iterable[str],
+        matcher: StringMatcher,
+        best_matches_only: Optional[bool] = True,
         no_match_threshold: Optional[float] = 0.,
         cache_results: Optional[bool] = True
     ):
@@ -178,8 +190,8 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
 
         Parameters
         ----------
-        vocabulary: list, set, or dict of string (keys)
-            List of values in the associated vocabulary agains which query
+        vocabulary: iterable of string
+            List of terms in the associated vocabulary agains which query
             strings are matched.
         matcher: openclean.function.matching.base.StringMatcher
             String similarity function that is used to compute scores between
@@ -193,7 +205,7 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
             Keep an internal cache of match results to avoid computing matches
             for the same query value twice.
         """
-        self.vocabulary = vocabulary
+        super(DefaultVocabularyMatcher, self).__init__(terms=vocabulary)
         self.matcher = matcher
         self.best_matches_only = best_matches_only
         self.no_match_threshold = no_match_threshold
@@ -225,7 +237,7 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
         # Compute list of all matches that satisfy the no-match threshold
         # constraint if the query string was not found in the cache.
         matches = list()
-        for term in self.vocabulary:
+        for term in self:
             score = self.matcher.score(term, query)
             if score > self.no_match_threshold:
                 m = (term, score)
