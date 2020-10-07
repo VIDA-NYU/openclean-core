@@ -5,19 +5,24 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Class that implements the DataframeMapper abstract class to identify FDViolations in a pandas dataframe."""
+"""Class that implements the DataframeMapper abstract class to identify
+violations of functional dependencies in a pandas dataframe.
+"""
 
 from openclean.data.groupby import DataFrameGrouping
 from openclean.operator.map.groupby import GroupBy
 
-def fdViolations(df, lhs, rhs=None):
+
+def fd_violations(df, lhs, rhs=None):
     fdv = FDViolations(lhs=lhs, rhs=rhs)
     return fdv.map(df=df)
 
 
 class FDViolations(GroupBy):
-    """FDViolation class that takes the left side and right side column names. identifies any tuples involved in
-    FDViolations and returns them as a GroupBy object"""
+    """FDViolation class that takes the left side and right side column names.
+    Identifies any tuples involved in FDViolations and returns them as a
+    GroupBy object.
+    """
     def __init__(self, lhs, rhs=None):
         """
         Initializes the FDViolation class with the left and right hand side column names.
@@ -31,7 +36,6 @@ class FDViolations(GroupBy):
         """
         super(FDViolations, self).__init__(columns=lhs)
         self.rhs = rhs
-
 
     def map(self, df):
         """Identifies FD violations and maps the pandas DataFrame into a DataFrameGrouping object.
