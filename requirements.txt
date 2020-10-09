@@ -1,3 +1,4 @@
+future
 python-dateutil
 requests
 pandas>=1.0.0

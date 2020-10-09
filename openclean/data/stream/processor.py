@@ -5,31 +5,119 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Collection of helper classes and methods to stream the data from a given CSV
-file in a way that is similar to applying certain openclean operators on a
-given pandas DataFrame. These classes are mainly intended for simple select
-and filter operations on large files that may not fit into main memory as a
-data frame.
+"""Operators in a data stream pipeline represent the actors in the definition
+of the pipeline. Each operator provides the functionality (factory pattern) to
+instantiate the operator for a given data stream before a data streaming
+pipeline is executed.
+
+The stream processor represents a data stream that is associated with a stream
+processing pipeline to filer, manipulate, or profile rows in teh data stream.
 """
+
+from __future__ import annotations
+from abc import ABCMeta, abstractmethod
+from typing import List, Optional
 
 import pandas as pd
 
-from collections import Counter
-from typing import List, Optional
-
-from openclean.data.column import Column
-from openclean.data.load.consumer import (
-    DataFrame, Distinct, Filter, Limit, StreamConsumer, Select, Write
-)
-from openclean.data.load.csv import CSVFile
-from openclean.function.eval.base import EvalFunction
+from openclean.data.column import ColumnName, ColumnRef
+from openclean.data.select import select_clause
+from openclean.data.stream.base import DatasetStream
+from openclean.data.stream.consumer import DataFrame, StreamConsumer, Select
 
 
-class DataStream(object):
+# -- Stream operators ---------------------------------------------------------
+
+class StreamOperator(metaclass=ABCMeta):
+    """Stream operators represent definitions of actors in a data stream
+    processing pipeline. Each operator implements the open method to create
+    a prepared instance (consumer) for the operator that is used in a stream
+    processing pipeline to filter, manipulate or profile data stream rows.
+    """
+    @abstractmethod
+    def open(
+        self, ds: StreamProcessor, pipeline: List[StreamOperator]
+    ) -> StreamConsumer:
+        """Signal that the consumer is about to receive the first row in the
+        data stream. Contains the list of column names that define the schema
+        of the rows in the stream.
+
+        Parameters
+        ----------
+        schema: list of column names
+            Schema for rows in the data stream.
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+
+class DataFrameOperator(StreamOperator):
+    """
+    """
+    def open(
+        self, ds: StreamProcessor, pipeline: List[StreamOperator]
+    ) -> DataFrameOperator:
+        """
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
+        return DataFrame(columns=ds.columns)
+
+
+class SelectOperator(StreamOperator):
+    """Definition of a column select operator for a data stream processing
+    pipeline.
+    """
+    def __init__(self, columns=List[ColumnRef]):
+        """Initialize the list of column references for those columns from the
+        input schema that will be part of the output schema.
+
+        Parameters
+        ----------
+        columns: list int or string
+            References to columns in the input schema for this operatir.
+        """
+        self.columns = columns
+
+    def open(
+        self, ds: StreamProcessor, pipeline: List[StreamOperator]
+    ) -> Select:
+        """
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
+        colnames, colidxs = select_clause(ds, self.columns)
+        if pipeline:
+            op = pipeline[0]
+            ds = StreamProcessor(
+                reader=ds.reader,
+                columns=colnames,
+                pipeline=ds.pipeline + [op]
+            )
+            return Select(
+                columns=colidxs,
+                consumer=op.open(ds=ds, pipeline=pipeline[1:])
+            )
+        else:
+            return Select(columns=colidxs)
+
+
+# -- Stream processor ---------------------------------------------------------
+
+class StreamProcessor(object):
     """The data stream class is intended for reading and filtering large CSV
     files as data frames. The class iterates over the rows of a given CSV file.
-    It allows to filer columns (select) and rows (where) using an openclean
-    predicate.
+    It allows to define a processing pipeline of stream operators to fitler,
+    manipulate, and profile the rows in the data stream .
 
     The class implements the iterrows() function and columns property of the
     pandas DataFrame. Instances of this class can be used as substitues for
@@ -37,25 +125,24 @@ class DataStream(object):
     iterrows() functions and the columns property for data frame arguments.
     """
     def __init__(
-        self, file: CSVFile, columns: List[Column],
-        consumer: Optional[StreamConsumer] = None
+        self,
+        reader: DatasetStream,
+        columns: Optional[List[ColumnName]] = None,
+        pipeline: Optional[StreamOperator] = None
     ):
-        """Initialize the data frmae columns, the CSV reader, and the optional
+        """Initialize the data stream reader, schema information for the
+        streamed rows, and the optional
         column filter.
 
         Parameters
         ----------
-        file: CSVFile
-            Handle for a CSV File.
-        columns: list of Column
-            List of data frame column objects
-        consumer: openclean.data.load.consumer.StreamConsumer, default=None
-            List of column indices in the read rows from the CSV reader that
-            are included in the output (set by the select() method).
+        reader: openclean.data.stream.base.DatasetReader
+            Reader for the data stream.
+        pipeline: ???
         """
-        self.columns = columns
-        self.file = file
-        self.consumer = consumer
+        self.reader = reader
+        self.columns = columns if columns is not None else reader.columns
+        self.pipeline = pipeline if pipeline is not None else list()
 
     def consume(self, consumer: StreamConsumer) -> pd.DataFrame:
         """Stream all rows to a consumer that has the given consumer as a sink.
@@ -143,24 +230,21 @@ class DataStream(object):
     def iterrows(self):
         """Simulate the iterrows() function of a pandas DataFrame as it is used
         in openclean. Returns an iterator that yields pairs of row identifier
-        and value list for each rw in the streamed data frame.
+        and value list for each row in the streamed data frame.
         """
-        # Attach the given consumer to a (potentially) existing consumer before
-        # streaming all rows the the resulting consumer.
-        with self.file.open(skip_header=True) as f:
-            if self.consumer is not None:
-                self.consumer.open(self.columns)
-                for rowid, row in f:
-                    try:
-                        row = self.consumer.consume(rowid, row)
-                        if row is not None:
-                            yield rowid, row
-                    except StopIteration:
-                        break
-                self.consumer.close()
-            else:
-                for rowid, row in f:
-                    yield rowid, row
+        if self.pipeline:
+            ds = StreamProcessor(reader=self.reader)
+            consumer = self.pipeline[0].open(ds, self.pipeline[1:])
+            for rowid, row in self.reader.iterrows():
+                try:
+                    row = consumer.consume(rowid, row)
+                    if row is not None:
+                        yield rowid, row
+                except StopIteration:
+                    break
+            consumer.close()
+        else:
+            return self.reader.iterrows()
 
     def limit(self, count: int):
         """Return a data stream for the data frame that will yield at most
@@ -198,18 +282,16 @@ class DataStream(object):
 
         Returns
         -------
-        openclean.data.load.stream.DataStream
+        openclean.data.stream.processor.StreamProcessor
         """
-        consumer = Select(columns=list(args))
-        if self.consumer is not None:
-            consumer = self.consumer.set_consumer(consumer)
-        return DataStream(
-            file=self.file,
+        op = SelectOperator(columns=list(args))
+        return StreamProcessor(
+            reader=self.reader,
             columns=self.columns,
-            consumer=consumer
+            pipeline=self.pipeline + [op]
         )
 
-    def stream(self, consumer):
+    def run(self):
         """Stream all rows from the associated data file to the given stream
         consumer. The returned value is the result that is returned when the
         consumer is closed.
@@ -223,18 +305,15 @@ class DataStream(object):
         -------
         any
         """
-        # Attach the given consumer to a (potentially) existing consumer before
-        # streaming all rows the the resulting consumer.
-        if self.consumer is not None:
-            consumer = self.consumer.set_consumer(consumer)
-        consumer.open(self.columns)
-        with self.file.open(skip_header=True) as f:
-            for rowid, row in f:
+        if self.pipeline:
+            ds = StreamProcessor(reader=self.reader)
+            consumer = self.pipeline[0].open(ds, self.pipeline[1:])
+            for rowid, row in self.reader.iterrows():
                 try:
                     consumer.consume(rowid, row)
                 except StopIteration:
                     break
-        return consumer.close()
+            return consumer.close()
 
     def to_df(self) -> pd.DataFrame:
         """Collect all rows in the stream that are yielded by the associated
@@ -244,7 +323,12 @@ class DataStream(object):
         -------
         pd.DataFrame
         """
-        return self.stream(DataFrame())
+        op = DataFrameOperator()
+        return StreamProcessor(
+            reader=self.reader,
+            columns=self.columns,
+            pipeline=self.pipeline + [op]
+        ).run()
 
     def where(self, predicate: EvalFunction, limit: Optional[int] = None):
         """Filter rows in the data stream that match a given condition. Returns
@@ -287,36 +371,3 @@ class DataStream(object):
         file = CSVFile(filename=filename, delim=delim, compressed=compressed)
         with file.write() as writer:
             self.consume(Write(writer))
-
-
-# -- Factory for data streams -------------------------------------------------
-
-def stream(
-    filename: str, delim: Optional[str] = None,
-    compressed: Optional[bool] = None
-) -> DataStream:
-    """Read a CSV file as a data stream. This is a helper method that is
-    intended to read and filter large CSV files.
-
-    Parameters
-    ----------
-    filename: string
-        Path to CSV file on the local file system.
-    delim: string, default=None
-        The column delimiter used in the CSV file.
-    compressed: bool, default=None
-        Flag indicating if the file contents have been compressed using
-        gzip.
-
-    Returns
-    -------
-    openclean.data.load.DataStream
-    """
-    file = CSVFile(filename=filename, delim=delim, compressed=compressed)
-    with file.open(skip_header=False) as reader:
-        columns = list()
-        for col_name in reader.header():
-            cid = len(columns)
-            col = Column(colid=cid, name=col_name.strip(), colidx=cid)
-            columns.append(col)
-    return DataStream(file=file, columns=columns)
