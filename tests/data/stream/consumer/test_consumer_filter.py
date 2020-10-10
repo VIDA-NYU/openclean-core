@@ -11,7 +11,7 @@ from openclean.data.stream.consumer import Collector, Filter
 from openclean.function.eval.base import Col
 
 
-def test_data_frame_consumer():
+def test_filter_consumer():
     """Test filtering rows from a data stream."""
     collector = Collector()
     pred = Col(columns='A', colidx=0) > 3

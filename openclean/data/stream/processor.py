@@ -25,10 +25,12 @@ from openclean.data.column import ColumnName, ColumnRef
 from openclean.data.select import select_clause
 from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.consumer import (
-    Count, DataFrame, Distinct, Filter, Limit, StreamConsumer, Select, Write
+    Count, DataFrame, Distinct, Filter, Limit, StreamConsumer, Select, Update,
+    Write
 )
 from openclean.data.stream.csv import CSVFile
 from openclean.function.eval.base import EvalFunction
+from openclean.operator.transform.update import get_update_function
 
 
 # -- Stream operators ---------------------------------------------------------
@@ -204,7 +206,8 @@ class FilterOperator(ProducingOperator):
         ----------
         predicate: openclean.function.eval.base.EvalFunction
             Evaluation function that is used as the predicate for filtering
-            data stream rows. The function will be prepared in the open method.
+            data stream rows. The function will be prepared in the
+            create_consumer method.
         """
         self.predicate = predicate
 
@@ -268,14 +271,14 @@ class SelectOperator(ProducingOperator):
     """Definition of a column select operator for a data stream processing
     pipeline.
     """
-    def __init__(self, columns=List[ColumnRef]):
+    def __init__(self, columns: List[ColumnRef]):
         """Initialize the list of column references for those columns from the
         input schema that will be part of the output schema.
 
         Parameters
         ----------
         columns: list int or string
-            References to columns in the input schema for this operatir.
+            References to columns in the input schema for this operator.
         """
         self.columns = columns
 
@@ -299,6 +302,49 @@ class SelectOperator(ProducingOperator):
         # Get names and index positions for the filtered columns.
         colnames, colidxs = select_clause(ds, self.columns)
         return Select(columns=colidxs), colnames
+
+
+class UpdateOperator(ProducingOperator):
+    """Definition of a update select operator for a data stream processing
+    pipeline.
+    """
+    def __init__(self, columns: List[ColumnRef], func: EvalFunction):
+        """Initialize the list of column references for those columns from the
+        input schema that will be updated and the update function.
+
+        Parameters
+        ----------
+        columns: list int or string
+            References to columns in the input schema for this operator.
+        func: openclean.function.eval.base.EvalFunction
+            Evaluation function that is used to update rows in the data stream.
+            The function will be prepared in the create_consumer method.
+        """
+        self.columns = columns
+        self.func = func
+
+    def create_consumer(
+        self, ds: StreamProcessor
+    ) -> Tuple[Update, List[ColumnName]]:
+        """Return a stream consumer that updates rows in a data stream using
+        the associated update function.
+
+        Parameters
+        ----------
+        ds: openclean.data.stream.StreamProcessor
+            Processor for the data stream that the created consumer will
+            receive as input.
+
+        Returns
+        -------
+        openclean.data.stream.consumer.Update
+        """
+        # Get index positions for the updated columns.
+        _, colidxs = select_clause(ds, self.columns)
+        # Prepate the update funnction
+        prep_func = self.func.prepare(ds)
+        # Return instance of the update consumer.
+        return Update(columns=colidxs, func=prep_func), ds.columns
 
 
 class WriteOperator(StreamOperator):
@@ -598,6 +644,29 @@ class StreamProcessor(object):
         pd.DataFrame
         """
         return self.stream(DataFrameOperator())
+
+    def update(self, *args):
+        """Update rows in a data frame. Expects a list of columns that are
+        updated. The last argument is expected to be an update function that
+        accepts as many arguments as there are columns in the argument list.
+
+        Raises a Value error if not enough arguments (at least two) are given.
+
+        Parameters
+        ----------
+        args: list of int or string
+            List of column names or index positions.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        args = list(args)
+        if len(args) < 1:
+            raise ValueError('not enough arguments for update')
+        columns = args[:-1]
+        func = get_update_function(func=args[-1], columns=columns)
+        return self.append(UpdateOperator(columns=columns, func=func))
 
     def where(self, predicate: EvalFunction, limit: Optional[int] = None):
         """Filter rows in the data stream that match a given condition. Returns

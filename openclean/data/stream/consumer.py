@@ -406,6 +406,61 @@ class Select(ProducingConsumer):
         return [row[i] for i in self.columns]
 
 
+class Update(ProducingConsumer):
+    """Update operator for rows in a data stream. Expects a list of columns
+    and an update function. Updated rows are passed on to a given downstream
+    consumer.
+    """
+    def __init__(
+        self, columns: List[int], func: EvalFunction,
+        consumer: Optional[StreamConsumer] = None
+    ):
+        """Initialize the columns that are updated and the update function.
+        Columns are referenced by their index in the schema. The update
+        function is expected to be an evaluation function. The function as is
+        already prepared.
+
+        Parameters
+        ----------
+        columns: list of int
+            List of column index positions for the columns that are updated.
+        func: openclean.function.eval.base.EvalFunction
+            Evaluation function that is used to generate values for the updated
+            columns in each row of the data stream.
+        consumer: openclean.data.stream.consumer.StreamConsumer, default=None
+            Downstream consumer for updated rows.
+        """
+        super(Update, self).__init__(consumer)
+        self.columns = columns
+        self.func = func
+
+    def handle(self, rowid: int, row: List) -> List:
+        """Update rows and return the updated result.
+
+        Parameters
+        -----------
+        rowid: int
+            Unique row identifier
+        row: list
+            List of values in the row.
+
+        Returns
+        -------
+        list
+        """
+        val = self.func.eval(row)
+        values = list(row)
+        if len(self.columns) == 1:
+            values[self.columns[0]] = val
+        else:
+            if len(val) != len(self.columns):
+                msg = 'expected {} values instead of {}'
+                raise ValueError(msg.format(len(self.columns), len(val)))
+            for i, col in enumerate(self.columns):
+                values[col] = val[i]
+        return values
+
+
 class Write(StreamConsumer):
     """Write data stream rows to an output file."""
     def __init__(self, writer: CSVWriter):
