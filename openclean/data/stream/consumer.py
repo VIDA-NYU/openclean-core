@@ -369,7 +369,7 @@ class Write(StreamConsumer):
 
         Parameters
         ----------
-        writer: openclean.data.load.csv.CSVWriter
+        writer: openclean.data.stream.csv.CSVWriter
             Writer for rows in a CSV file.
         """
         self.writer = writer

@@ -28,6 +28,18 @@ def agencies():
 
 
 @pytest.fixture
+def boroughs():
+    """Return set of boroughs in the 311 dataset."""
+    return {
+        'BRONX',
+        'BROOKLYN',
+        'MANHATTAN',
+        'QUEENS',
+        'STATEN ISLAND'
+    }
+
+
+@pytest.fixture
 def countries():
     """Get dataset with known countries from restcountries.eu web service."""
     return dataset(COUNTRIES_FILE)

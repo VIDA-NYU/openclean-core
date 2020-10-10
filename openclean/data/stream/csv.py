@@ -12,7 +12,7 @@ from typing import List, Optional
 import csv
 import gzip
 
-from openclean.data.column import ColumnName
+from openclean.data.column import Column, ColumnName
 from openclean.data.stream.base import DatasetIterator, DatasetStream
 
 
@@ -105,10 +105,14 @@ class CSVFile(DatasetStream):
     """Helper class to open a CSV reader for a given data file."""
     def __init__(
         self, filename: str, header: Optional[List[ColumnName]] = None,
-        delim: Optional[str] = None, compressed: Optional[bool] = None
+        delim: Optional[str] = None, compressed: Optional[bool] = None,
+        write: Optional[bool] = False
     ):
         """Set the file name, delimiter and the flag that indicates if the file
         is compressed using gzip.
+
+        If the file is opened for writing and no header is given no attempt is
+        made to reader the header from file.
 
         Parameters
         ----------
@@ -122,6 +126,8 @@ class CSVFile(DatasetStream):
         compressed: bool, default=None
             Flag indicating if the file contents have been compressed using
             gzip.
+        write: bool, default=False
+            Indicate if the file is opened for writing.
         """
         self.filename = filename
         # Keep track if the header information was None intially, i.e., if the
@@ -144,10 +150,13 @@ class CSVFile(DatasetStream):
         self.compressed = compressed
         # Read the header information from the first line of the input file if
         # no header is given.
-        if header is None:
+        if header is None and not write:
             reader, csvfile = self._openreader()
             try:
-                header = next(reader)
+                header = list()
+                for name in next(reader):
+                    cid = len(header)
+                    header.append(Column(colid=cid, name=name, colidx=cid))
             finally:
                 csvfile.close()
         super(CSVFile, self).__init__(columns=header)
@@ -181,13 +190,19 @@ class CSVFile(DatasetStream):
             csvfile = open(self.filename, 'r')
         return csv.reader(csvfile, delimiter=self.delim), csvfile
 
-    def write(self) -> CSVWriter:
+    def write(self, header: Optional[List[ColumnName]] = None) -> CSVWriter:
         """Get a CSV writer for the associated CSV file. Writes the dataset
         header information to the opened output file.
 
+        Parameters
+        ----------
+        header: list of string, default=None
+            Optional header information that overwrites the header information
+            in the file.
+
         Returns
         -------
-        openclean.data.load.CSVWriter
+        openclean.data.stream.csv.CSVWriter
         """
         # Open file depending on whether it is gzip compressed or not.
         if self.compressed:
@@ -196,5 +211,8 @@ class CSVFile(DatasetStream):
             csvfile = open(self.filename, 'w', newline='')
         # Open te CSV writer and output the dataset header.
         writer = csv.writer(csvfile, delimiter=self.delim)
-        writer.writerow(self.columns)
+        if header is not None:
+            writer.writerow(header)
+        elif self.columns is not None:
+            writer.writerow(self.columns)
         return CSVWriter(writer=writer, file=csvfile)

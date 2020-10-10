@@ -57,7 +57,7 @@ def dataset(
         for rowid, row in reader:
             data.append(row)
             index.append(rowid)
-        return pd.DataFrame(data=data, columns=reader.header(), index=index)
+        return pd.DataFrame(data=data, columns=file.columns, index=index)
 
 
 def stream(
@@ -82,7 +82,7 @@ def stream(
 
     Returns
     -------
-    openclean.data.load.DataStream
+    openclean.data.stream.processor.StreamProcessor
     """
     file = CSVFile(
         filename=filename,
