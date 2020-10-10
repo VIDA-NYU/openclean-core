@@ -361,6 +361,7 @@ class StreamProcessor(object):
             List of operators in the pipeline fpr this stream processor.
 
         """
+        print('init {}'.format(pipeline))
         self.reader = reader
         self.columns = columns if columns is not None else reader.columns
         self.pipeline = pipeline if pipeline is not None else list()
@@ -510,24 +511,6 @@ class StreamProcessor(object):
         """
         return self.append(LimitOperator(limit=count))
 
-    def select(self, *args):
-        """Select a given list of columns from the streamed data frame. Columns
-        may either be referenced by their index position or their name.
-
-        Returns a new data stream with the column filter set to the columns
-        that were in the argument list.
-
-        Parameters
-        ----------
-        args: list of int or string
-            List of column names or index positions.
-
-        Returns
-        -------
-        openclean.data.stream.processor.StreamProcessor
-        """
-        return self.append(SelectOperator(columns=list(args)))
-
     def run(self):
         """Stream all rows from the associated data file to the data pipeline
         that is associated with this processor. If an optional operator is
@@ -558,6 +541,24 @@ class StreamProcessor(object):
         # Return the result from the consumer when closed at the end of the
         # stream.
         return consumer.close()
+
+    def select(self, *args):
+        """Select a given list of columns from the streamed data frame. Columns
+        may either be referenced by their index position or their name.
+
+        Returns a new data stream with the column filter set to the columns
+        that were in the argument list.
+
+        Parameters
+        ----------
+        args: list of int or string
+            List of column names or index positions.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        return self.append(SelectOperator(columns=list(args)))
 
     def stream(self, op: StreamOperator):
         """Stream all rows from the associated data file to the data pipeline

@@ -17,7 +17,7 @@ discovering patterns in the data.
 """
 from abc import ABCMeta, abstractmethod
 
-from openclean.function.distinct import distinct
+from openclean.operator.collector.distinct import distinct
 
 import openclean.util as util
 

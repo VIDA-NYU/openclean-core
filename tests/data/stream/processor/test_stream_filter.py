@@ -11,7 +11,7 @@ from openclean.function.eval.aggregate import Max
 from openclean.function.eval.base import Col
 
 
-def test_sfilter_rows_from_stream(stream311, boroughs):
+def test_filter_rows_from_stream(stream311, boroughs):
     """Test filtering rows where city and borough are identical."""
     ds = stream311\
         .select('city', 'borough')\

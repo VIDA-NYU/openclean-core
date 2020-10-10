@@ -7,10 +7,10 @@
 
 """Unit tests for the distinct value count generator."""
 
-from openclean.function.distinct import distinct
 from openclean.function.value.normalize import (
     divide_by_total, MaxAbsScale, MinMaxScale
 )
+from openclean.operator.collector.distinct import distinct
 
 
 def test_distinct_all_columns(schools):
