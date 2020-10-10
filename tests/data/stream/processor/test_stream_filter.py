@@ -39,8 +39,28 @@ def test_filter_with_prepare(streamSchools):
     """Test filtering rows with a evaluation function that needs to be
     prepared.
     """
-    ds = streamSchools\
+    # The row with the maximum class size (73.0) as at position 8. The borough
+    # is 'X' and the school_code 'X142'.
+    counts = streamSchools\
         .select('borough', 'school_code', 'max_class_size')\
         .filter(Col('max_class_size') == Max('max_class_size'))\
-        .to_df()
-    print(ds)
+        .distinct('borough', 'school_code')
+    assert len(counts) == 1
+    assert ('X', 'X142') in counts
+    # Adding limit > 1 does not affect the results.
+    counts = streamSchools\
+        .select('borough', 'school_code', 'max_class_size')\
+        .filter(Col('max_class_size') == Max('max_class_size'))\
+        .limit(7)\
+        .distinct('borough', 'school_code')
+    assert len(counts) == 1
+    assert ('X', 'X142') in counts
+    # Add limit of 7 before filter yields 'X', 'X525' as the scholl with max.
+    # class size.
+    counts = streamSchools\
+        .select('borough', 'school_code', 'max_class_size')\
+        .limit(7)\
+        .filter(Col('max_class_size') == Max('max_class_size'))\
+        .distinct('borough', 'school_code')
+    assert len(counts) == 1
+    assert ('X', 'X525') in counts

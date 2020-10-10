@@ -168,14 +168,12 @@ class FilterOperator(StreamOperator):
         openclean.data.stream.consumer.Filter
         """
         # Prepare the predicate.
-        print('GO')
         prep_pred = self.predicate.prepare(ds)
-        print('PREPARED')
         if pipeline:
             op = pipeline[0]
             return Filter(
                 predicate=prep_pred,
-                consumer=op.open(ds=ds.append(op=op), pipeline=pipeline[1:])
+                consumer=op.open(ds=ds.append(op=self), pipeline=pipeline[1:])
             )
         else:
             return Filter(predicate=prep_pred)
@@ -219,7 +217,7 @@ class LimitOperator(StreamOperator):
             op = pipeline[0]
             return Limit(
                 limit=self.limit,
-                consumer=op.open(ds=ds.append(op=op), pipeline=pipeline[1:])
+                consumer=op.open(ds=ds.append(op=self), pipeline=pipeline[1:])
             )
         else:
             return Limit(limit=self.limit)
@@ -266,7 +264,7 @@ class SelectOperator(StreamOperator):
             return Select(
                 columns=colidxs,
                 consumer=op.open(
-                    ds=ds.append(op=op, columns=colnames),
+                    ds=ds.append(op=self, columns=colnames),
                     pipeline=pipeline[1:]
                 )
             )
@@ -344,7 +342,6 @@ class StreamProcessor(object):
             List of operators in the pipeline fpr this stream processor.
 
         """
-        print('init {}'.format(pipeline))
         self.reader = reader
         self.columns = columns if columns is not None else reader.columns
         self.pipeline = pipeline if pipeline is not None else list()
