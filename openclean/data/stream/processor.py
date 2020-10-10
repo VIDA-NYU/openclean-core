@@ -63,14 +63,35 @@ class StreamOperator(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
 
-class CountOperator(StreamOperator):
-    """Stream operator that returns the number of rows in a data stream.
+class CollectOperator(StreamOperator):
+    """Stream operator that represents the endpoint in a data stream. This is
+    a generic operator for any consumer that does not require access to the
+    data stream columns when it is instantiated.
     """
+    def __init__(self, cls: StreamConsumer, *args, **kwargs):
+        """Initialize the class of the stream consumer that is instantiated
+        when the open method is called. The class constructor will receive any
+        additional arguments that are passed to this constructor.
+
+        Parameters
+        ----------
+        cls: class definition of openclean.data.stream.consumer.StreamConsumer
+            Class of the consumer that is instantiated by the operator.
+        args: variable argument list
+            Additional arguments for the consumer class constructor.
+        kwrgs: variable keyword arguments
+            Additional keywrod arguments for the consumer class constructor.
+        """
+        self.cls = cls
+        self.args = args
+        self.kwargs = kwargs
+
     def open(
         self, ds: StreamProcessor, pipeline: List[StreamOperator]
-    ) -> Distinct:
-        """Create a row counter as the sink in a data stream processing
-        pipeline. Will ignore any given downstream operators.
+    ) -> StreamConsumer:
+        """Create an instance of the associated consumer class as the sink in a
+        data stream processing pipeline. Will ignore any given downstream
+        operators.
 
         Parameters
         ----------
@@ -82,9 +103,9 @@ class CountOperator(StreamOperator):
 
         Returns
         -------
-        openclean.data.stream.consumer.Distinct
+        openclean.data.stream.consumer.StreamConsumer
         """
-        return Count()
+        return self.cls(*self.args, **self.kwargs)
 
 
 class DataFrameOperator(StreamOperator):
@@ -110,44 +131,6 @@ class DataFrameOperator(StreamOperator):
         openclean.data.stream.consumer.DataFrame
         """
         return DataFrame(columns=ds.columns)
-
-
-class DistinctOperator(StreamOperator):
-    """Stream operator that returns a distinct value counter as the generated
-    consumer. Ignores any given downstram operators.
-    """
-    def __init__(self, count_values: Optional[bool] = False):
-        """Set the count values only flag. If this flag is True the result of
-        the distinct consumer will be an integer value for the distinct number
-        of values in the data stream instead of a counter with frequencies for
-        each distinct value pair.
-
-        Parameters
-        ----------
-        count_values: bool, default=False
-            Return only the number of distinct values if True.
-        """
-        self.count_values = count_values
-
-    def open(
-        self, ds: StreamProcessor, pipeline: List[StreamOperator]
-    ) -> Distinct:
-        """Create a distinct data value counter as the sink in a data stream
-        processing pipeline. Will ignore any given downstream operators.
-
-        Parameters
-        ----------
-        ds: openclean.data.stream.StreamProcessor
-            Processor for the data stream that the created consumer will
-            receive as input. Ignored.
-        pipeline: list of openclean.data.stream.processor.StreamOperator
-            List of downstream operators for the generated consumer. Ignored.
-
-        Returns
-        -------
-        openclean.data.stream.consumer.Distinct
-        """
-        return Distinct(count_values=self.count_values)
 
 
 class FilterOperator(StreamOperator):
@@ -410,10 +393,10 @@ class StreamProcessor(object):
         """
         columns = list(args)
         if len(columns) > 0:
-            op = DistinctOperator(count_values=True)
+            op = CollectOperator(Distinct, count_values=True)
             return self.select(*args).stream(op)
         else:
-            op = CountOperator()
+            op = CollectOperator(Count)
         return self.stream(op)
 
     def distinct(self, *args) -> Counter:
@@ -429,7 +412,7 @@ class StreamProcessor(object):
         -------
         collections.Counter
         """
-        op = DistinctOperator()
+        op = CollectOperator(Distinct)
         # If optional list of columns is given append a select operation first
         # to filter on those columns before running the data stream.
         columns = list(args)
