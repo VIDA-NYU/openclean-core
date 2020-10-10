@@ -11,7 +11,7 @@ from openclean.data.stream.consumer import Distinct
 
 
 def test_distinct_consumer_ternary():
-    """Test countng distinct values for ternary rows."""
+    """Test frequency counts for ternary rows."""
     consumer = Distinct()
     consumer.consume(1, ['A', 1])
     consumer.consume(2, ['A', 2])
@@ -25,7 +25,7 @@ def test_distinct_consumer_ternary():
 
 
 def test_distinct_consumer_unary():
-    """Test countng distinct values for unary rows."""
+    """Test frequency counts for distinct values for unary rows."""
     consumer = Distinct()
     consumer.consume(1, [3])
     consumer.consume(2, [4])
@@ -34,3 +34,13 @@ def test_distinct_consumer_unary():
     assert len(counts) == 2
     assert counts[3] == 2
     assert counts[4] == 1
+
+
+def test_distinct_count():
+    """Test counting distinct values for unary rows."""
+    consumer = Distinct(count_values=True)
+    consumer.consume(1, [3])
+    consumer.consume(2, [4])
+    consumer.consume(3, [3])
+    counts = consumer.close()
+    assert counts == 2

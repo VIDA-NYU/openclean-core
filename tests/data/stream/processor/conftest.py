@@ -16,9 +16,16 @@ from openclean.data.load import stream
 """Input files for testing."""
 DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../../.files')  # noqa: E501
 NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
+SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
 
 
 @pytest.fixture
 def stream311():
     """Get stream processor for the 311 test data file."""
     return stream(NYC311_FILE)
+
+
+@pytest.fixture
+def streamSchools():
+    """Get stream processor for the schools test data file."""
+    return stream(SCHOOLS_FILE)

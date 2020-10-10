@@ -10,7 +10,7 @@
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import pandas as pd
 
@@ -185,7 +185,7 @@ class Collector(StreamConsumer):
         return self.rows
 
     def consume(self, rowid: int, row: List):
-        """ Add the given (rowid, row)-pair to the internal buffer. Returns
+        """Add the given (rowid, row)-pair to the internal buffer. Returns
         the row.
 
         Parameters
@@ -198,24 +198,68 @@ class Collector(StreamConsumer):
         self.rows.append((rowid, row))
 
 
+class Count(StreamConsumer):
+    """The counter is a simple counter for the number of (rowid, row) pairs
+    that are passed on to consumer.
+    """
+    def __init__(self):
+        """Initialize the internal row counter."""
+        self.rows = 0
+
+    def close(self) -> int:
+        """Return the couter value.
+
+        Returns
+        -------
+        int
+        """
+        return self.rows
+
+    def consume(self, rowid: int, row: List):
+        """Increament the counter value.
+
+        Parameters
+        -----------
+        rowid: int
+            Unique row identifier
+        row: list
+            List of values in the row.
+        """
+        self.rows += 1
+
+
 class Distinct(StreamConsumer):
     """Consumer that popuates a counter with the frequency counts for distinct
     values (value combinations) in the processed rows for the data stream.
     """
-    def __init__(self):
+    def __init__(self, count_values: Optional[bool] = False):
         """Initialize the counter that maintains the frequency counts for each
-        distinct row in the data stream.
+        distinct row in the data stream. The count values only flag determines
+        the type of the returned consumer result. If the flag is True the count
+        of distinct values (i.e., the size of the counter dictionary) is
+        returned. Otherwise, the value counts are returned.
+
+        Parameters
+        ----------
+        count_values: bool, default=False
+            Return only the number of distinct values if True.
         """
+        self.count_values = count_values
         self.counter = Counter()
 
-    def close(self) -> Counter:
+    def close(self) -> Union[Counter, int]:
         """Closing the consumer yields the populated Counter object.
 
         Returns
         -------
-        collections.Counter
+        collections.Counter or int
         """
-        return self.counter
+        if self.count_values:
+            # Return only the number of elements in the counter dictionary
+            return len(self.counter)
+        else:
+            # Return the distinct values together with their counts.
+            return self.counter
 
     def consume(self, rowid: int, row: List):
         """Add the value combination for a given row to the counter. If the

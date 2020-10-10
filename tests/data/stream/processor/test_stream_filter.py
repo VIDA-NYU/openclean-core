@@ -7,6 +7,7 @@
 
 """Unit tests for the filter operator in data processing pipeline."""
 
+from openclean.function.eval.aggregate import Max
 from openclean.function.eval.base import Col
 
 
@@ -32,3 +33,14 @@ def test_sfilter_rows_from_stream(stream311, boroughs):
         assert row[0] == row[1] in boroughs
         row_count += 1
     assert row_count == 10
+
+
+def test_filter_with_prepare(streamSchools):
+    """Test filtering rows with a evaluation function that needs to be
+    prepared.
+    """
+    ds = streamSchools\
+        .select('borough', 'school_code', 'max_class_size')\
+        .filter(Col('max_class_size') == Max('max_class_size'))\
+        .to_df()
+    print(ds)

@@ -11,7 +11,7 @@ from openclean.data.stream.consumer import Collector
 
 
 def test_row_collector():
-    """Test the stream cnsumer that collects row identifier and rows."""
+    """Test the stream consumer that collects row identifier and rows."""
     consumer = Collector()
     consumer.consume(3, [1, 2, 3])
     consumer.consume(2, [4, 5, 6])
