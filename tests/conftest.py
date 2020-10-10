@@ -80,22 +80,6 @@ def employees():
 
 
 @pytest.fixture
-def zipcodes():
-    "Get a simple data frame with misspelled borough names and a zipcode"
-    data = [
-        ['Brooklyn', 11201],
-        ['Manhattan', 10001],
-        ['Manhattan', 10007],
-        ['Queens', 11355],
-        ['Broooklyn', 11207],
-        ['Queens', 11412],
-        ['Quees', 11366]
-    ]
-    columns = [Column(0, 'Borough'), Column(1, 'Zipcode')]
-    return pd.DataFrame(data=data, columns=columns)
-
-
-@pytest.fixture
 def idi():
     """Load the ITU ICT Development Index dataset."""
     return dataset(IDI_FILE)
@@ -111,3 +95,19 @@ def nyc311():
 def schools():
     """Load the school level detail dataset."""
     return dataset(SCHOOLS_FILE)
+
+
+@pytest.fixture
+def zipcodes():
+    "Get a simple data frame with misspelled borough names and a zipcode"
+    data = [
+        ['Brooklyn', 11201],
+        ['Manhattan', 10001],
+        ['Manhattan', 10007],
+        ['Queens', 11355],
+        ['Broooklyn', 11207],
+        ['Queens', 11412],
+        ['Quees', 11366]
+    ]
+    columns = [Column(0, 'Borough'), Column(1, 'Zipcode')]
+    return pd.DataFrame(data=data, columns=columns)
