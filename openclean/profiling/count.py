@@ -12,53 +12,18 @@ for counters that are not universal but column specific, e.g., counting the
 number of distinct values in a column.
 """
 
-import pandas as pd
 from collections import Counter
 
 from typing import Callable, Optional, Union
 
-from openclean.data.column import Columns
 from openclean.data.types import Scalar
 from openclean.function.value.base import CallableWrapper, ValueFunction
-from openclean.profiling.base import profile, Profiler, ProfilingFunction
+from openclean.profiling.base import Profiler, ProfilingFunction
 
 import openclean.util as util
 
 
-# -- Predicate satisfaction counter -------------------------------------------
-
-def count(
-    df: pd.DataFrame, columns: Optional[Columns] = None,
-    predicate: Optional[Union[Callable, ValueFunction]] = None,
-    truth_value: Optional[Scalar] = True
-):
-    """Count number of values in a given data frame that match a given value.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Input data frame.
-    columns: list, tuple, or openclean.function.eval.base.EvalFunction
-        Evaluation function to extract values from data frame rows. This
-        can also be a list or tuple of evaluation functions or a list of
-        column names or index positions.
-    predicate: callable or openclean.function.base.ValueFunction
-        Predicate that is evaluated over a list of values.
-    truth_value: scalar, defaut=True
-        Count the occurrence of the truth value when evaluating the column
-        expression over the data frame.
-
-    Returns
-    -------
-    int
-    """
-    # The distinct value generator will transform list values into tuples. We
-    # need to do the same if the truth_value is a list.
-    if isinstance(truth_value, list):
-        truth_value = tuple(truth_value)
-    counter = Count(predicate=predicate, truth_value=truth_value)
-    return profile(df, columns=columns, profilers=counter)[counter.name]
-
+# -- Counters -----------------------------------------------------------------
 
 class Count(ProfilingFunction):
     """Count number of values in a given list that satisfy a given predicate.
@@ -112,8 +77,6 @@ class Count(ProfilingFunction):
         else:
             return values.get(self.truth_value, 0)
 
-
-# -- Multi-predicate counts ---------------------------------------------------
 
 class Counts(Profiler):
     """The count operator takes a list of scalar predicates as input. It

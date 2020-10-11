@@ -23,3 +23,18 @@ def test_filter_consumer():
     assert len(rows) == 2
     assert rows[0] == (2, [4, 5, 6])
     assert rows[1] == (1, [7, 8, 9])
+
+
+def test_filter_consumer_with_custom_truth_value():
+    """Test filtering rows from a data stream using a different truth value for
+    the predicate than the default.
+    """
+    collector = Collector()
+    pred = Col(columns='A', colidx=0)
+    consumer = Filter(predicate=pred, truth_value=4, consumer=collector)
+    consumer.consume(3, [1, 2, 3])
+    consumer.consume(2, [4, 5, 6])
+    consumer.consume(1, [7, 8, 9])
+    rows = consumer.close()
+    assert len(rows) == 1
+    assert rows[0] == (2, [4, 5, 6])

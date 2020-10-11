@@ -16,6 +16,7 @@ import pandas as pd
 
 from openclean.data.column import ColumnName
 from openclean.data.stream.csv import CSVWriter
+from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
 
 
@@ -125,48 +126,6 @@ class ProducingConsumer(StreamConsumer):
 
 # -- Data stream consumers ----------------------------------------------------
 
-class DataFrame(StreamConsumer):
-    """Row collector that generates a pandas data frame from the rows in a
-    data stream. This consumer will not accept a downstream consumer as it
-    would never send any rows to such a consumer.
-    """
-    def __init__(self, columns: List[ColumnName]):
-        """Initialize empty lists for data frame columns, rows and the row
-        identifier. These lists will be initialized when the consumer receives
-        the open signal.
-        """
-        self.columns = columns
-        self.data = list()
-        self.index = list()
-
-    def close(self) -> pd.DataFrame:
-        """Closing the consumer yields the data frame with the collected rows.
-
-        Returns
-        -------
-        ps.DataFrame
-        """
-        return pd.DataFrame(
-            data=self.data,
-            columns=self.columns,
-            index=self.index
-        )
-
-    def consume(self, rowid: int, row: List):
-        """Add the row identifier and row values to the respective lists.
-        Returns None to avoid that the (empty) downstream consumer is called.
-
-        Parameters
-        -----------
-        rowid: int
-            Unique row identifier
-        row: list
-            List of values in the row.
-        """
-        self.data.append(row)
-        self.index.append(rowid)
-
-
 class Collector(StreamConsumer):
     """The collector is intended primarily for test purposes. Simply collects
     the (rowid, row) pairs that are passed on to it in a list.
@@ -228,6 +187,48 @@ class Count(StreamConsumer):
         self.rows += 1
 
 
+class DataFrame(StreamConsumer):
+    """Row collector that generates a pandas data frame from the rows in a
+    data stream. This consumer will not accept a downstream consumer as it
+    would never send any rows to such a consumer.
+    """
+    def __init__(self, columns: List[ColumnName]):
+        """Initialize empty lists for data frame columns, rows and the row
+        identifier. These lists will be initialized when the consumer receives
+        the open signal.
+        """
+        self.columns = columns
+        self.data = list()
+        self.index = list()
+
+    def close(self) -> pd.DataFrame:
+        """Closing the consumer yields the data frame with the collected rows.
+
+        Returns
+        -------
+        ps.DataFrame
+        """
+        return pd.DataFrame(
+            data=self.data,
+            columns=self.columns,
+            index=self.index
+        )
+
+    def consume(self, rowid: int, row: List):
+        """Add the row identifier and row values to the respective lists.
+        Returns None to avoid that the (empty) downstream consumer is called.
+
+        Parameters
+        -----------
+        rowid: int
+            Unique row identifier
+        row: list
+            List of values in the row.
+        """
+        self.data.append(row)
+        self.index.append(rowid)
+
+
 class Distinct(StreamConsumer):
     """Consumer that popuates a counter with the frequency counts for distinct
     values (or value combinations) in the processed rows for the data stream.
@@ -275,7 +276,7 @@ class Filter(ProducingConsumer):
     are passed on to a given downstream consumer.
     """
     def __init__(
-        self, predicate: EvalFunction,
+        self, predicate: EvalFunction, truth_value: Optional[Scalar] = True,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the predicate that is used to filer rows in the stream
@@ -287,11 +288,15 @@ class Filter(ProducingConsumer):
         predicate: openclean.function.eval.base.EvalFunction
             Evaluation function that is used as the predicate to filter rows
             in the data stream.
+        truth_value: scalar, defaut=True
+            Return value of the predicate that signals that the predicate is
+            satisfied by an input value.
         consumer: openclean.data.stream.consumer.StreamConsumer, default=None
             Downstream consumer for rows that satisfy the given predicate.
         """
         super(Filter, self).__init__(consumer)
         self.predicate = predicate
+        self.truth_value = truth_value
 
     def handle(self, rowid: int, row: List) -> List:
         """Evaluate the predicate on the given row. Only if the predicate is
@@ -308,7 +313,7 @@ class Filter(ProducingConsumer):
         -------
         list
         """
-        if self.predicate.eval(row):
+        if self.predicate.eval(row) == self.truth_value:
             return row
 
 

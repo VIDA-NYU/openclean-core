@@ -29,6 +29,7 @@ from openclean.data.stream.consumer import (
     Write
 )
 from openclean.data.stream.csv import CSVFile
+from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
 from openclean.operator.transform.update import get_update_function
 
@@ -198,7 +199,9 @@ class FilterOperator(ProducingOperator):
     """Definition of a row filter operator for a data stream processing
     pipeline.
     """
-    def __init__(self, predicate=EvalFunction):
+    def __init__(
+        self, predicate=EvalFunction, truth_value: Optional[Scalar] = True
+    ):
         """Initialize the evaluation function that is used a predicate to
         filter rows in the data stream.
 
@@ -208,8 +211,12 @@ class FilterOperator(ProducingOperator):
             Evaluation function that is used as the predicate for filtering
             data stream rows. The function will be prepared in the
             create_consumer method.
+        truth_value: scalar, defaut=True
+            Return value of the predicate that signals that the predicate is
+            satisfied by an input value.
         """
         self.predicate = predicate
+        self.truth_value = truth_value
 
     def create_consumer(
         self, ds: StreamProcessor
@@ -229,7 +236,8 @@ class FilterOperator(ProducingOperator):
         """
         # Prepare the predicate.
         prep_pred = self.predicate.prepare(ds)
-        return Filter(predicate=prep_pred), ds.columns
+        consumer = Filter(predicate=prep_pred, truth_value=self.truth_value)
+        return consumer, ds.columns
 
 
 class LimitOperator(ProducingOperator):
@@ -476,7 +484,10 @@ class StreamProcessor(object):
             return self.select(*args).stream(op)
         return self.stream(op)
 
-    def filter(self, predicate: EvalFunction, limit: Optional[int] = None):
+    def filter(
+        self, predicate: EvalFunction, truth_value: Optional[Scalar] = True,
+        limit: Optional[int] = None
+    ):
         """Filter rows in the data stream that match a given condition. Returns
         a new data stream with a consumer that filters the rows. Currently
         expects an evaluation function as the row predicate.
@@ -487,6 +498,9 @@ class StreamProcessor(object):
         ----------
         predicate: opencelan.function.eval.base.EvalFunction
             Evaluation function used to filter rows.
+        truth_value: scalar, defaut=True
+            Return value of the predicate that signals that the predicate is
+            satisfied by an input value.
         limit: int, default=None
             Limit the number of rows in the filtered data stream.
 
@@ -496,7 +510,8 @@ class StreamProcessor(object):
         """
         # Create a new stream processor with a filter operator appended to the
         # pipeline.
-        ds = self.append(FilterOperator(predicate=predicate))
+        op = FilterOperator(predicate=predicate, truth_value=truth_value)
+        ds = self.append(op)
         # Append a limit operator to the returned dataset if a limit is given.
         return ds if limit is None else ds.limit(count=limit)
 

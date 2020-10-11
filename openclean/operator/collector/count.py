@@ -17,22 +17,41 @@ from typing import Callable, List, Optional, Tuple, Union
 from openclean.data.column import Columns
 from openclean.data.load import stream
 from openclean.data.select import as_list
+from openclean.data.types import Scalar
+from openclean.function.eval.base import EvalFunction
 from openclean.function.value.base import ValueFunction, normalize
 
 
-def count(df: pd.DataFrame) -> int:
-    """Count the number of rows in a data frame.
+def count(
+    df: pd.DataFrame, predicate: Optional[EvalFunction] = None,
+    truth_value: Optional[Scalar] = True
+) -> int:
+    """Count the number of rows in a data frame. If the predicate is given then
+    we only count the number of rows that satisy the predicate.
 
     Parameters
     ----------
     df: pandas.DataFrame
         Input data frame.
+    predicate: openclean.function.eval.base.EvalFunction, default=None
+        Predicate that is evaluated over a list of values.
+    truth_value: scalar, defaut=True
+        Count the occurrence of the truth value when evaluating the predicate
+        on a the data frame rows.
 
     Returns
     -------
     int
     """
-    return df.shape[0]
+    # Return the number of rows in the data frame if no predicate is given.
+    # Here we ignore the truth_value.
+    if predicate is None:
+        return df.shape[0]
+    # Stream the data frame and filter rows using the given predicate. Returns
+    # the count for rows that satisfy the predicate.
+    return stream(df)\
+        .filter(predicate=predicate, truth_value=truth_value)\
+        .count()
 
 
 def distinct(
