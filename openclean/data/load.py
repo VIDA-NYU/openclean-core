@@ -9,11 +9,12 @@
 
 import pandas as pd
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from openclean.data.column import ColumnName
 from openclean.data.stream.processor import StreamProcessor
 from openclean.data.stream.csv import CSVFile
+from openclean.data.stream.df import DataFrameStream
 
 
 def dataset(
@@ -61,7 +62,8 @@ def dataset(
 
 
 def stream(
-    filename: str, header: Optional[List[ColumnName]] = None,
+    filename: Union[str, pd.DataFrame],
+    header: Optional[List[ColumnName]] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None
 ) -> StreamProcessor:
     """Read a CSV file as a data stream. This is a helper method that is
@@ -84,10 +86,13 @@ def stream(
     -------
     openclean.data.stream.processor.StreamProcessor
     """
-    file = CSVFile(
-        filename=filename,
-        header=header,
-        delim=delim,
-        compressed=compressed
-    )
+    if isinstance(filename, pd.DataFrame):
+        file = DataFrameStream(df=filename)
+    else:
+        file = CSVFile(
+            filename=filename,
+            header=header,
+            delim=delim,
+            compressed=compressed
+        )
     return StreamProcessor(reader=file)

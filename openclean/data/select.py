@@ -31,6 +31,8 @@ def as_list(columns: Columns) -> List[Union[int, str, Column]]:
     """
     if isinstance(columns, pd.Index):
         return list(columns)
+    elif isinstance(columns, tuple):
+        return list(columns)
     elif not isinstance(columns, list):
         return [columns]
     else:
@@ -47,14 +49,14 @@ def select_clause(
     The result is a tuple containing two lists: the list of column objects and
     the list of column index positions.
 
-    Raises errors if invalid columns positions or unknown column names are
-    provided.
+    Raises errors if invalid columns positions or unknown column names or types
+    are provided.
 
     Parameters
     ----------
     df: pandas.DataFrame or list of column names.
         Pandas data frame or list of data frame columns.
-    columns: list(int or str) or openclean.data.column.ColumnSet
+    columns: int, string or list of int or string
         List of column index positions or column names.
 
     Returns
@@ -93,20 +95,18 @@ def select_clause(
                 msg = 'column name mismatch  <{} {} {} />'
                 raise ValueError(msg.format(col, col.colid, col.colidx))
             colname = col
-        else:
+        elif isinstance(col, str):
             colidx = -1
             for i in range(len(schema)):
-                try:
-                    if schema[i] == col:
-                        colname = schema[i]
-                        colidx = i
-                        break
-                except ValueError:
-                    print('DF {}'.format(schema[i]))
-                    print('COL {}'.format(col))
+                if schema[i] == col:
+                    colname = schema[i]
+                    colidx = i
+                    break
             # Raise value error if the column name is unknown
             if colidx == -1:
                 raise ValueError('unknown column name {}'.format(col))
+        else:
+            raise ValueError("invalid column reference '{}'".format(col))
         column_names.append(colname)
         column_index.append(colidx)
     return column_names, column_index

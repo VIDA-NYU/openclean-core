@@ -12,6 +12,13 @@ for counters that are not universal but column specific, e.g., counting the
 number of distinct values in a column.
 """
 
+import pandas as pd
+from collections import Counter
+
+from typing import Callable, Optional, Union
+
+from openclean.data.column import Columns
+from openclean.data.types import Scalar
 from openclean.function.value.base import CallableWrapper, ValueFunction
 from openclean.profiling.base import profile, Profiler, ProfilingFunction
 
@@ -20,12 +27,16 @@ import openclean.util as util
 
 # -- Predicate satisfaction counter -------------------------------------------
 
-def count(df, columns=None, predicate=None, truth_value=True):
+def count(
+    df: pd.DataFrame, columns: Optional[Columns] = None,
+    predicate: Optional[Union[Callable, ValueFunction]] = None,
+    truth_value: Optional[Scalar] = True
+):
     """Count number of values in a given data frame that match a given value.
 
     Parameters
     ----------
-    df: pandas.DataFramee
+    df: pd.DataFrame
         Input data frame.
     columns: list, tuple, or openclean.function.eval.base.EvalFunction
         Evaluation function to extract values from data frame rows. This
@@ -52,7 +63,10 @@ def count(df, columns=None, predicate=None, truth_value=True):
 class Count(ProfilingFunction):
     """Count number of values in a given list that satisfy a given predicate.
     """
-    def __init__(self, predicate, truth_value=True, name=None):
+    def __init__(
+        self, predicate: Optional[Union[Callable, ValueFunction]] = None,
+        truth_value: Optional[Scalar] = True, name: Optional[str] = None
+    ):
         """Initialize the predicate that is being evaluated.
 
         Parameters
@@ -75,13 +89,13 @@ class Count(ProfilingFunction):
         self.predicate = predicate
         self.truth_value = truth_value
 
-    def run(self, values):
+    def run(self, values: Counter):
         """Count the number of values in the given sequence that satisfy the
         associated predicate.
 
         Parameters
         ----------
-        values: dict
+        values: collections.Counter
             Set of distinct scalar values or tuples of scalar values that are
             mapped to their respective frequency count.
 
@@ -103,7 +117,7 @@ class Count(ProfilingFunction):
 
 class Counts(Profiler):
     """The count operator takes a list of scalar predicates as input. It
-    evaluates the predicates for each value in a given sequence. the operator
+    evaluates the predicates for each value in a given sequence. The operator
     returns a dictionary that contains the results from the individual
     counters, keyed by their unique name.
     """

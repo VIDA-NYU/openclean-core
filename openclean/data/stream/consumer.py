@@ -10,7 +10,7 @@
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 import pandas as pd
 
@@ -230,36 +230,22 @@ class Count(StreamConsumer):
 
 class Distinct(StreamConsumer):
     """Consumer that popuates a counter with the frequency counts for distinct
-    values (value combinations) in the processed rows for the data stream.
+    values (or value combinations) in the processed rows for the data stream.
     """
-    def __init__(self, count_values: Optional[bool] = False):
+    def __init__(self):
         """Initialize the counter that maintains the frequency counts for each
-        distinct row in the data stream. The count values only flag determines
-        the type of the returned consumer result. If the flag is True the count
-        of distinct values (i.e., the size of the counter dictionary) is
-        returned. Otherwise, the value counts are returned.
-
-        Parameters
-        ----------
-        count_values: bool, default=False
-            Return only the number of distinct values if True.
+        distinct row in the data stream.
         """
-        self.count_values = count_values
         self.counter = Counter()
 
-    def close(self) -> Union[Counter, int]:
-        """Closing the consumer yields the populated Counter object.
+    def close(self) -> Counter:
+        """Closing the consumer returns the populated Counter object.
 
         Returns
         -------
-        collections.Counter or int
+        collections.Counter
         """
-        if self.count_values:
-            # Return only the number of elements in the counter dictionary
-            return len(self.counter)
-        else:
-            # Return the distinct values together with their counts.
-            return self.counter
+        return self.counter
 
     def consume(self, rowid: int, row: List):
         """Add the value combination for a given row to the counter. If the

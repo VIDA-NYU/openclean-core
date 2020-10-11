@@ -7,7 +7,7 @@
 
 """Unit tests for FDViolation operator."""
 
-from openclean.operator.collector.distinct import distinct
+from openclean.operator.collector.count import distinct
 from openclean.operator.map.fd import fd_violations, FDViolations
 
 

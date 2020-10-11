@@ -17,14 +17,3 @@ def test_count_rows_in_stream(stream311):
     assert rows == 304
     rows = stream311.filter(Col('borough') == 'BROOKLYN').count()
     assert rows == 61
-
-
-def test_count_values_in_stream(stream311):
-    """Test counting the number of distrinct values in a column of the data
-     stream.
-     """
-    # Total number of rows.
-    rows = stream311.count('borough')
-    assert rows == 5
-    rows = stream311.filter(Col('borough') == 'BROOKLYN').count('borough')
-    assert rows == 1

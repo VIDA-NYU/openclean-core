@@ -446,30 +446,14 @@ class StreamProcessor(object):
             pipeline=self.pipeline + [op]
         )
 
-    def count(self, *args) -> int:
-        """Count the number of rows or distinct values in a data stream. The
-        behavior depends on whether column arguments are given or not.
-
-        If the argument list is empty the total number of rows in the data
-        stream will be counted. If columns are specified the number of distinct
-        values in the column combination is returned.
-
-        Parameters
-        ----------
-        args: list of int or str
-            References to the column(s) for which unique values are counted.
+    def count(self) -> int:
+        """Count the number of rows in a data stream.
 
         Returns
         -------
         int
         """
-        columns = list(args)
-        if len(columns) > 0:
-            op = CollectOperator(Distinct, count_values=True)
-            return self.select(*args).stream(op)
-        else:
-            op = CollectOperator(Count)
-        return self.stream(op)
+        return self.stream(CollectOperator(Count))
 
     def distinct(self, *args) -> Counter:
         """Get counts for all distinct values over all columns in the
