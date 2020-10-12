@@ -31,27 +31,32 @@ def as_list(columns: Columns) -> List[Union[int, str, Column]]:
     """
     if isinstance(columns, pd.Index):
         return list(columns)
+    elif isinstance(columns, tuple):
+        return list(columns)
     elif not isinstance(columns, list):
         return [columns]
     else:
         return columns
 
 
-def select_clause(df, columns: Columns) -> Tuple[List[str], List[int]]:
+def select_clause(
+    df: Union[pd.DataFrame, List[Union[str, Column]]],
+    columns: Columns
+) -> Tuple[List[str], List[int]]:
     """Get the list of column name objects and index positions in a data frame
     for list of columns that are specified either by name or by index position.
 
     The result is a tuple containing two lists: the list of column objects and
     the list of column index positions.
 
-    Raises errors if invalid columns positions or unknown column names are
-    provided.
+    Raises errors if invalid columns positions or unknown column names or types
+    are provided.
 
     Parameters
     ----------
-    df: pandas.DataFrame
-        Pandas data frame.
-    columns: list(int or str) or openclean.data.column.ColumnSet
+    df: pandas.DataFrame or list of column names.
+        Pandas data frame or list of data frame columns.
+    columns: int, string or list of int or string
         List of column index positions or column names.
 
     Returns
@@ -62,6 +67,12 @@ def select_clause(df, columns: Columns) -> Tuple[List[str], List[int]]:
     ------
     ValueError
     """
+    # The first argument may either be a data frame (or object with a columns
+    # property) or a list of column (names) from a data frame schema.
+    try:
+        schema = df.columns
+    except AttributeError:
+        schema = df
     # Ensure that columns is a list.
     columns = as_list(columns)
     # Ensure that all elements in the selected column list are names.
@@ -71,33 +82,31 @@ def select_clause(df, columns: Columns) -> Tuple[List[str], List[int]]:
         if isinstance(col, int):
             # Raise value error if the specified index is invalid
             try:
-                colname = df.columns[col]
+                colname = schema[col]
                 colidx = col
             except IndexError as ex:
                 raise ValueError(ex)
         elif isinstance(col, Column) and col.colidx is not None:
             colidx = col.colidx
-            if colidx < 0 or colidx >= len(df.columns):
+            if colidx < 0 or colidx >= len(schema):
                 msg = 'invalid column index <{} {} {} />'
                 raise ValueError(msg.format(col, col.colid, col.colidx))
-            if df.columns[colidx] != col:
+            if schema[colidx] != col:
                 msg = 'column name mismatch  <{} {} {} />'
                 raise ValueError(msg.format(col, col.colid, col.colidx))
             colname = col
-        else:
+        elif isinstance(col, str):
             colidx = -1
-            for i in range(len(df.columns)):
-                try:
-                    if df.columns[i] == col:
-                        colname = df.columns[i]
-                        colidx = i
-                        break
-                except ValueError:
-                    print('DF {}'.format(df.columns[i]))
-                    print('COL {}'.format(col))
+            for i in range(len(schema)):
+                if schema[i] == col:
+                    colname = schema[i]
+                    colidx = i
+                    break
             # Raise value error if the column name is unknown
             if colidx == -1:
                 raise ValueError('unknown column name {}'.format(col))
+        else:
+            raise ValueError("invalid column reference '{}'".format(col))
         column_names.append(colname)
         column_index.append(colidx)
     return column_names, column_index

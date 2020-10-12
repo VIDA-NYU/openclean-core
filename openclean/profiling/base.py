@@ -15,22 +15,31 @@ values. That is, they filter values based on some condition computed over the
 value features. Profilers can also compute new 'value', for example, when
 discovering patterns in the data.
 """
-from abc import ABCMeta, abstractmethod
 
-from openclean.function.distinct import distinct
+from __future__ import annotations
+from abc import ABCMeta, abstractmethod
+from typing import Optional, List
+
+import pandas as pd
+
+from openclean.data.column import Columns
+from openclean.operator.collector.count import distinct
 
 import openclean.util as util
 
 
 # -- Column profiling operator ------------------------------------------------
 
-def profile(df, columns=None, profilers=None):
+def profile(
+    df: pd.DataFrame, columns: Optional[Columns] = None,
+    profilers: Optional[List[ProfilingFunction]] = None
+):
     """Generic profiler that executes a list of associated profiling functions
     on a given list of values and combined their results in a dictionary.
 
     Parameters
     ----------
-    df: pandas.DataFramee
+    df: pd.DataFrame
         Input data frame.
     columns: list, tuple, or openclean.function.eval.base.EvalFunction
         Evaluation function to extract values from data frame rows. This
