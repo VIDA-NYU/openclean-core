@@ -59,7 +59,7 @@ class Classifier(DataStreamProfiler):
         if features is None:
             features = ResultFeatures.TOTAL
         elif features not in ResultFeatures:
-            raise ValueError('invalid features {}'.format(features))
+            raise TypeError('invalid features {}'.format(features))
         # Create keyword argument dictionary
         self.classifier = classifier
         self.normalizer = normalizer
