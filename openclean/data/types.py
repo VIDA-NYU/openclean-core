@@ -8,8 +8,10 @@
 """Type alias for basic data types."""
 
 from datetime import datetime
-from typing import Union
+from typing import Tuple, Union
 
 
 # Scalar values.
 Scalar = Union[int, float, str, datetime]
+# Elements in an input stream generated from one or morce columns in a dataset.
+Value = Union[Scalar, Tuple[Scalar]]

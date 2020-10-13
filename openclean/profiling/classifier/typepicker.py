@@ -13,8 +13,8 @@ datatype to a list of values (e.g., a column in a data frame).
 """
 
 from openclean.function.value.normalize import divide_by_total
-from openclean.profiling.base import profile, ProfilingFunction
-from openclean.profiling.classifier.base import DISTINCT, TOTAL
+from openclean.profiling.base import DistinctSetProfiler
+from openclean.profiling.classifier.base import ResultFeatures
 from openclean.profiling.classifier.datatype import Datatypes
 from openclean.profiling.util import get_threshold
 
@@ -61,16 +61,15 @@ def majority_typepicker(
     -------
     dict
     """
-    picker = MajorityTypePicker(
+    return MajorityTypePicker(
         classifier=classifier,
         threshold=threshold,
         use_total_counts=use_total_counts,
         at_most_one=at_most_one
-    )
-    return profile(df, columns=columns, profilers=picker)[picker.name]
+    ).run(df=df, columns=columns)
 
 
-class MajorityTypePicker(ProfilingFunction):
+class MajorityTypePicker(DistinctSetProfiler):
     """Pick the most frequent type assigned by a given classifier to the values
     in a given list. Generates a dictionary containing the most frequent
     type(s) as key(s) and their normalized frequency as the associated value.
@@ -82,7 +81,7 @@ class MajorityTypePicker(ProfilingFunction):
     """
     def __init__(
         self, classifier=None, threshold=None, use_total_counts=False,
-        at_most_one=False, name=None
+        at_most_one=False
     ):
         """Initialize the classifier for data type assignement. The optional
         threshold allows to further constrain the possible results by requiring
@@ -104,18 +103,13 @@ class MajorityTypePicker(ProfilingFunction):
             Ensure that at most one data type is returned in the result. If the
             flag is True and multiple types have the maximum frequency, an
             empty dictionary will be returned.
-        name: string, default='majorityTypePicker'
-            Unique function name.
         """
-        super(MajorityTypePicker, self).__init__(
-            name=name if name else 'majorityTypePicker'
-        )
         self.classifier = classifier
         self.threshold = get_threshold(threshold)
         self.use_total_counts = use_total_counts
         self.at_most_one = at_most_one
 
-    def run(self, values):
+    def process(self, values):
         """Select one or more type labels based on data type statistics that
         are computed over the given list of values using the associated
         classifier.
@@ -137,9 +131,9 @@ class MajorityTypePicker(ProfilingFunction):
         """
         types = Datatypes(
             classifier=self.classifier,
-            features=TOTAL if self.use_total_counts else DISTINCT,
+            features=ResultFeatures.TOTAL if self.use_total_counts else ResultFeatures.DISTINCT,  # noqa: E501
             normalizer=divide_by_total
-        ).run(values)
+        ).process(values)
         # Return an empty dictionary if the list of returned types is empty.
         if not types:
             return dict()
@@ -191,15 +185,14 @@ def threshold_typepicker(
         Use total value counst instead of distinct counts to compute type
         frequencies.
     """
-    picker = ThresholdTypePicker(
+    return ThresholdTypePicker(
         classifier=classifier,
         threshold=threshold,
         use_total_counts=use_total_counts
-    )
-    return profile(df, columns=columns, profilers=picker)[picker.name]
+    ).run(df=df, columns=columns)
 
 
-class ThresholdTypePicker(ProfilingFunction):
+class ThresholdTypePicker(DistinctSetProfiler):
     """Identify all types assigned by a given classifier to the values in a
     list having a frequency that exceeds a specified threshold. Generates a
     dictionary containing the types as keys and their normalized frequency as
@@ -209,8 +202,7 @@ class ThresholdTypePicker(ProfilingFunction):
     given list or the absolute value counts.
     """
     def __init__(
-        self, classifier=None, threshold=None, use_total_counts=False,
-        name=None
+        self, classifier=None, threshold=None, use_total_counts=False
     ):
         """Initialize the classifier for data type assignement. The threshold
         constrains the results by requiring a type to have a minimal frequency.
@@ -227,17 +219,12 @@ class ThresholdTypePicker(ProfilingFunction):
         use_total_counts: bool, default=False
             Use total value counst instead of distinct counts to compute type
             frequencies.
-        name: string, default='thresholdTypePicker'
-            Unique function name.
         """
-        super(ThresholdTypePicker, self).__init__(
-            name=name if name else 'thresholdTypePicker'
-        )
         self.classifier = classifier
         self.threshold = get_threshold(threshold)
         self.use_total_counts = use_total_counts
 
-    def run(self, values):
+    def process(self, values):
         """Select one or more type labels based on data type statistics that
         are computed over the given list of values using the associated
         classifier.
@@ -259,9 +246,9 @@ class ThresholdTypePicker(ProfilingFunction):
         """
         types = Datatypes(
             classifier=self.classifier,
-            features=TOTAL if self.use_total_counts else DISTINCT,
+            features=ResultFeatures.TOTAL if self.use_total_counts else ResultFeatures.DISTINCT,  # noqa: E501
             normalizer=divide_by_total
-        ).run(values)
+        ).process(values)
         # Return an empty dictionary if the list of returned types is empty.
         if not types:
             return dict()

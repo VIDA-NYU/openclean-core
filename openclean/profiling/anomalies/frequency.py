@@ -7,17 +7,24 @@
 
 """Operators for frequency outlier detection."""
 
-from openclean.function.value.normalize import DivideByTotal
-from openclean.profiling.anomalies.base import AnomalyDetector
-from openclean.profiling.base import profile
-from openclean.profiling.util import get_threshold
+from collections import Counter
+from typing import Callable, Dict, Optional
 
+import pandas as pd
+
+from openclean.function.value.normalize import DivideByTotal, NormalizeFunction
+from openclean.operator.collector.count import DistinctColumns
+from openclean.profiling.anomalies.base import AnomalyDetector
+from openclean.profiling.util import get_threshold
 
 ABSOLUTE = 'absolute'
 NORMALIZED = 'normalized'
 
 
-def frequency_outliers(df, columns, threshold, normalize=DivideByTotal()):
+def frequency_outliers(
+    df: pd.DataFrame, columns: DistinctColumns, threshold: Callable,
+    normalize: Optional[NormalizeFunction] = DivideByTotal()
+) -> Dict:
     """Detect frequency outliers for values (or value combinations) in one or
     more columns of a data frame. A value (combination) is considered an
     outlier if the relative frequency satisfies the given threshold predicate.
@@ -46,10 +53,10 @@ def frequency_outliers(df, columns, threshold, normalize=DivideByTotal()):
     ------
     ValueError
     """
-    # Create the predicate as a lookup over the normalized frequencies of
-    # values in the given columns.
-    op = FrequencyOutliers(threshold=threshold, normalize=normalize)
-    return profile(df, columns=columns, profilers=op)[op.name]
+    return FrequencyOutliers(
+        threshold=threshold,
+        normalize=normalize
+    ).run(df=df, columns=columns)
 
 
 class FrequencyOutliers(AnomalyDetector):
@@ -57,7 +64,10 @@ class FrequencyOutliers(AnomalyDetector):
     considered an outlier if its relative frequency in the list satisfies the
     given threshold predicate.
     """
-    def __init__(self, threshold, normalize=DivideByTotal()):
+    def __init__(
+        self, threshold: Callable,
+        normalize: Optional[NormalizeFunction] = DivideByTotal()
+    ):
         """Initialize the frequency threshold.
 
         Parameters
@@ -70,11 +80,10 @@ class FrequencyOutliers(AnomalyDetector):
             Function used to normalize frequency values befor evaluating the
             threshold constraint.
         """
-        super(FrequencyOutliers, self).__init__(name='frequencyOutlier')
         self.threshold = get_threshold(threshold)
         self.normalize = normalize
 
-    def run(self, values):
+    def process(self, values: Counter) -> Dict:
         """Normalize the frequency counts in the given mapping. Returns all
         values that satisfy the threshold constraint together with their
         normalized (and absolute) frequencies.

@@ -9,15 +9,24 @@
 assignments for columns in a data frame.
 """
 
+from typing import Callable, List, Optional, Tuple, Union
+
+import pandas as pd
+
+from openclean.function.value.base import ValueFunction
 from openclean.function.value.classifier import ValueClassifier
 from openclean.function.value.datatype import Datetime, Float, Int
-from openclean.profiling.base import profile
-from openclean.profiling.classifier.base import Classifier
+from openclean.operator.collector.count import DistinctColumns
+from openclean.profiling.classifier.base import Classifier, ResultFeatures
 
 
 def datatypes(
-    df, columns=None, classifier=None, normalizer=None, features=None,
-    labels=None
+    df: pd.DataFrame,
+    columns: Optional[DistinctColumns] = None,
+    classifier: Optional[ValueClassifier] = None,
+    normalizer: Optional[Union[Callable, ValueFunction]] = None,
+    features: Optional[ResultFeatures] = None,
+    labels: Optional[Union[List[str], Tuple[str, str]]] = None
 ):
     """Compute list of raw data types and their counts for each distinct value
     (pair) in the specified column(s). Type labels are assigned by the given
@@ -41,12 +50,11 @@ def datatypes(
     ----------
     df: pd.DataFrame
         Input data frame.
-    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+    columns: int, string, list, or openclean.function.eval.base.EvalFunction
         Evaluation function to extract values from data frame rows. This
-        can also be a list or tuple of evaluation functions or a list of
-        column names or index positions.
-    classifier: openclean.function.value.classifier.ValueClassifier
-            , default=None
+        can also be a a single column reference or a list of column references.
+    classifier: openclean.function.value.classifier.ValueClassifier,
+            default=None
         Classifier that assigns data type class labels for scalar column
         values. Uses the standard classifier if not specified.
     normalizer: callable or openclean.function.value.base.ValueFunction,
@@ -65,27 +73,28 @@ def datatypes(
     -------
     dict
     """
-    op = Datatypes(
+    return Datatypes(
         classifier=classifier,
         normalizer=normalizer,
         features=features,
         labels=labels
-    )
-    return profile(df, columns=columns, profilers=op)[op.name]
+    ).run(df=df, columns=columns)
 
 
 class Datatypes(Classifier):
     """Compute data type frequency counts for values in a given list."""
     def __init__(
-        self, classifier=None, name=None, normalizer=None, features=None,
-        labels=None
+        self, classifier: Optional[ValueClassifier] = None,
+        normalizer: Optional[Union[Callable, ValueFunction]] = None,
+        features: Optional[ResultFeatures] = None,
+        labels: Optional[Union[List[str], Tuple[str, str]]] = None
     ):
         """Initialize the associated classifier and optional normalizer.
 
         Parameters
         ----------
-        classifier: openclean.function.value.classifier.ValueClassifier
-                , default=None
+        classifier: openclean.function.value.classifier.ValueClassifier,
+                default=None
             Classifier that assigns data type class labels for scalar column
             values. Uses the standard classifier if not specified.
         normalizer: callable or openclean.function.value.base.ValueFunction,
@@ -123,7 +132,6 @@ class Datatypes(Classifier):
             )
         super(Datatypes, self).__init__(
             classifier=classifier,
-            name=name if name else 'datatypes',
             normalizer=normalizer,
             features=features,
             labels=labels
