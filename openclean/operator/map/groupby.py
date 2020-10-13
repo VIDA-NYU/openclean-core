@@ -14,7 +14,7 @@ from openclean.operator.base import DataFrameMapper
 from openclean.function.eval.base import Cols, EvalFunction, Eval
 
 
-def groupby(df, columns, func=None):
+def groupby(df, columns, func=None, having=None):
     """Groupby function for data frames. Evaluates a new index based on the
     rows of the dataframe using the input function (optional). The output
     comprises of a openclean.data.groupby.DataFrameGrouping object.
@@ -34,13 +34,24 @@ def groupby(df, columns, func=None):
         Evaluation function or callable that accepts a data frame row as the
         only argument (if columns is None). ValueFunction or callable if one
         or more columns are specified.
+    having: int or callable (default: None)
+        If given, group by only returns groups that (i) have a number of rows that equals a given int or
+        (ii) (if a callable is given) we pass the group to that callable as an argument and if
+        the returned result is True the group is included in the returned result.
 
     Returns
     -------
     openclean.data.groupby.DataFrameGrouping
     """
     gpby = GroupBy(columns=columns, func=func)
-    return gpby.map(df=df)
+    all_groups = gpby.map(df=df)
+
+    selected_groups = DataFrameGrouping(df=df)
+    for key, group in all_groups.groups():
+        if GroupBy.select(group, having):
+            selected_groups.add(key=key, rows=list(group.index))
+
+    return selected_groups
 
 
 class GroupBy(DataFrameMapper):
@@ -103,6 +114,38 @@ class GroupBy(DataFrameMapper):
         for gby in groupedby:
             grouping.add(key=gby, rows=groupedby[gby])
         return grouping
+
+    @staticmethod
+    def select(group, condition):
+        """
+        Given a dataframe and a condition, returns a bool of whether the group should be selected
+
+        Parameters
+        ----------
+        group: pd.DataFrame
+            the group/df under consideration
+        condition: int or callable
+            if not provided, the group is selected
+            if int, the group's number of rows is checked against the condition
+            if callable, the group is passed to it. The callable should return a boolean
+
+        Returns
+        -------
+        bool
+
+        Raises
+        ------
+        TypeError
+        """
+        if condition is None:
+            return True
+        elif isinstance(condition, int):
+            return group.shape[0] == condition
+        elif callable(condition):
+            if not isinstance(condition(group), bool):
+                raise TypeError('selection condition expected to return a boolean')
+            return condition(group)
+        return False
 
 
 # -- Helper Methods -----------------------------------------------------------

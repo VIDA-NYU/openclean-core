@@ -52,3 +52,11 @@ def test_groupby_parking(parking):
     assert len(groups) > 0
     assert '144-3955' in groups
     assert groups.get('144-3955').shape == (8, 5)
+
+
+def test_groupby_selectn(parking):
+    """Ensure groupby is able to select groups with n=3 elements"""
+    groups = groupby(parking, 'Street', having=3)
+    assert len(groups) > 0
+    assert '2nd Ave' in groups
+    assert groups.get('2nd Ave').shape == (3, 5)
