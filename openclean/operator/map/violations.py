@@ -8,9 +8,8 @@
 """
 functions that return the Dataframe Grouping class with violations of functional dependencies or keys in a pandas dataframe.
 """
-from openclean.data.groupby import DataFrameGrouping
 from openclean.operator.map.groupby import groupby
-from openclean.function.distinct import distinct
+from openclean.operator.collector.count import distinct
 
 
 def fd_violations(df, lhs, rhs):
