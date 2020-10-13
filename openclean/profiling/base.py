@@ -187,7 +187,7 @@ class DistinctSetProfiler(ProfilingFunction):
 
     def open(self):
         """Initialize the counter at the beginning of the stream."""
-        self.counter = Counter()
+        self.values = Counter()
 
 
 # -- Profiling operators ------------------------------------------------------

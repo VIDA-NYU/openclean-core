@@ -17,7 +17,7 @@ processing pipeline to filer, manipulate, or profile rows in teh data stream.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -25,13 +25,20 @@ from openclean.data.column import ColumnName, ColumnRef
 from openclean.data.select import select_clause
 from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.consumer import (
-    Count, DataFrame, Distinct, Filter, Limit, StreamConsumer, Select, Update,
-    Write
+    Count, DataFrame, Distinct, Filter, Limit, Profile, StreamConsumer,
+    Select, Update, Write
 )
 from openclean.data.stream.csv import CSVFile
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
 from openclean.operator.transform.update import get_update_function
+from openclean.profiling.base import ProfilingFunction
+from openclean.profiling.column import DefaultStreamProfiler
+
+
+"""Type alias for column profiler specifications."""
+ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, ProfilingFunction]]
+ProfilerSpecs = Union[ColumnProfiler, List[ColumnProfiler]]
 
 
 # -- Stream operators ---------------------------------------------------------
@@ -273,6 +280,72 @@ class LimitOperator(ProducingOperator):
         openclean.data.stream.consumer.Limit
         """
         return Limit(limit=self.limit), ds.columns
+
+
+class ProfilingOperator(StreamOperator):
+    def __init__(self, profilers: Optional[ColumnProfiler] = None):
+        """Profiling operator one or more columns in the data stream. By
+        default all columns in the data stream are profiled independently using
+        the default stream profiler. The optional list of profilers allows to
+        override the default behavior by providing a list of column references
+        and (optional) profiler functions.
+
+        Parameters
+        ----------
+        profilers: list of tuples of column reference and
+                openclean.profiling.base.ProfilingFunction, default=None
+            Specify he list of columns that are profiled and the profiling
+            function. If only a column reference is given (not a tuple) the
+            default stream profiler is used for profiling the column.
+        """
+        self.profilers = profilers
+
+    def open(
+        self, ds: StreamProcessor, pipeline: List[StreamOperator]
+    ) -> StreamConsumer:
+        """Factory pattern for stream profiling consumers. Creates an instance
+        of a stream profiler for each column that was selected for profiling.
+        If no profilers were specified at object instantiation all columns will
+        be profiled.
+
+        Parameters
+        ----------
+        ds: openclean.data.stream.StreamProcessor
+            Processor for the data stream that the created consumer will
+            receive as input. Can be used to prepare evaluation funcitons that
+            accept a dataset stream.
+        pipeline: list of openclean.data.stream.processor.StreamOperator
+            List of downstream operators for the generated consumer.
+
+        Returns
+        -------
+        openclean.data.stream.consumer.Profile
+        """
+        # Create a list of (column index, profiling function)-pairs that is
+        # passed to the profiling cnsumer. That consumer will (i) open the
+        # profilers, (ii) dispatch extracted row values to the consumers, and
+        # (iii) generate the result from the profiling functions.
+        consumers = list()
+        if self.profilers is None:
+            # If no profilers were specified at object creation all columns are
+            # profiled.
+            for i, name in enumerate(ds.columns):
+                consumers.append((i, name, DefaultStreamProfiler()))
+        else:
+            # Create profilers only for columns included in the profilers list
+            # that was initialized at object creation.
+            for p in self.profilers:
+                # There are two types of values allowed in the profiler list.
+                # Tuples that are (column reference, profiler function)-pairs
+                # or column references only.
+                if isinstance(p, tuple):
+                    col, profiler = p
+                else:
+                    col = p
+                    profiler = DefaultStreamProfiler()
+                name, colidx = select_clause(ds.columns, col)
+                consumers.append((colidx[0], name[0], profiler))
+        return Profile(profilers=consumers)
 
 
 class SelectOperator(ProducingOperator):
@@ -564,6 +637,36 @@ class StreamProcessor(object):
         openclean.data.stream.processor.StreamProcessor
         """
         return self.append(LimitOperator(limit=count))
+
+    def profile(
+        self, profilers: Optional[ProfilerSpecs] = None
+    ) -> List[Dict]:
+        """Profile one or more columns in the data stream. Returns a list of
+        profiler results for each profiled column.
+
+        By default each column in the data stream is profiled independently
+        using the default stream profiler. The optional list of profilers
+        allows to override the default behavior by providing a list of column
+        references (with optional profiler function). If only a column
+        reference is given the default stream profiler is used for the
+        referenced column.
+
+        Parameters
+        ----------
+        profilers: int, string, tuple, or list of tuples of column reference
+                and openclean.profiling.base.ProfilingFunction, default=None
+            Specify he list of columns that are profiled and the profiling
+            function. If only a column reference is given (not a tuple) the
+            default stream profiler is used for profiling the column.
+
+        Returns
+        -------
+        list
+        """
+        # Ensure that profilers is a list.
+        if profilers is not None and not isinstance(profilers, list):
+            profilers = [profilers]
+        return self.stream(ProfilingOperator(profilers=profilers))
 
     def run(self):
         """Stream all rows from the associated data file to the data pipeline

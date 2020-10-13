@@ -10,7 +10,7 @@
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -18,6 +18,7 @@ from openclean.data.column import ColumnName
 from openclean.data.stream.csv import CSVWriter
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
+from openclean.profiling.base import ProfilingFunction
 
 
 # -- Abstract base class for data stream consumers ----------------------------
@@ -357,6 +358,48 @@ class Limit(ProducingConsumer):
             return row
         else:
             raise StopIteration()
+
+
+class Profile(StreamConsumer):
+    def __init__(self, profilers: List[Tuple[int, str, ProfilingFunction]]):
+        """Initialize the list of column profilers.
+
+        Parameters
+        ----------
+        profilers: list of column index, name,  and
+                openclean.profiling.base.ProfilingFunction
+            List of profiling functions together with the index of the column
+            that they are profiling.
+        """
+        self.profilers = profilers
+        # Call the open method for each of the rofiling functions.
+        for _, _, profiler in self.profilers:
+            profiler.open()
+
+    def close(self) -> List[Dict]:
+        """Return a list containing the results from each of the profilers.
+
+        Returns
+        -------
+        list
+        """
+        result = list()
+        for _, name, p in self.profilers:
+            result.append({'column': name, 'stats': p.close()})
+        return result
+
+    def consume(self, rowid: int, row: List) -> List:
+        """CDispatch extracted columns values to each consumer.
+
+        Parameters
+        -----------
+        rowid: int
+            Unique row identifier
+        row: list
+            List of values in the row.
+        """
+        for colidx, _, profiler in self.profilers:
+            profiler.consume(value=row[colidx], count=1)
 
 
 class Select(ProducingConsumer):
