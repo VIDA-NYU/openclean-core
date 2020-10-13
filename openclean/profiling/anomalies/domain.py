@@ -7,12 +7,21 @@
 
 """Domain outlier detector."""
 
+from typing import Dict, List, Optional, Set, Union
+
+import pandas as pd
+
+from openclean.data.types import Value
 from openclean.function.value.domain import IsNotInDomain
+from openclean.operator.collector.count import DistinctColumns
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.base import profile
 
 
-def domain_outliers(df, columns, domain, ignore_case=False):
+def domain_outliers(
+    df: pd.DataFrame, columns: DistinctColumns,
+    domain: Union[pd.DataFrame, Dict, List, Set],
+    ignore_case: Optional[bool] = False
+) -> List:
     """The domain outlier detector returns the list of values from a given data
     stream that do not occur in a ground truth domain.
 
@@ -35,14 +44,17 @@ def domain_outliers(df, columns, domain, ignore_case=False):
     list
     """
     op = DomainOutliers(domain=domain, ignore_case=ignore_case)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return list(op.run(df=df, columns=columns).keys())
 
 
 class DomainOutliers(ConditionalOutliers):
     """The domain outlier detector returns the list of values from a given data
     stream that do not occur in a ground truth domain.
     """
-    def __init__(self, domain, ignore_case=False):
+    def __init__(
+        self, domain: Union[pd.DataFrame, Dict, List, Set],
+        ignore_case: Optional[bool] = False
+    ):
         """Initialize the ground truth domain.
 
         Parameters
@@ -53,10 +65,9 @@ class DomainOutliers(ConditionalOutliers):
         ignore_case: bool, optional
             Ignore case for domain inclusion checking
         """
-        super(DomainOutliers, self).__init__(name='domainOutlier')
         self.predicate = IsNotInDomain(domain=domain, ignore_case=ignore_case)
 
-    def outlier(self, value):
+    def outlier(self, value: Value) -> bool:
         """Test if a given value is in the associated ground truth domain. If
         the value is not in the domain it is considered an outlier.
 

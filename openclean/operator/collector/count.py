@@ -15,11 +15,16 @@ from collections import Counter
 from typing import Callable, List, Optional, Tuple, Union
 
 from openclean.data.column import Columns
-from openclean.data.load import stream
 from openclean.data.select import as_list
 from openclean.data.types import Scalar
-from openclean.function.eval.base import EvalFunction
+from openclean.function.eval.base import EvalFunction, Cols, Col
 from openclean.function.value.base import ValueFunction, normalize
+
+
+"""Type alias for specifying distinct columns or column combinations. Allows to
+have an evaluation functions as the data source.
+"""
+DistinctColumns = Union[Columns, EvalFunction]
 
 
 def count(
@@ -49,20 +54,24 @@ def count(
         return df.shape[0]
     # Stream the data frame and filter rows using the given predicate. Returns
     # the count for rows that satisfy the predicate.
-    return stream(df)\
-        .filter(predicate=predicate, truth_value=truth_value)\
-        .count()
+    count = 0
+    f = predicate.prepare(df)
+    for rowid, values in df.iterrows():
+        if f.eval(values) == truth_value:
+            count += 1
+    return count
 
 
 def distinct(
-    df: pd.DataFrame, columns: Optional[Columns] = None,
+    df: pd.DataFrame, columns: Optional[DistinctColumns] = None,
     normalizer: Optional[Union[Callable, ValueFunction]] = None,
     keep_original: Optional[bool] = False,
     labels: Optional[Union[List[str], Tuple[str, str]]] = None
 ) -> Counter:
-    """Compute the set of distinct value combinations for a given list of
-    columns. Returns a dictionary containing the distinct values (tuples)
-    together with their frequency counts.
+    """Compute the set of distinct value combinations for a single columns, a
+    given list of columns, or the list of values returned by a given evaluation
+    function. Returns a Counter containing the distinct values (tuples in case
+    of multiple input columns) together with their frequency counts.
 
     If the optional normalization function is given, the frequency counts in
     the returned dictionary will be normalized. If the keep original flag is
@@ -73,10 +82,9 @@ def distinct(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: list, tuple, or openclean.function.eval.base.EvalFunction
+    columns: int, string, list, or openclean.function.eval.base.EvalFunction
         Evaluation function to extract values from data frame rows. This
-        can also be a list or tuple of evaluation functions or a list of
-        column names or index positions.
+        can also be a a single column reference or a list of column references.
     normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
@@ -96,12 +104,23 @@ def distinct(
     -------
     dict
     """
-    # Ensure that columns are a list if given.
-    if columns is not None:
-        columns = as_list(columns)
-        counts = stream(df).distinct(*columns)
-    else:
-        counts = stream(df).distinct()
+    # Create an evaluation function to extract values if the columns argument
+    # is not an evaluation function.
+    if columns is None or not isinstance(columns, EvalFunction):
+        if columns is None:
+            columns = Cols(*list(range(len(df.columns))))
+        else:
+            columns = as_list(columns)
+            if len(columns) == 1:
+                columns = Col(columns[0])
+            else:
+                columns = Cols(*columns)
+    # Evaluate the columns function on all rows in the data frame and count the
+    # frequencies for the returned values.
+    counts = Counter()
+    f = columns.prepare(df)
+    for _, row in df.iterrows():
+        counts[f.eval(list(row))] += 1
     # Normalize the result if a normalizer is given.
     if normalizer is not None:
         counts = normalize(

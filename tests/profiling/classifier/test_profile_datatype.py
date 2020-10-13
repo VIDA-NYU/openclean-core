@@ -12,6 +12,7 @@ import pytest
 from openclean.function.value.classifier import ValueClassifier
 from openclean.function.value.datatype import Float, Int
 from openclean.function.value.normalize import divide_by_total
+from openclean.profiling.classifier.base import ResultFeatures
 from openclean.profiling.classifier.datatype import datatypes, Datatypes
 
 
@@ -31,14 +32,6 @@ def test_datatype_profiler(employees, schools):
     # Types from school level detail grades: 8 (30) x int, 5 (70) x string.
     classifier = ValueClassifier(Int(), Float(), default_label='str')
     types = datatypes(schools, columns='grade', classifier=classifier)
-    assert types['int'] == 8
-    assert types['str'] == 5
-    types = datatypes(
-        schools,
-        columns='grade',
-        classifier=classifier,
-        features='total'
-    )
     assert len(types) == 2
     assert types['int'] == 30
     assert types['str'] == 70
@@ -46,7 +39,16 @@ def test_datatype_profiler(employees, schools):
         schools,
         columns='grade',
         classifier=classifier,
-        features='total',
+        features=ResultFeatures.DISTINCT
+    )
+    assert len(types) == 2
+    assert types['int'] == 8
+    assert types['str'] == 5
+    types = datatypes(
+        schools,
+        columns='grade',
+        classifier=classifier,
+        features=ResultFeatures.TOTAL,
         normalizer=divide_by_total
     )
     assert len(types) == 2
@@ -56,7 +58,7 @@ def test_datatype_profiler(employees, schools):
         schools,
         columns='grade',
         classifier=classifier,
-        features='both'
+        features=ResultFeatures.BOTH
     )
     assert len(types) == 2
     assert types['int'] == {'distinct': 8, 'total': 30}
@@ -65,7 +67,7 @@ def test_datatype_profiler(employees, schools):
         schools,
         columns='grade',
         classifier=classifier,
-        features='both',
+        features=ResultFeatures.BOTH,
         normalizer=divide_by_total,
         labels=['dist', 'ttl']
     )
@@ -77,14 +79,8 @@ def test_datatype_profiler(employees, schools):
 def test_datatypes_error_cases():
     """Test error cases for datypes profiling."""
     # Invalid features value
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Datatypes(features='unknown')
     # Invalid label list
     with pytest.raises(ValueError):
-        Datatypes(features='both', labels=['only-one'])
-    # Manipulate features.
-    dt = Datatypes(features='both')
-    assert dt.run({'A': 1}) == {'text': {'distinct': 1, 'total': 1}}
-    dt.features = 'unknown'
-    with pytest.raises(ValueError):
-        dt.run({'A': 1})
+        Datatypes(features=ResultFeatures.BOTH, labels=['only-one'])

@@ -7,6 +7,7 @@
 
 """Unit tests for the distinct value counter."""
 
+from openclean.function.eval.string import Lower
 from openclean.function.value.normalize import (
     divide_by_total, MaxAbsScale, MinMaxScale
 )
@@ -19,6 +20,19 @@ def test_distinct_all_columns(schools):
     assert len(tuples) == schools.shape[0]
     for key in tuples.keys():
         assert tuples[key] == 1
+
+
+def test_distinct_eval_function(schools):
+    """Test getting distinct values for results of an evaluation function."""
+    # Count frequencies of the different boroughs
+    boroughs = distinct(schools, Lower('borough'))
+    # The result is a dictionary with five elements.
+    assert len(boroughs) == 5
+    assert boroughs['k'] == 36
+    assert boroughs['m'] == 16
+    assert boroughs['q'] == 17
+    assert boroughs['r'] == 5
+    assert boroughs['x'] == 26
 
 
 def test_distinct_multi_columns(schools):

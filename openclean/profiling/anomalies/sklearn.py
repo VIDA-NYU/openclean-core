@@ -9,12 +9,13 @@
 clustering algorithms.
 """
 
-from openclean.embedding.base import Embedding
+from collections import Counter
+from sklearn.base import BaseEstimator
+from typing import Dict, Optional
+
+from openclean.embedding.base import Embedding, ValueEmbedder
 from openclean.embedding.feature.default import StandardEmbedding
 from openclean.profiling.anomalies.base import AnomalyDetector
-from openclean.profiling.base import profile
-
-import openclean.util as util
 
 
 class SklearnOutliers(AnomalyDetector):
@@ -24,7 +25,10 @@ class SklearnOutliers(AnomalyDetector):
     the scikit-learn estimator to get labels for each value. Values that are
     assigned a label of -1 are considered outliers.
     """
-    def __init__(self, algorithm, features=None):
+    def __init__(
+        self, algorithm: BaseEstimator,
+        features: Optional[ValueEmbedder] = None
+    ):
         """Initialize the embedding generator and the outlier detection or
         clustering algorithm. If no feature generator is given the default
         feature generator is used.
@@ -36,13 +40,10 @@ class SklearnOutliers(AnomalyDetector):
         features: openclean.profiling.embedding.base.ValueEmbedder, optional
             Feature vector generator for values in a data stream.
         """
-        super(SklearnOutliers, self).__init__(
-            name='sklearn:' + util.funcname(algorithm)
-        )
         self.algorithm = algorithm
         self.features = StandardEmbedding() if features is None else features
 
-    def run(self, values):
+    def process(self, values: Counter) -> Dict:
         """Return set of values that are identified as outliers. This anomaly
         detector does not provide any additional provenance for the detected
         outlier values (other than the name of the used algorithm).
@@ -62,12 +63,12 @@ class SklearnOutliers(AnomalyDetector):
         # Get labels using the fit_predict() metod of the estimator
         labels = self.algorithm.fit_predict(vec.data)
         # Return values that were assigned label -1.
-        result = dict()
+        result = list()
         keys = list(vec.keys())
         for i in range(len(keys)):
             if labels[i] == -1:
-                result[keys[i]] = self.name
-        return result
+                result.append(keys[i])
+        return {'outliers': result}
 
 
 # -- Functions for specific scikit-learn outlier detectors --------------------
@@ -149,7 +150,7 @@ def dbscan(
     # Run the scikit-learn outlier detection algoritm with DBSCAN as the
     # estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return op.run(df=df, columns=columns)['outliers']
 
 
 def isolation_forest(
@@ -236,7 +237,7 @@ def isolation_forest(
     # Run the scikit-learn outlier detection algoritm with IsolationForest as
     # the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return op.run(df=df, columns=columns)['outliers']
 
 
 def local_outlier_factor(
@@ -345,7 +346,7 @@ def local_outlier_factor(
     # Run the scikit-learn outlier detection algoritm with LocalOutlierFactor
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return op.run(df=df, columns=columns)['outliers']
 
 
 def one_class_svm(
@@ -427,7 +428,7 @@ def one_class_svm(
     # Run the scikit-learn outlier detection algoritm with OneClassSVM
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return op.run(df=df, columns=columns)['outliers']
 
 
 def robust_covariance(
@@ -489,4 +490,4 @@ def robust_covariance(
     # Run the scikit-learn outlier detection algoritm with EllipticEnvelope
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return op.run(df=df, columns=columns)['outliers']

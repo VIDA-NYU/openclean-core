@@ -8,27 +8,19 @@
 """Abstract base class for anomaly and outlier detection operators."""
 
 from collections import Counter
+from typing import List
 
-from openclean.profiling.base import ProfilingFunction
+from openclean.data.types import Value
+from openclean.profiling.base import DistinctSetProfiler
 
 
-class AnomalyDetector(ProfilingFunction):
+class AnomalyDetector(DistinctSetProfiler):
     """Interface for generic anomaly and outlier detectors. Each implementation
     should take a stream of distinct values (e.g., from a column in a data
     frame or a metadata object) as input and return a list of values that were
     identified as outliers.
     """
-    def __init__(self, name):
-        """Set the function name.
-
-        Parameters
-        ----------
-        name: string
-            Unique function name.
-        """
-        super(AnomalyDetector, self).__init__(name=name)
-
-    def find(self, values):
+    def find(self, values: List[Value]) -> List[Value]:
         """Identify values in a given set of values that are classified as
         outliers or anomalities. Returns a list of identified values.
 
@@ -41,4 +33,4 @@ class AnomalyDetector(ProfilingFunction):
         -------
         list
         """
-        return list(self.run(Counter(values)).keys())
+        return list(self.process(Counter(values)).keys())

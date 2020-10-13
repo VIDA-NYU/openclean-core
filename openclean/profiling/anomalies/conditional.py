@@ -10,7 +10,10 @@ satisfy a given outlier predicate.
 """
 
 from abc import ABCMeta, abstractmethod
+from collections import Counter
+from typing import Any, Dict
 
+from openclean.data.types import Value
 from openclean.profiling.anomalies.base import AnomalyDetector
 
 
@@ -18,17 +21,7 @@ class ConditionalOutliers(AnomalyDetector, metaclass=ABCMeta):
     """Detect outliers in a given value sequence by testing for each value
     whether they satisfy an implementation-specific outlier condition.
     """
-    def __init__(self, name):
-        """Initialize the function name.
-
-        Parameters
-        ----------
-        name: string
-            Unique function name.
-        """
-        super(ConditionalOutliers, self).__init__(name=name)
-
-    def run(self, values):
+    def process(self, values: Counter) -> Dict:
         """Identify values in a given set of values that satisfy the
         outlier condition. This method is called if the outlier detector is
         part of a data profiler configuration. The result is a dictionary where
@@ -53,7 +46,7 @@ class ConditionalOutliers(AnomalyDetector, metaclass=ABCMeta):
         return result
 
     @abstractmethod
-    def outlier(self, value, count):
+    def outlier(self, value: Value, count: int) -> Any:
         """Implementation specific outlier condition. If the given value is
         classified as an outlier, the result is a dictionary object containing
         the outlier value and additional optional provenance information that

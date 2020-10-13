@@ -57,7 +57,8 @@ def select_clause(
     df: pandas.DataFrame or list of column names.
         Pandas data frame or list of data frame columns.
     columns: int, string or list of int or string
-        List of column index positions or column names.
+        Single column reference or a list of column index positions or column
+        names.
 
     Returns
     -------

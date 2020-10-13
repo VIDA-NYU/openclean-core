@@ -18,14 +18,14 @@ from typing import Callable, Optional, Union
 
 from openclean.data.types import Scalar
 from openclean.function.value.base import CallableWrapper, ValueFunction
-from openclean.profiling.base import Profiler, ProfilingFunction
+from openclean.profiling.base import Profiler, DistinctSetProfiler
 
 import openclean.util as util
 
 
 # -- Counters -----------------------------------------------------------------
 
-class Count(ProfilingFunction):
+class Count(DistinctSetProfiler):
     """Count number of values in a given list that satisfy a given predicate.
     """
     def __init__(
@@ -44,9 +44,6 @@ class Count(ProfilingFunction):
         name: string, default=None
             Count the occurrence of the truth value in a given set of values.
         """
-        super(Count, self).__init__(
-            name=name if name else util.funcname(predicate)
-        )
         # Wrap the predicate if it is a simple callable.
         if predicate is not None:
             if not isinstance(predicate, ValueFunction):
@@ -54,7 +51,7 @@ class Count(ProfilingFunction):
         self.predicate = predicate
         self.truth_value = truth_value
 
-    def run(self, values: Counter):
+    def process(self, values: Counter):
         """Count the number of values in the given sequence that satisfy the
         associated predicate.
 
@@ -108,55 +105,10 @@ class Counts(Profiler):
         # Raise an error if the two lists are not of same length
         if len(args) != len(truth_values):
             raise ValueError('incompatible lists')
-        counters = list()
+        counters = dict()
         for f, truth_value in zip(args, truth_values):
+            key = util.funcname(f)
             if not isinstance(f, Count):
                 f = Count(predicate=f, truth_value=truth_value)
-            counters.append(f)
-        super(Counts, self).__init__(
-            profilers=counters,
-            name=kwargs.get('name', 'counts')
-        )
-
-
-# -- Value counts -------------------------------------------------------------
-
-class Values(ProfilingFunction):
-    """Count number of distinct and total values."""
-    def __init__(
-        self, distinct_count='distinct', total_count='total', name=None
-    ):
-        """Initialize the labels for the distinct and total count in the
-        result.
-
-        Parameters
-        ----------
-        distinct_count: string, defaut='distinct'
-            Label for the distinct count value in the result.
-        total_count: string, defaut='total'
-            Label for the total count value in the result.
-        name: string, default=None
-            Count the occurrence of the truth value in a given set of values.
-        """
-        # Wrap the predicate if it is a simple callable.
-        super(Values, self).__init__(name=name if name else 'valueCounts')
-        self.distinct_count = distinct_count
-        self.total_count = total_count
-
-    def run(self, values):
-        """Count the number of distinct and total values in the given set.
-
-        Parameters
-        ----------
-        values: dict
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
-
-        Returns
-        -------
-        dict
-        """
-        return {
-            self.distinct_count: len(values),
-            self.total_count: sum(values.values())
-        }
+            counters[key] = f
+        super(Counts, self).__init__(profilers=counters)

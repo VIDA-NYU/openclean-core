@@ -10,13 +10,21 @@ general are considered values that do not match a (list of) pattern(s) that
 the values in a list (e.g., data frame column) are expected to satisfy.
 """
 
+from typing import List, Optional
+
+import pandas as pd
+
+from openclean.data.types import Value
+from openclean.operator.collector.count import DistinctColumns
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.base import profile
 from openclean.profiling.util import always_false, eval_all
 
 
-def regex_outliers(df, columns, patterns, fullmatch=True):
+def regex_outliers(
+    df: pd.DataFrame, columns: DistinctColumns, patterns: List[str],
+    fullmatch: Optional[bool] = True
+) -> List:
     """Identify values in a (list of) data frame columns(s) that do not match
     any of the given pattern expressions. Patterns are represented as strings
     in the Python Regular Expression Syntax.
@@ -40,7 +48,7 @@ def regex_outliers(df, columns, patterns, fullmatch=True):
     list
     """
     op = RegExOutliers(patterns=patterns, fullmatch=fullmatch)
-    return list(profile(df, columns=columns, profilers=op)[op.name].keys())
+    return list(op.run(df=df, columns=columns).keys())
 
 
 class RegExOutliers(ConditionalOutliers):
@@ -48,7 +56,7 @@ class RegExOutliers(ConditionalOutliers):
     any of the given pattern expressions. Patterns are represented as strings
     in the Python Regular Expression Syntax.
     """
-    def __init__(self, patterns, fullmatch=True):
+    def __init__(self, patterns: List[str], fullmatch: Optional[bool] = True):
         """Initialize the list of patterns and the matching condition.
 
         patterns: list(string)
@@ -57,7 +65,6 @@ class RegExOutliers(ConditionalOutliers):
             If True, the pattern has to match a given string fully in order to
             not be considered an outlier.
         """
-        super(RegExOutliers, self).__init__(name='regexOutlier')
         # Ensure that patterns is a list.
         if not isinstance(patterns, list):
             patterns = [patterns]
@@ -77,7 +84,7 @@ class RegExOutliers(ConditionalOutliers):
             ops = [IsMatch(pattern=p, fullmatch=fullmatch) for p in patterns]
             self.predicate = eval_all(predicates=ops, truth_value=False)
 
-    def outlier(self, value):
+    def outlier(self, value: Value) -> bool:
         """Test if a given value is a match for the associated regular
         expressions. If the value is not a match it is considered an outlier.
 
