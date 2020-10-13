@@ -39,7 +39,7 @@ def datatypes(
 
     Parameters
     ----------
-    df: pandas.DataFramee
+    df: pd.DataFrame
         Input data frame.
     columns: list, tuple, or openclean.function.eval.base.EvalFunction
         Evaluation function to extract values from data frame rows. This

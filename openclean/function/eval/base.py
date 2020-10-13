@@ -425,7 +425,7 @@ class UnaryEvalFunction(PreparedEvalFunction):
 
         Parameters
         ----------
-        columns: single input column or list of input columns
+        column: single input column
             Specifies the column from which values are extracted. There are
             three different options to specify the input column: (i) as an
             integer referencing the input column by index (in the data frame

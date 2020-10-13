@@ -18,7 +18,12 @@ from histore.document.schema import Column as Column  # noqa: F401
 
 
 """Type alias for column lists."""
+# Column names are strings or column objects.
+ColumnName = Union[str, Column]
+# Reference to a column in a data frame schema. Columns can be referenced by
+# their name or index position in the dataset schema.
+ColumnRef = Union[int, str, Column]
 # List of columns that are identified either by their name or index position,
 # or represented as a Column object. A single index (int) or column name (str)
 # are also accepted as 'a list with a single element'.
-Columns = Union[int, str, List[Union[int, str, Column]]]
+Columns = Union[ColumnRef, List[ColumnRef]]

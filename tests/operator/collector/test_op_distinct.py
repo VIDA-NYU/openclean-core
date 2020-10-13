@@ -5,12 +5,12 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the distinct value count generator."""
+"""Unit tests for the distinct value counter."""
 
-from openclean.function.distinct import distinct
 from openclean.function.value.normalize import (
     divide_by_total, MaxAbsScale, MinMaxScale
 )
+from openclean.operator.collector.count import distinct
 
 
 def test_distinct_all_columns(schools):
