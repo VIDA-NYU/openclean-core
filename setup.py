@@ -14,6 +14,7 @@ from setuptools import setup, find_packages
 
 
 install_requires = [
+    'future',
     'python-dateutil',
     'requests',
     'pandas>=1.0.0',
@@ -21,7 +22,8 @@ install_requires = [
     'jsonschema>=3.2.0',
     'Shapely>=1.7.0',
     'histore>=0.1.4',
-    'fuzzyset==0.0.19'
+    'fuzzyset==0.0.19',
+    'jellyfish'
 ]
 
 
@@ -83,7 +85,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python'

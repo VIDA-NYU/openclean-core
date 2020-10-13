@@ -11,7 +11,8 @@ column).
 
 from abc import abstractmethod
 
-from openclean.function.value.base import ValueFunction, scalar_pass_through
+from openclean.function.base import scalar_pass_through
+from openclean.function.value.base import ValueFunction
 from openclean.function.value.datatype import is_numeric_type
 from openclean.function.value.filter import filter
 

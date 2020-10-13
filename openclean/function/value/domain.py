@@ -10,9 +10,58 @@
 import pandas as pd
 
 from openclean.data.util import to_set
+from openclean.function.matching.base import VocabularyMatcher
 from openclean.function.value.base import PreparedFunction
 
 import openclean.util as util
+
+
+class BestMatch(PreparedFunction):
+    """Value function that returns for a given value the best matching similar
+    value in a controlled vocabulary.
+    """
+    def __init__(self, vocabulary: VocabularyMatcher):
+        """Initialize the matcher for the associated controlled vocabulary.
+
+        Parameters
+        ----------
+        vocabulary: openclean.function.matching.base.VocabularyMatcher
+            Matcher that computes bast matches for the terms in a controlled
+            vocabulary.
+        """
+        self.vocabulary = vocabulary
+
+    def eval(self, value):
+        """Return the base matching value for a given query in the associated
+        vocabulary. If the query term is in the vocabulary it is returned as
+        the result. If the term is not in the vocabulary the best matching
+        values (using the associated vocabulary matcher) are found. If no
+        bast match is found or if multiple best matches are found a ValueError
+        is raised. Otherwise, the best matching value is returned as the
+        function result.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value for which the best matching value in the associated
+            vocabulary is computed.
+
+        Returns
+        -------
+        bool
+
+        Raises
+        ------
+        ValueError
+        """
+        if value in self.vocabulary:
+            return value
+        matches = self.vocabulary.matched_values(value)
+        if len(matches) == 0:
+            raise ValueError("no match for '{}'".format(value))
+        elif len(matches) > 1:
+            raise ValueError("multiple matches for '{}'".format(value))
+        return matches[0]
 
 
 class IsInDomain(PreparedFunction):

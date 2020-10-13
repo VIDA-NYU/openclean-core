@@ -13,8 +13,9 @@ Lookup functions represent mappings using dictionaries.
 """
 
 from openclean.data.sequence import Sequence
+from openclean.function.base import scalar_pass_through
 from openclean.function.value.base import (
-    CallableWrapper, PreparedFunction, ValueFunction, scalar_pass_through
+    CallableWrapper, PreparedFunction, ValueFunction
 )
 from openclean.function.value.cond import ConditionalStatement
 

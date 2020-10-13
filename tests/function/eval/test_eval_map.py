@@ -12,7 +12,7 @@ import pytest
 
 from openclean.function.eval.base import Col
 from openclean.function.eval.mapping import Map, Replace
-from openclean.function.value.base import scalar_pass_through as pass_through
+from openclean.function.base import scalar_pass_through as pass_through
 from openclean.function.value.mapping import Lookup
 
 

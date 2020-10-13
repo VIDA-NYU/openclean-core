@@ -12,8 +12,9 @@ frame.
 import pandas as pd
 
 from openclean.data.select import select_clause, select_by_id
+from openclean.function.base import scalar_pass_through
 from openclean.function.eval.base import Const, EvalFunction, Eval
-from openclean.function.value.base import ValueFunction, scalar_pass_through
+from openclean.function.value.base import ValueFunction
 from openclean.function.value.mapping import Lookup
 from openclean.operator.base import DataFrameTransformer
 

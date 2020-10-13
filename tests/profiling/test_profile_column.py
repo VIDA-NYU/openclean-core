@@ -8,7 +8,6 @@
 """Unit tests for the column profiler."""
 
 from openclean.function.value.datatype import is_int, is_float
-from openclean.function.value.normalize import divide_by_total
 from openclean.profiling.base import profile
 from openclean.profiling.classifier.datatype import Datatypes
 from openclean.profiling.count import Counts, Values

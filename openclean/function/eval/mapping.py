@@ -10,8 +10,9 @@
 import pandas as pd
 
 from openclean.data.util import to_lookup
+from openclean.function.base import scalar_pass_through
 from openclean.function.eval.base import Eval
-from openclean.function.value.base import ValueFunction, scalar_pass_through
+from openclean.function.value.base import ValueFunction
 from openclean.function.value.cond import ConditionalStatement
 from openclean.function.value.mapping import Lookup
 

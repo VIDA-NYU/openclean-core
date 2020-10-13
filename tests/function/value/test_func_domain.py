@@ -7,7 +7,34 @@
 
 """Unit tests for domain inclusion operators."""
 
-from openclean.function.value.domain import IsInDomain, IsNotInDomain
+import pytest
+
+from openclean.function.matching.base import DefaultVocabularyMatcher
+from openclean.function.matching.tests import DummyStringMatcher
+from openclean.function.value.domain import (
+    BestMatch, IsInDomain, IsNotInDomain
+)
+
+
+def test_func_best_match():
+    """Test finding best matches in a controlled vocabulary."""
+    domain = ['abc', 'ab', 'ac', 'b']
+    f = BestMatch(
+        vocabulary=DefaultVocabularyMatcher(
+            vocabulary=domain,
+            matcher=DummyStringMatcher(),
+            no_match_threshold=0.5
+        )
+    )
+    assert f.eval('b') == 'b'
+    assert f.eval('A') == 'b'
+    # -- Error cases ----------------------------------------------------------
+    # Empty result set.
+    with pytest.raises(ValueError):
+        f.eval('ABCDEFGHIJKLMNOP')
+    # Multiple best matches
+    with pytest.raises(ValueError):
+        f.eval('ad')
 
 
 def test_func_domain():
