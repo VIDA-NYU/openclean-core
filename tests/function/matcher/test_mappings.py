@@ -19,7 +19,7 @@ VOCABULARY = [
     'Paris',
     'Berlin',
     'Sydney',
-    'Shanghai'
+    'Shanghai',
     'New York',
     'Abu Dhabi',
     'Edinburgh',
@@ -80,3 +80,73 @@ def test_init_mapping():
     assert m['C'] == []
     m['C'].append('A')
     assert m['C'] == ['A']
+
+def test_match_counts():
+    """Test generating the count of matches against a given vocabulary."""
+    vocab = DefaultVocabularyMatcher(
+        vocabulary=VOCABULARY,
+        matcher=DummyStringMatcher(),
+        no_match_threshold=0.5
+    )
+    map = Mapping()
+    values = ['Chicago', 'London', 'Edinburgh','Universal Studios Florida (c)']
+    for val in values:
+        map.add(val, vocab.find_matches(val))
+
+    counts = map.match_counts()
+    assert len(counts) == len(map)
+    for key in counts:
+        assert len(map[key]) == counts[key]
+
+
+def test_matched_and_unmatched():
+    """Test matched and unmatched methods."""
+    vocab = DefaultVocabularyMatcher(
+        vocabulary=VOCABULARY,
+        matcher=DummyStringMatcher(),
+        no_match_threshold=0.5
+    )
+    map = Mapping()
+    values = ['Chicago', 'London', 'Edinburgh', 'Universal Studios Florida (c)']
+    for val in values:
+        map.add(val, vocab.find_matches(val))
+
+    matched = map.matched()
+    assert len(matched) == 3
+    for m in map['Chicago']:
+        assert m[0] in ['Shanghai', 'New York']
+
+    unmatched = map.unmatched()
+    assert 'Universal Studios Florida (c)' in unmatched
+
+    # test single match only
+    vocab = DefaultVocabularyMatcher(
+        vocabulary=VOCABULARY,
+        matcher=DummyStringMatcher(),
+        no_match_threshold=0
+    )
+    map = Mapping()
+    for val in values:
+        map.add(val, vocab.find_matches(val))
+
+    matched = map.matched(single_match_only=True)
+    assert len(matched) == 1
+    assert map['Universal Studios Florida (c)'][0][0] == 'Rio de Janeiro'
+
+def test_filter_mapping():
+    """Test matched and unmatched methods."""
+    vocab = DefaultVocabularyMatcher(
+        vocabulary=VOCABULARY,
+        matcher=DummyStringMatcher(),
+        no_match_threshold=0.5
+    )
+    map = Mapping()
+    values = ['Chicago', 'London', 'Edinburgh', 'Universal Studios Florida (c)']
+    for val in values:
+        map.add(val, vocab.find_matches(val))
+
+    filtered = map.filter(['Chicago', 'Universal Studios Florida (c)'])
+    assert len(filtered) == 2
+    for m in filtered['Chicago']:
+        assert m[0] in ['Shanghai', 'New York']
+    assert filtered['Universal Studios Florida (c)'] == []
