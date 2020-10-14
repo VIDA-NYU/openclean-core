@@ -153,7 +153,7 @@ def test_filter_mapping():
         assert m[0] in ['Shanghai', 'New York']
     assert filtered['Universal Studios Florida (c)'] == []
 
-def test_replace_mapping():
+def test_update_mapping():
     """Test replace and error case"""
     vocab = DefaultVocabularyMatcher(
         vocabulary=VOCABULARY,
@@ -167,9 +167,9 @@ def test_replace_mapping():
 
     assert map['Universal Studios Florida (c)'][0][0] == 'Rio de Janeiro'
     replacements = {'Universal Studios Florida (c)': 'Florida'}
-    map.replace(replacements=replacements)
+    map.update(updates=replacements)
     assert map['Universal Studios Florida (c)'] == [('Florida', 1.)]
 
     # Missing Key
     with pytest.raises(KeyError):
-        map.replace({'unknown':'unknown'})
+        map.update({'unknown':'unknown'})

@@ -55,24 +55,24 @@ class Mapping(defaultdict):
             self[key].append(m)
         return self[key]
 
-    def replace(self, replacements: Dict[str, str] = None) -> None:
+    def update(self, updates: Optional[Dict[str, str]] = None) -> None: # noqa
         """lets the user update values in the map with their own values
 
         Parameters
         ----------
-        replacements: dict
+        updates: dict
             dictionary of type {mapping_key: best_match}
 
         Raises
         ------
         Key Error
         """
-        replacements = {} if replacements is None else replacements
+        updates = {} if updates is None else updates
         missing_keys = []
-        [missing_keys.append(k) for k in replacements if k not in self]
+        [missing_keys.append(k) for k in updates if k not in self]
         if not len(missing_keys):
-            for k, v in replacements.items():
-                self.update({k: [(v, 1.)]})
+            for k, v in updates.items():
+                super(Mapping, self).update({k: [(v, 1.)]})
         else:
             raise KeyError("Key(s) not found: {}".format(str(missing_keys)))
 
