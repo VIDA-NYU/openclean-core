@@ -6,7 +6,7 @@
 # full license details.
 
 from collections import defaultdict
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Dict
 
 from openclean.function.matching.base import StringMatchResult, VocabularyMatcher  # noqa: E501
 from collections import Counter
@@ -54,6 +54,27 @@ class Mapping(defaultdict):
         for m in matches:
             self[key].append(m)
         return self[key]
+
+    def replace(self, replacements: Dict[str, str] = None) -> None:
+        """lets the user update values in the map with their own values
+
+        Parameters
+        ----------
+        replacements: dict
+            dictionary of type {mapping_key: best_match}
+
+        Raises
+        ------
+        Key Error
+        """
+        replacements = {} if replacements is None else replacements
+        missing_keys = []
+        [missing_keys.append(k) for k in replacements if k not in self]
+        if not len(missing_keys):
+            for k, v in replacements.items():
+                self.update({k: [(v, 1.)]})
+        else:
+            raise KeyError("Key(s) not found: {}".format(str(missing_keys)))
 
     def match_counts(self) -> Counter:
         """Counts the matches for each key in the map.

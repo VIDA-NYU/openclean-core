@@ -9,6 +9,8 @@
 normalization.
 """
 
+import pytest
+
 from openclean.function.matching.base import DefaultVocabularyMatcher
 from openclean.function.matching.mapping import Mapping, best_matches
 from openclean.function.matching.tests import DummyStringMatcher
@@ -150,3 +152,24 @@ def test_filter_mapping():
     for m in filtered['Chicago']:
         assert m[0] in ['Shanghai', 'New York']
     assert filtered['Universal Studios Florida (c)'] == []
+
+def test_replace_mapping():
+    """Test replace and error case"""
+    vocab = DefaultVocabularyMatcher(
+        vocabulary=VOCABULARY,
+        matcher=DummyStringMatcher(),
+        no_match_threshold=0
+    )
+    map = Mapping()
+    values = ['Chicago', 'London', 'Edinburgh', 'Universal Studios Florida (c)']
+    for val in values:
+        map.add(val, vocab.find_matches(val))
+
+    assert map['Universal Studios Florida (c)'][0][0] == 'Rio de Janeiro'
+    replacements = {'Universal Studios Florida (c)': 'Florida'}
+    map.replace(replacements=replacements)
+    assert map['Universal Studios Florida (c)'] == [('Florida', 1.)]
+
+    # Missing Key
+    with pytest.raises(KeyError):
+        map.replace({'unknown':'unknown'})
