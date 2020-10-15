@@ -12,9 +12,11 @@ normalization.
 import pytest
 
 from openclean.function.matching.base import DefaultVocabularyMatcher
+from openclean.function.matching.fuzzy import FuzzyVocabularyMatcher
 from openclean.function.matching.mapping import Mapping, best_matches
 from openclean.function.matching.tests import DummyStringMatcher
-
+from openclean.function.value.domain import BestMatch
+from openclean.operator.transform.update import update
 
 VOCABULARY = [
     'Tokyo',
@@ -83,6 +85,7 @@ def test_init_mapping():
     m['C'].append('A')
     assert m['C'] == ['A']
 
+
 def test_match_counts():
     """Test generating the count of matches against a given vocabulary."""
     vocab = DefaultVocabularyMatcher(
@@ -91,7 +94,7 @@ def test_match_counts():
         no_match_threshold=0.5
     )
     map = Mapping()
-    values = ['Chicago', 'London', 'Edinburgh','Universal Studios Florida (c)']
+    values = ['Chicago', 'London', 'Edinburgh', 'Universal Studios Florida (c)']
     for val in values:
         map.add(val, vocab.find_matches(val))
 
@@ -135,6 +138,7 @@ def test_matched_and_unmatched():
     assert len(matched) == 1
     assert map['Universal Studios Florida (c)'][0][0] == 'Rio de Janeiro'
 
+
 def test_filter_mapping():
     """Test matched and unmatched methods."""
     vocab = DefaultVocabularyMatcher(
@@ -153,8 +157,9 @@ def test_filter_mapping():
         assert m[0] in ['Shanghai', 'New York']
     assert filtered['Universal Studios Florida (c)'] == []
 
+
 def test_update_mapping():
-    """Test replace and error case"""
+    """Test update and error case"""
     vocab = DefaultVocabularyMatcher(
         vocabulary=VOCABULARY,
         matcher=DummyStringMatcher(),
@@ -172,4 +177,59 @@ def test_update_mapping():
 
     # Missing Key
     with pytest.raises(KeyError):
-        map.update({'unknown':'unknown'})
+        map.update({'unknown': 'unknown'})
+
+
+def test_translate_mapping(nyc311):
+    """test translate converts Mapping to a dict of keys:matches"""
+    domain_boroughs = ['MANHATTAN', 'BROOKLYN', 'QUEENS', 'STATEN ISLAND', 'BRONX']
+    vocabulary = DefaultVocabularyMatcher(
+        vocabulary=domain_boroughs,
+        matcher=DummyStringMatcher(),
+        no_match_threshold=0.
+    )
+    map = best_matches(values=nyc311['borough'].unique(), matcher=vocabulary, include_vocab=True)
+    translated = map.translate()
+    assert len(translated) == 5
+    assert sorted(list(translated.values())) == sorted(domain_boroughs)
+
+    map['BROOKLYN'] = [('Brook', .4), ('Lyn', .1)]
+    translated = map.translate()
+    assert len(translated) == 4 and 'BROOKLYN' not in translated.keys()
+
+    # test error cases
+    with pytest.raises(RuntimeError):
+        map['BROOKLYN'] = ['Brook', .4]
+        map.translate()
+
+
+def test_update_bestmatch_column(nyc311):
+    """Test updating values in a single column with their best match mappings of a data frame."""
+    domain_pronounciation = [
+        'bronks',
+        'brooklen',
+        'manhatn',
+        'kweenz',
+        'staten islen'
+    ]
+
+    vocabulary = FuzzyVocabularyMatcher(
+        vocabulary=domain_pronounciation,
+        no_match_threshold=0.
+    )
+
+    # replace with the best match in the given vocabulary
+    df = update(nyc311, 'borough', BestMatch(vocabulary=vocabulary))
+    values = df['borough'].unique()
+    assert len(values) == 5
+    assert sorted(values) == sorted(domain_pronounciation)
+
+    # manually create a mapping to let user manipulate it before updating the df
+    map = best_matches(values=nyc311['borough'].unique(), matcher=vocabulary)
+    # override best match from the vocabulary
+    map.update({'STATEN ISLAND': 'statn ayeln'})
+
+    df = update(nyc311, 'borough', map.translate())
+    values = df['borough'].unique()
+    assert len(values) == 5
+    assert sorted(values) == sorted(map.translate().values())

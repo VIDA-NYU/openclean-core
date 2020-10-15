@@ -5,11 +5,11 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import Iterable, List, Optional, Dict
+import warnings
 
 from openclean.function.matching.base import StringMatchResult, VocabularyMatcher  # noqa: E501
-from collections import Counter
 
 
 class Mapping(defaultdict):
@@ -55,7 +55,7 @@ class Mapping(defaultdict):
             self[key].append(m)
         return self[key]
 
-    def update(self, updates: Optional[Dict[str, str]] = None) -> None: # noqa
+    def update(self, updates: Optional[Dict[str, str]] = None) -> None:
         """lets the user update values in the map with their own values
 
         Parameters
@@ -145,6 +145,31 @@ class Mapping(defaultdict):
         for term in terms:
             filtered.add(key=term, matches=self[term])
         return filtered
+
+    def translate(self) -> dict:
+        """Convert map into dict of key:match
+
+        Note: incase of multiple matches, it'll ignore those keys and raise a warning
+
+        Returns
+        -------
+        dict of keys and their matches
+
+        Raises
+        ------
+        RuntimeError
+        """
+        values = dict()
+        for k, v in self.items():
+            if isinstance(v, list) and isinstance(v[0], tuple):
+                if len(v) == 1:
+                    values[k] = v[0][0]
+                else:
+                    warnings.warn('Ignoring key: {} ({} matches). To include ignored keys, '
+                                  'update the map to contain only 1 match per key'.format(k, len(v)))
+            else:
+                raise RuntimeError("Malformed values for key: {}".format(k))
+        return values
 
 
 def best_matches(
