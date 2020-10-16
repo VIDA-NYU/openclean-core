@@ -117,12 +117,11 @@ class DatasetProfiler(object):
         -------
         pd.DataFrame
         """
-        columns = ['column', 'min', 'max', 'total', 'empty', 'distinct']
+        columns = ['min', 'max', 'total', 'empty', 'distinct']
         data = list()
         for obj in self.profiles:
             stats = obj['stats']
             row = [
-                obj['column'],
                 stats[self.label_min],
                 stats[self.label_max],
                 stats[self.label_total_count],
@@ -163,18 +162,17 @@ class DatasetProfiler(object):
         types = sorted(types)
         # Create a data frame with the type results. Datatype labels are used
         # as column names in the returned data frame.
-        columns = ['column'] + types
         data = list()
         for obj in self.profiles:
             datatypes = obj['stats'][self.label_datatypes]
-            row = [obj['column']]
+            row = list()
             for t in types:
                 count = datatypes.get(t, 0)
                 if isinstance(count, dict):
                     count = count['distinct'] if distinct else count['total']
                 row.append(count)
             data.append(row)
-        return pd.DataFrame(data=data, index=self.columns, columns=columns)
+        return pd.DataFrame(data=data, index=self.columns, columns=types)
 
     def unique_columns(self) -> DatasetProfiler:
         """Get a dataset profiler that only contains information for those
