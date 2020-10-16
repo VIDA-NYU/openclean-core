@@ -17,7 +17,7 @@ processing pipeline to filer, manipulate, or profile rows in teh data stream.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
@@ -283,7 +283,10 @@ class LimitOperator(ProducingOperator):
 
 
 class ProfilingOperator(StreamOperator):
-    def __init__(self, profilers: Optional[ColumnProfiler] = None):
+    def __init__(
+        self, profilers: Optional[ColumnProfiler] = None,
+        default_profiler: Optional[Type] = None
+    ):
         """Profiling operator one or more columns in the data stream. By
         default all columns in the data stream are profiled independently using
         the default stream profiler. The optional list of profilers allows to
@@ -297,8 +300,14 @@ class ProfilingOperator(StreamOperator):
             Specify he list of columns that are profiled and the profiling
             function. If only a column reference is given (not a tuple) the
             default stream profiler is used for profiling the column.
+        default_profiler: class, default=None
+            Class object that is instanciated as the profiler for columns
+            that do not have a profiler instance speicified for them.
         """
         self.profilers = profilers
+        if default_profiler is None:
+            default_profiler = DefaultStreamProfiler
+        self.default_profiler = default_profiler
 
     def open(
         self, ds: StreamProcessor, pipeline: List[StreamOperator]
@@ -330,7 +339,7 @@ class ProfilingOperator(StreamOperator):
             # If no profilers were specified at object creation all columns are
             # profiled.
             for i, name in enumerate(ds.columns):
-                consumers.append((i, name, DefaultStreamProfiler()))
+                consumers.append((i, name, self.default_profiler()))
         else:
             # Create profilers only for columns included in the profilers list
             # that was initialized at object creation.
@@ -342,7 +351,7 @@ class ProfilingOperator(StreamOperator):
                     col, profiler = p
                 else:
                     col = p
-                    profiler = DefaultStreamProfiler()
+                    profiler = self.default_profiler()
                 name, colidx = select_clause(ds.columns, col)
                 consumers.append((colidx[0], name[0], profiler))
         return Profile(profilers=consumers)
@@ -639,7 +648,8 @@ class StreamProcessor(object):
         return self.append(LimitOperator(limit=count))
 
     def profile(
-        self, profilers: Optional[ProfilerSpecs] = None
+        self, profilers: Optional[ProfilerSpecs] = None,
+        default_profiler: Optional[Type] = None
     ) -> List[Dict]:
         """Profile one or more columns in the data stream. Returns a list of
         profiler results for each profiled column.
@@ -658,6 +668,9 @@ class StreamProcessor(object):
             Specify he list of columns that are profiled and the profiling
             function. If only a column reference is given (not a tuple) the
             default stream profiler is used for profiling the column.
+        default_profiler: class, default=None
+            Class object that is instanciated as the profiler for columns
+            that do not have a profiler instance speicified for them.
 
         Returns
         -------
@@ -666,7 +679,12 @@ class StreamProcessor(object):
         # Ensure that profilers is a list.
         if profilers is not None and not isinstance(profilers, list):
             profilers = [profilers]
-        return self.stream(ProfilingOperator(profilers=profilers))
+        return self.stream(
+            ProfilingOperator(
+                profilers=profilers,
+                default_profiler=default_profiler
+            )
+        )
 
     def run(self):
         """Stream all rows from the associated data file to the data pipeline
