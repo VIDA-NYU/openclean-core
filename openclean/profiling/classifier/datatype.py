@@ -15,7 +15,7 @@ import pandas as pd
 
 from openclean.function.value.base import ValueFunction
 from openclean.function.value.classifier import ValueClassifier
-from openclean.function.value.datatype import Datetime, Float, Int
+from openclean.function.value.datatype import DefaultDatatypeClassifier
 from openclean.operator.collector.count import DistinctColumns
 from openclean.profiling.classifier.base import Classifier, ResultFeatures
 
@@ -124,12 +124,7 @@ class Datatypes(Classifier):
         # given. The default label for unclassified values in the default
         # classifier is 'text'
         if classifier is None:
-            classifier = ValueClassifier(
-                Datetime(),
-                Int(),
-                Float(),
-                default_label='text'
-            )
+            classifier = DefaultDatatypeClassifier()
         super(Datatypes, self).__init__(
             classifier=classifier,
             normalizer=normalizer,

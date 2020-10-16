@@ -14,10 +14,11 @@ import math
 import numpy as np
 
 from datetime import datetime
-from dateutil.parser import isoparse
+from dateutil.parser import isoparse, parse
 from dateutil.tz import UTC
 
-from openclean.function.value.classifier import ClassLabel
+from openclean.data.types import Scalar
+from openclean.function.value.classifier import ClassLabel, ValueClassifier
 
 
 # -- Type cast function -------------------------------------------------------
@@ -135,6 +136,7 @@ def to_int(value, default_value=None, raise_error=False):
 
 # -- Type check functions -----------------------------------------------------
 
+
 def is_datetime(value, formats=None, typecast=True):
     """Test if a given string value can be converted into a datetime object for
     a given data format. The function accepts a single date format or a list of
@@ -163,11 +165,29 @@ def is_datetime(value, formats=None, typecast=True):
     # exception if the value does not match the datetime format string.
     # Duplicate code depending on whether format is a list of a string.
     if formats is None:
-        try:
-            isoparse(value)
-            return True
-        except ValueError:
-            pass
+        # Issue \#39: dateutil.parse (falsely?) identifies the following
+        # strings as dates. For column profiling we want to exclude these:
+        # 14A; 271 1/2; 41-05; 6-8
+        #
+        # As a work-around for now we expect a valid date to have at least six
+        # characters (one for day, month, two for year and at least two
+        # non-alphanumeric characters.
+        #
+        # An alternative solution was pointer out by @remram44:
+        # https://gitlab.com/ViDA-NYU/datamart/datamart/-/blob/39462a5dca533a1e55596ddcbfc0ac7e98dce4de/lib_profiler/datamart_profiler/temporal.py#L63  # noqa: E501
+        #
+        # All solutions seem to suffer from the problem that values like
+        # 152-12 are valid dates (e.g., 152-12-01 in this case) but also
+        # valid house numbers, for example. There is no good solution here.
+        # For now we go with the assumption that if someone wants to specify
+        # a date it should have a tleast a day, month and year separated by
+        # some special (non-alphanumeric) charcater.
+        if len(value) >= 6 and has_two_spec_chars(value):
+            try:
+                parse(value, fuzzy=False)
+                return True
+            except (OverflowError, TypeError, ValueError):
+                pass
     elif isinstance(formats, list):
         for date_format in formats:
             try:
@@ -313,6 +333,37 @@ def is_numeric_type(value):
     return is_numeric(value, typecast=False, ignore_nan=False)
 
 
+# -- Helper Methods -----------------------------------------------------------
+
+def has_two_spec_chars(value: Scalar) -> bool:
+    """Returns True if the given string has at least two non-alphanumeric
+    characters.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value in a data stream.
+
+    Returns
+    -------
+    bool
+    """
+    # We only need to encounter two special-characters for the function to
+    # return True. The spec_char flag keeps track of whether we encountered
+    # one special character so far.
+    spec_char = False
+    for c in str(value):
+        if not c.isalnum():
+            # If we encountered a special character before we can return True
+            # since we now encountered two.
+            if spec_char:
+                return True
+            # We encountered the first special character if we reach this
+            # point.
+            spec_char = True
+    return False
+
+
 # -- Default data type classifiers --------------------------------------------
 
 class Datetime(ClassLabel):
@@ -373,3 +424,21 @@ class Int(ClassLabel):
             return is_int(value, typecast=typecast)
 
         super(Int, self).__init__(predicate=predicate, label=label)
+
+
+# -- Default classifier -------------------------------------------------------
+
+def DefaultDatatypeClassifier() -> ValueClassifier:
+    """Return an instance of the avlue classifier initialized with a default
+    set of class labels.
+
+    Returns
+    -------
+    openclean.function.value.classifier.ValueClassifier
+    """
+    return ValueClassifier(
+        Int(),
+        Float(),
+        Datetime(),
+        default_label='text'
+    )
