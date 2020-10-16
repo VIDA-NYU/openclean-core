@@ -146,7 +146,7 @@ class Mapping(defaultdict):
             filtered.add(key=term, matches=self[term])
         return filtered
 
-    def translate(self) -> dict:
+    def to_lookup(self, raise_exceptions: bool = False) -> dict:
         """Convert map into dict of key:match
 
         Note: incase of multiple matches, it'll ignore those keys and raise a warning
@@ -165,8 +165,11 @@ class Mapping(defaultdict):
                 if len(v) == 1:
                     values[k] = v[0][0]
                 else:
-                    warnings.warn('Ignoring key: {} ({} matches). To include ignored keys, '
-                                  'update the map to contain only 1 match per key'.format(k, len(v)))
+                    if not raise_exceptions:
+                        warnings.warn('Ignoring key: {} ({} matches). To include ignored keys, '
+                                      'update the map to contain only 1 match per key'.format(k, len(v)))
+                    else:
+                        raise RuntimeError('Operation failed. Found duplicate matches for key: {}'.format(k))
             else:
                 raise RuntimeError("Malformed values for key: {}".format(k))
         return values

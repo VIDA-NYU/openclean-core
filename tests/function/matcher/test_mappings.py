@@ -180,7 +180,7 @@ def test_update_mapping():
         map.update({'unknown': 'unknown'})
 
 
-def test_translate_mapping(nyc311):
+def test_tolookup_mapping(nyc311):
     """test translate converts Mapping to a dict of keys:matches"""
     domain_boroughs = ['MANHATTAN', 'BROOKLYN', 'QUEENS', 'STATEN ISLAND', 'BRONX']
     vocabulary = DefaultVocabularyMatcher(
@@ -189,18 +189,22 @@ def test_translate_mapping(nyc311):
         no_match_threshold=0.
     )
     map = best_matches(values=nyc311['borough'].unique(), matcher=vocabulary, include_vocab=True)
-    translated = map.translate()
-    assert len(translated) == 5
-    assert sorted(list(translated.values())) == sorted(domain_boroughs)
+    lookup = map.to_lookup()
+    assert len(lookup) == 5
+    assert sorted(list(lookup.values())) == sorted(domain_boroughs)
 
     map['BROOKLYN'] = [('Brook', .4), ('Lyn', .1)]
-    translated = map.translate()
-    assert len(translated) == 4 and 'BROOKLYN' not in translated.keys()
+    lookup = map.to_lookup()
+    assert len(lookup) == 4 and 'BROOKLYN' not in lookup.keys()
 
     # test error cases
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError): # duplicate matches
+        map['BROOKLYN'] = [('Brook', .4), ('Lyn', .1)]
+        map.to_lookup(raise_exceptions=True)
+
+    with pytest.raises(RuntimeError): # malformed values
         map['BROOKLYN'] = ['Brook', .4]
-        map.translate()
+        map.to_lookup()
 
 
 def test_update_bestmatch_column(nyc311):
@@ -229,7 +233,7 @@ def test_update_bestmatch_column(nyc311):
     # override best match from the vocabulary
     map.update({'STATEN ISLAND': 'statn ayeln'})
 
-    df = update(nyc311, 'borough', map.translate())
+    df = update(nyc311, 'borough', map.to_lookup())
     values = df['borough'].unique()
     assert len(values) == 5
-    assert sorted(values) == sorted(map.translate().values())
+    assert sorted(values) == sorted(map.to_lookup().values())
