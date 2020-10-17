@@ -379,6 +379,6 @@ class MinMaxScale(NormalizeFunction):
         return MinMaxScale(
             raise_error=self.raise_error,
             default_value=self.default_value,
-            minimum=float(min(values)),
-            maximum=float(max(values))
+            minimum=float(min(values, default=0)),
+            maximum=float(max(values, default=0))
         )

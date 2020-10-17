@@ -106,8 +106,8 @@ class DefaultColumnProfiler(DistinctSetProfiler):
                 non_empty_values[val] = count
         datatypes = Datatypes(features=ResultFeatures.BOTH)
         return {
-            self.label_min: min(non_empty_values),
-            self.label_max: max(non_empty_values),
+            self.label_min: min(non_empty_values, default=None),
+            self.label_max: max(non_empty_values, default=None),
             self.label_total_count: sum(values.values()),
             self.label_empty_count: empty_count,
             self.label_distinct_values: len(non_empty_values),
