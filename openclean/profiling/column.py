@@ -22,6 +22,8 @@ from openclean.profiling.base import DataStreamProfiler, DistinctSetProfiler
 from openclean.profiling.classifier.base import ResultFeatures
 from openclean.profiling.classifier.datatype import Datatypes
 
+import openclean.profiling.stats as stats
+
 
 class DefaultColumnProfiler(DistinctSetProfiler):
     """Default profiler for columns in a data frame. This profiler does
@@ -37,6 +39,7 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         "emptyValueCount": number of empty values in the column,
         "totalValueCount": number of total values (including empty ones),
         "distinctValueCount": number of distinct values in the column,
+        "entropy": entropy for distinct values in the column,
         "topValues": List of most frequent values in the column,
         "datatypes": Counter of type labels for all non-empty values
     }
@@ -46,6 +49,7 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         label_datatypes: Optional[str] = 'datatypes',
         label_distinct_values: Optional[str] = 'distinctValueCount',
         label_empty_count: Optional[str] = 'emptyValueCount',
+        label_entropy: Optional[str] = 'entropy',
         label_min: Optional[str] = 'minimumValue',
         label_max: Optional[str] = 'maximumValue',
         label_top_values: Optional[str] = 'topValues',
@@ -63,6 +67,8 @@ class DefaultColumnProfiler(DistinctSetProfiler):
             Label for datatype counts in the result.
         label_empty_count: string, default='emptyValueCount'
             Label for empty value counts in the result.
+        label_entropy: string, default='emptyValueCount'
+            Label for column entropy.
         label_min: string, default='minimumValue'
             Label for minimum stream value in the result.
         label_max: string, default='maximumValue'
@@ -77,6 +83,7 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         self.label_datatypes = label_datatypes
         self.label_distinct_values = label_distinct_values
         self.label_empty_count = label_empty_count
+        self.label_entropy = label_entropy
         self.label_min = label_min
         self.label_max = label_max
         self.label_top_values = label_top_values
@@ -111,6 +118,7 @@ class DefaultColumnProfiler(DistinctSetProfiler):
             self.label_total_count: sum(values.values()),
             self.label_empty_count: empty_count,
             self.label_distinct_values: len(non_empty_values),
+            self.label_entropy: stats.entropy(non_empty_values),
             self.label_top_values: non_empty_values.most_common(self.top_k),
             self.label_datatypes: datatypes.process(non_empty_values)
         }
