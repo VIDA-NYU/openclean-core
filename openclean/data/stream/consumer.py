@@ -19,6 +19,7 @@ from openclean.data.stream.csv import CSVWriter
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
 from openclean.profiling.base import ProfilingFunction
+from openclean.profiling.dataset import DatasetProfile
 
 
 # -- Abstract base class for data stream consumers ----------------------------
@@ -383,10 +384,10 @@ class Profile(StreamConsumer):
         -------
         list
         """
-        result = list()
+        profile = DatasetProfile()
         for _, name, p in self.profilers:
-            result.append({'column': name, 'stats': p.close()})
-        return result
+            profile.add(name=name, stats=p.close())
+        return profile
 
     def consume(self, rowid: int, row: List) -> List:
         """CDispatch extracted columns values to each consumer.

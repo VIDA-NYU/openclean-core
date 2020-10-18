@@ -10,12 +10,12 @@ profiling results.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
 
-class DatasetProfiler(object):
+class DatasetProfile(list):
     """THe dataset profiler provides functionality to access and transform the
     list of profiling results for columns in a dataset. Expects a list of
     dictionaries, each dictionary contaiing at least the following information
@@ -30,47 +30,58 @@ class DatasetProfiler(object):
     Additional information includes the distinct number of values with their
     respective frequency counts.
     """
-    def __init__(
-        self,
-        profiles: List[Dict],
-        label_datatypes: Optional[str] = 'datatypes',
-        label_distinct_values: Optional[str] = 'distinctValueCount',
-        label_empty_count: Optional[str] = 'emptyValueCount',
-        label_min: Optional[str] = 'minimumValue',
-        label_max: Optional[str] = 'maximumValue',
-        label_total_count: Optional[str] = 'totalValueCount'
-    ):
-        """Initialize the profiling results and the labels for the respective
-        profiing result components for each column.
+    def __init__(self):
+        """Initialize the list that maintains the names of profiled columns,
+        i.e., the dataset schema.
+        """
+        self.columns = []
+
+    def add(self, name: str, stats: Dict):
+        """Add profiler results for a given column to the list.
 
         Parameters
         ----------
-        profiles: list of dict
-            Profiling results for each column in the dataset.
-        label_datatypes: string, default='datatypes'
-            Label for datatype counts in the result.
-        label_distinct_values: string, default='distinctValueCount'
-            Label for datatype counts in the result.
-        label_empty_count: string, default='emptyValueCount'
-            Label for empty value counts in the result.
-        label_min: string, default='minimumValue'
-            Label for minimum stream value in the result.
-        label_max: string, default='maximumValue'
-            Label for maximum stream value in the result.
-        label_total_count: string, default='totalValueCount'
-            Label for total value counts in the result.
+        name: string
+            Column name
+        stats: dict
+            Profiling results for the column.
         """
-        self.profiles = profiles
-        self.label_datatypes = label_datatypes
-        self.label_distinct_values = label_distinct_values
-        self.label_empty_count = label_empty_count
-        self.label_min = label_min
-        self.label_max = label_max
-        self.label_total_count = label_total_count
-        # Extract list of columns names from the profiles.
-        self.columns = [obj['column'] for obj in profiles]
+        self.append({'column': name, 'stats': stats})
+        self.columns.append(name)
 
-    def multitype_columns(self) -> DatasetProfiler:
+    def minmax(self, column: Union[int, str]) -> pd.DataFrame:
+        """Get data frame with (min, max)-values for all data types in a given
+        column.
+
+        Raises a ValueError if the specified column is unknown.
+
+        Parameters
+        ----------
+        column: int or string
+            Column index of column name.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        if isinstance(column, int):
+            stats = self[column]['stats']
+        else:
+            stats = None
+            for col in self:
+                if col['column'] == column:
+                    stats = col['stats']
+        if stats is None:
+            raise ValueError("unknown column '{}'".format(column))
+        types = stats['minmaxValues'].keys()
+        data = list()
+        for t in types:
+            s = stats['minmaxValues'][t]
+            row = [s['minimum'], s['maximum']]
+            data.append(row)
+        return pd.DataFrame(data, index=types, columns=['min', 'max'])
+
+    def multitype_columns(self) -> DatasetProfile:
         """Get a dataset profiler that only contains information for those
         columns that have values of more than one raw data type.
 
@@ -78,34 +89,24 @@ class DatasetProfiler(object):
         -------
         openclean.profiling.dataset.DatasetProfiler
         """
-        mtypecols = list()
-        for obj in self.profiles:
-            if len(obj['stats'][self.label_datatypes]) > 1:
-                mtypecols.append(obj)
-        return self._projection(mtypecols)
+        profile = DatasetProfile()
+        for col, stats in self.profiles():
+            if len(stats['datatypes']) > 1:
+                profile.add(name=col, stats=stats)
+        return profile
 
-    def _projection(self, profiles: List[Dict]) -> DatasetProfiler:
-        """Get an instance of the dataset profiler for a (limited) set of
-        columns. This is a helper method since the assignment of element
-        labels isn't changed by the projection.
-
-        ----------
-        profiles: list of dict
-            Profiling results for columns in the returned dataset profiler.
+    def profiles(self) -> List[Tuple[str, Dict]]:
+        """Get a list of (column name, profiling result) tuples for all columns
+        in the dataset.
 
         Returns
         -------
-        openclean.profiling.dataset.DatasetProfiler
+        list
         """
-        return DatasetProfiler(
-            profiles=profiles,
-            label_datatypes=self.label_datatypes,
-            label_distinct_values=self.label_distinct_values,
-            label_empty_count=self.label_empty_count,
-            label_min=self.label_min,
-            label_max=self.label_max,
-            label_total_count=self.label_total_count
-        )
+        result = list()
+        for i in range(len(self.columns)):
+            result.append((self.columns[i], self[i]['stats']))
+        return result
 
     def stats(self) -> pd.DataFrame:
         """Get a data frame containing the basic statistics for each columns.
@@ -117,20 +118,24 @@ class DatasetProfiler(object):
         -------
         pd.DataFrame
         """
-        columns = ['min', 'max', 'total', 'empty', 'distinct']
+        columns = ['total', 'empty', 'distinct', 'uniqueness', 'entropy']
         data = list()
-        for obj in self.profiles:
+        for obj in self:
             stats = obj['stats']
-            row = [
-                stats[self.label_min],
-                stats[self.label_max],
-                stats[self.label_total_count],
-                stats[self.label_empty_count]
-            ]
-            if self.label_distinct_values in stats:
-                row.append(stats[self.label_distinct_values])
+            total_count = stats['totalValueCount']
+            empty_count = stats['emptyValueCount']
+            distinct = stats.get('distinctValueCount')
+            if distinct is not None:
+                uniqueness = float(distinct) / float(total_count - empty_count)
             else:
-                row.append(None)
+                uniqueness = None
+            row = [
+                total_count,
+                empty_count,
+                distinct,
+                stats.get('entropy'),
+                uniqueness
+            ]
             data.append(row)
         return pd.DataFrame(data=data, index=self.columns, columns=columns)
 
@@ -156,15 +161,15 @@ class DatasetProfiler(object):
         types = set()
         # Make a pass over the profiling results to get a list of all data
         # types that are present.
-        for obj in self.profiles:
-            types.update(obj['stats'][self.label_datatypes].keys())
+        for obj in self:
+            types.update(obj['stats']['datatypes'].keys())
         # Convert types to a sorted list of types.
         types = sorted(types)
         # Create a data frame with the type results. Datatype labels are used
         # as column names in the returned data frame.
         data = list()
-        for obj in self.profiles:
-            datatypes = obj['stats'][self.label_datatypes]
+        for obj in self:
+            datatypes = obj['stats']['datatypes']
             row = list()
             for t in types:
                 count = datatypes.get(t, 0)
@@ -174,7 +179,7 @@ class DatasetProfiler(object):
             data.append(row)
         return pd.DataFrame(data=data, index=self.columns, columns=types)
 
-    def unique_columns(self) -> DatasetProfiler:
+    def unique_columns(self) -> DatasetProfile:
         """Get a dataset profiler that only contains information for those
         columns that have a uniqueness of 1, i.e., where all values are unique.
 
@@ -182,11 +187,10 @@ class DatasetProfiler(object):
         -------
         openclean.profiling.dataset.DatasetProfiler
         """
-        unqcols = list()
-        for obj in self.profiles:
-            stats = obj['stats']
-            total_count = stats[self.label_total_count]
-            distinct_values = len(stats[self.label_distinct_values])
+        profile = DatasetProfile()
+        for col, stats in self.profiles():
+            total_count = stats['totalValueCount']
+            distinct_values = len(stats['distinctValueCount'])
             if total_count == distinct_values:
-                unqcols.append(obj)
-        return self._projection(unqcols)
+                profile.add(name=col, stats=stats)
+        return profile
