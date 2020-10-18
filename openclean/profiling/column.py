@@ -14,7 +14,7 @@ the stream profiler cannot collect.
 """
 
 from collections import Counter
-from typing import Dict, Optional
+from typing import Optional
 
 from openclean.data.types import Scalar
 from openclean.function.value.null import is_empty
@@ -24,6 +24,89 @@ from openclean.profiling.stats import MinMaxCollector
 
 import openclean.profiling.stats as stats
 
+
+# -- Profiling results --------------------------------------------------------
+
+class ColumnProfile(dict):
+    """Dictionary of profiling results for the openclean column profiler."""
+    def __init__(
+        self, converter: DatatypeConverter, values: Optional[Counter] = None,
+        top_k: Optional[int] = None
+    ):
+        """
+        """
+        self.converter = converter
+        # Initialize the internal statistic.
+        self['totalValueCount'] = 0
+        self['emptyValueCount'] = 0
+        self['datatypes'] = Counter()
+        self['minmaxValues'] = dict()
+        # Consume the list of values if given.
+        non_empty_values = Counter()
+        if values is not None:
+            for value, count in values.items():
+                value = self.consume(value=value, count=count, distinct=True)
+                if value is not None:
+                    non_empty_values[value] += count
+            self['distinctValueCount'] = len(non_empty_values)
+            self['entropy'] = stats.entropy(non_empty_values)
+            self['topValues'] = non_empty_values.most_common(top_k)
+
+    def consume(
+        self, value: Scalar, count: int, distinct: Optional[bool] = False
+    ) -> Scalar:
+        """Consume a pair of (value, count) in the data stream. Values in the
+        stream are not guaranteed to be unique and may be passed to this
+        consumer multiple times (with multiple counts).
+
+        Returns the given value if it is not an empty value. Otherwise, the
+        returned result in None.
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar column value from a dataset that is part of the data stream
+            that is being profiled.
+        count: int
+            Frequency of the value. Note that this count only relates to the
+            given value and does not necessarily represent the total number of
+            occurrences of the value in the stream.
+        distinct: bool, default=False
+            Count distinct and total values for data types if this flag is
+            True.
+
+        Returns
+        -------
+        scalar
+        """
+        # Adjust value counts. For all following operations we ignore values
+        # that are empty.
+        self['totalValueCount'] += count
+        if is_empty(value):
+            self['emptyValueCount'] += count
+            return
+        # Convert the given value and get the type label. Then adjust the
+        # datatype counter and the (min,max) counts.
+        datatypes = self['datatypes']
+        minmax = self['minmaxValues']
+        val, type_label = self.converter.convert(value)
+        if type_label in minmax:
+            minmax[type_label].consume(val)
+            if distinct:
+                datatypes[type_label]['total'] += count
+                datatypes[type_label]['distinct'] += 1
+            else:
+                datatypes[type_label] += count
+        else:
+            minmax[type_label] = MinMaxCollector(first_value=val)
+            if distinct:
+                datatypes[type_label] = {'total': count, 'distinct': 1}
+            else:
+                datatypes[type_label] += count
+        return value
+
+
+# -- Column profiler ----------------------------------------------------------
 
 class DefaultColumnProfiler(DistinctSetProfiler):
     """Default profiler for columns in a data frame. This profiler does
@@ -62,7 +145,7 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         self.top_k = top_k
         self.converter = converter if converter else DefaultConverter()
 
-    def process(self, values: Counter) -> Dict:
+    def process(self, values: Counter) -> ColumnProfile:
         """Compute profile for given counter of values in teh column.
 
         Parameters
@@ -75,38 +158,11 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         -------
         dict
         """
-        # Filter empty values for computation of the remaining column
-        # statistics.
-        empty_count = 0
-        non_empty_values = Counter()
-        datatypes = dict()
-        minmax = dict()
-        for val, count in values.items():
-            if is_empty(val):
-                empty_count += count
-            else:
-                non_empty_values[val] = count
-                conv_val, type_label = self.converter.convert(val)
-                # Adjust (min,max) counts and datatype counts. If this is the
-                # first time we encounter a type of type_label neither
-                # dictionary will have an entry for that type. Ootherwise, both
-                # will have an entry for that type.
-                if type_label in minmax:
-                    minmax[type_label].consume(conv_val)
-                    datatypes[type_label]['total'] += count
-                    datatypes[type_label]['distinct'] += 1
-                else:
-                    minmax[type_label] = MinMaxCollector(first_value=conv_val)
-                    datatypes[type_label] = {'total': count, 'distinct': 1}
-        return {
-            'minmaxValues': minmax,
-            'totalValueCount': sum(values.values()),
-            'emptyValueCount': empty_count,
-            'distinctValueCount': len(non_empty_values),
-            'entropy': stats.entropy(non_empty_values),
-            'topValues': non_empty_values.most_common(self.top_k),
-            'datatypes': datatypes
-        }
+        return ColumnProfile(
+            converter=self.converter,
+            values=values,
+            top_k=self.top_k
+        )
 
 
 class DefaultStreamProfiler(DataStreamProfiler):
@@ -137,15 +193,12 @@ class DefaultStreamProfiler(DataStreamProfiler):
             Datatype converter that is used to determing the type of the
             values in the data stream.
         """
-        # Create variables for different parts of the profiling result. These
-        # variables will be initialize in the open method for the profiler.
-        self.minmax = None
-        self.empty_count = None
-        self.total_count = None
-        self.datatypes = None
+        # Create variable for profiler results. This variable will be
+        # initialized in the open method for the profiler.
+        self.profiler = None
         self.converter = converter if converter else DefaultConverter()
 
-    def close(self) -> Dict:
+    def close(self) -> ColumnProfile:
         """Return the dictionary with collected statistics at the end of the
         data stream.
 
@@ -153,12 +206,7 @@ class DefaultStreamProfiler(DataStreamProfiler):
         -------
         dict
         """
-        return {
-            'minmaxValues': self.minmax,
-            'totalValueCount': self.total_count,
-            'emptyValueCount': self.empty_count,
-            'datatypes': self.datatypes
-        }
+        return self.profiler
 
     def consume(self, value: Scalar, count: int):
         """Consume a pair of (value, count) in the data stream. Values in the
@@ -175,26 +223,10 @@ class DefaultStreamProfiler(DataStreamProfiler):
             given value and does not necessarily represent the total number of
             occurrences of the value in the stream.
         """
-        # Adjust value counts. For all following operations we ignore values
-        # that are empty.
-        self.total_count += count
-        if is_empty(value):
-            self.empty_count += count
-            return
-        # Convert the given value and get the type label. Then adjust the
-        # datatype counter and the (min,max) counts .
-        val, type_label = self.converter.convert(value)
-        self.datatypes[type_label] += count
-        if type_label in self.minmax:
-            self.minmax[type_label].consume(val)
-        else:
-            self.minmax[type_label] = MinMaxCollector(first_value=val)
+        self.profiler.consume(value=value, count=count, distinct=False)
 
     def open(self):
         """Initialize the internal variables that maintain different parts of
         the generated profiling result.
         """
-        self.minmax = dict()
-        self.empty_count = 0
-        self.total_count = 0
-        self.datatypes = Counter()
+        self.profiler = ColumnProfile(converter=self.converter)
