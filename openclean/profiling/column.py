@@ -19,8 +19,8 @@ from typing import Dict, Optional
 from openclean.data.types import Scalar
 from openclean.function.value.null import is_empty
 from openclean.profiling.base import DataStreamProfiler, DistinctSetProfiler
-from openclean.profiling.classifier.base import ResultFeatures
-from openclean.profiling.classifier.datatype import Datatypes
+from openclean.profiling.datatype import DatatypeConverter, DefaultConverter
+from openclean.profiling.stats import MinMaxCollector
 
 import openclean.profiling.stats as stats
 
@@ -34,8 +34,8 @@ class DefaultColumnProfiler(DistinctSetProfiler):
     The result schema for the returned dictionary is:
 
     {
-        "minimumValue": smallest not-None value in the column,
-        'maximumValue": smallest not-None value in the column ,
+        "minmaxValues": smallest and largest not-None value for each data type
+            in the stream,
         "emptyValueCount": number of empty values in the column,
         "totalValueCount": number of total values (including empty ones),
         "distinctValueCount": number of distinct values in the column,
@@ -46,48 +46,21 @@ class DefaultColumnProfiler(DistinctSetProfiler):
     """
     def __init__(
         self, top_k: Optional[int] = 10,
-        label_datatypes: Optional[str] = 'datatypes',
-        label_distinct_values: Optional[str] = 'distinctValueCount',
-        label_empty_count: Optional[str] = 'emptyValueCount',
-        label_entropy: Optional[str] = 'entropy',
-        label_min: Optional[str] = 'minimumValue',
-        label_max: Optional[str] = 'maximumValue',
-        label_top_values: Optional[str] = 'topValues',
-        label_total_count: Optional[str] = 'totalValueCount'
+        converter: Optional[DatatypeConverter] = None
     ):
-        """Initialize the labels for elements in the profiling result.
+        """Initialize the number of top-k values that are returned and the
+        optional converter that is used for data type detection.
 
         Parameters
         ----------
         top_k: int, default=10
             Include the k most frequent values in the result.
-        label_datatypes: string, default='datatypes'
-            Label for datatype counts in the result.
-        label_distinct_values: string, default='distinctValueCount'
-            Label for datatype counts in the result.
-        label_empty_count: string, default='emptyValueCount'
-            Label for empty value counts in the result.
-        label_entropy: string, default='emptyValueCount'
-            Label for column entropy.
-        label_min: string, default='minimumValue'
-            Label for minimum stream value in the result.
-        label_max: string, default='maximumValue'
-            Label for maximum stream value in the result.
-        label_top_values: string, default='topValues'
-            Label for k most frequent values included in the result.
-        label_total_count: string, default='totalValueCount'
-            Label for total value counts in the result.
+        converter: openclean.profiling.datatype.DatatypeConverter, default=None
+            Datatype converter that is used to determing the type of the
+            values in the data stream.
         """
         self.top_k = top_k
-        # Define the lables for elements in the result dictionary.
-        self.label_datatypes = label_datatypes
-        self.label_distinct_values = label_distinct_values
-        self.label_empty_count = label_empty_count
-        self.label_entropy = label_entropy
-        self.label_min = label_min
-        self.label_max = label_max
-        self.label_top_values = label_top_values
-        self.label_total_count = label_total_count
+        self.converter = converter if converter else DefaultConverter()
 
     def process(self, values: Counter) -> Dict:
         """Compute profile for given counter of values in teh column.
@@ -106,21 +79,33 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         # statistics.
         empty_count = 0
         non_empty_values = Counter()
+        datatypes = dict()
+        minmax = dict()
         for val, count in values.items():
             if is_empty(val):
                 empty_count += count
             else:
                 non_empty_values[val] = count
-        datatypes = Datatypes(features=ResultFeatures.BOTH)
+                conv_val, type_label = self.converter.convert(val)
+                # Adjust (min,max) counts and datatype counts. If this is the
+                # first time we encounter a type of type_label neither
+                # dictionary will have an entry for that type. Ootherwise, both
+                # will have an entry for that type.
+                if type_label in minmax:
+                    minmax[type_label].consume(conv_val)
+                    datatypes[type_label]['total'] += count
+                    datatypes[type_label]['distinct'] += 1
+                else:
+                    minmax[type_label] = MinMaxCollector(first_value=conv_val)
+                    datatypes[type_label] = {'total': count, 'distinct': 1}
         return {
-            self.label_min: min(non_empty_values, default=None),
-            self.label_max: max(non_empty_values, default=None),
-            self.label_total_count: sum(values.values()),
-            self.label_empty_count: empty_count,
-            self.label_distinct_values: len(non_empty_values),
-            self.label_entropy: stats.entropy(non_empty_values),
-            self.label_top_values: non_empty_values.most_common(self.top_k),
-            self.label_datatypes: datatypes.process(non_empty_values)
+            'minmaxValues': minmax,
+            'totalValueCount': sum(values.values()),
+            'emptyValueCount': empty_count,
+            'distinctValueCount': len(non_empty_values),
+            'entropy': stats.entropy(non_empty_values),
+            'topValues': non_empty_values.most_common(self.top_k),
+            'datatypes': datatypes
         }
 
 
@@ -136,48 +121,29 @@ class DefaultStreamProfiler(DataStreamProfiler):
     The result schema for the returned dictionary is:
 
     {
-        "minimumValue": smallest not-None value in the stream,
-        'maximumValue": smallest not-None value in the stream ,
+        "minmaxValues": smallest and largest not-None value for each data type
+            in the stream,
         "emptyValueCount": number of empty values in the stream,
         "totalValueCount": number of total values (including empty ones),
         "datatypes": Counter of type labels for all non-empty values
     }
     """
-    def __init__(
-        self, label_datatypes: Optional[str] = 'datatypes',
-        label_empty_count: Optional[str] = 'emptyValueCount',
-        label_min: Optional[str] = 'minimumValue',
-        label_max: Optional[str] = 'maximumValue',
-        label_total_count: Optional[str] = 'totalValueCount'
-    ):
-        """Initialize the labels for elements in the profiling result.
+    def __init__(self, converter: Optional[DatatypeConverter] = None):
+        """Create internal varianbles for collected statistics.
 
         Parameters
         ----------
-        label_datatypes: string, default='datatypes'
-            Label for datatype counts in the result.
-        label_empty_count: string, default='emptyValueCount'
-            Label for empty value counts in the result.
-        label_min: string, default='minimumValue'
-            Label for minimum stream value in the result.
-        label_max: string, default='maximumValue'
-            Label for maximum stream value in the result.
-        label_total_count: string, default='totalValueCount'
-            Label for total value counts in the result.
+        converter: openclean.profiling.datatype.DatatypeConverter, default=None
+            Datatype converter that is used to determing the type of the
+            values in the data stream.
         """
         # Create variables for different parts of the profiling result. These
         # variables will be initialize in the open method for the profiler.
-        self.min = None
-        self.max = None
+        self.minmax = None
         self.empty_count = None
         self.total_count = None
-        self.datatypes = Datatypes()
-        # Define the lables for elements in the result dictionary.
-        self.label_empty_count = label_empty_count
-        self.label_min = label_min
-        self.label_max = label_max
-        self.label_total_count = label_total_count
-        self.label_datatypes = label_datatypes
+        self.datatypes = None
+        self.converter = converter if converter else DefaultConverter()
 
     def close(self) -> Dict:
         """Return the dictionary with collected statistics at the end of the
@@ -188,11 +154,10 @@ class DefaultStreamProfiler(DataStreamProfiler):
         dict
         """
         return {
-            self.label_min: self.min,
-            self.label_max: self.max,
-            self.label_total_count: self.total_count,
-            self.label_empty_count: self.empty_count,
-            self.label_datatypes: self.datatypes.close()
+            'minmaxValues': self.minmax,
+            'totalValueCount': self.total_count,
+            'emptyValueCount': self.empty_count,
+            'datatypes': self.datatypes
         }
 
     def consume(self, value: Scalar, count: int):
@@ -211,29 +176,25 @@ class DefaultStreamProfiler(DataStreamProfiler):
             occurrences of the value in the stream.
         """
         # Adjust value counts. For all following operations we ignore values
-        # that are or empty.
+        # that are empty.
         self.total_count += count
         if is_empty(value):
             self.empty_count += count
             return
-        # If either min or max is None this is the first not None value in the
-        # stream.
-        if self.min is None:
-            self.min = value
-            self.max = value
-        elif value < self.min:
-            self.min = value
-        elif value > self.max:
-            self.max = value
-        # Add data type label for the value.
-        self.datatypes.consume(value=value, count=count)
+        # Convert the given value and get the type label. Then adjust the
+        # datatype counter and the (min,max) counts .
+        val, type_label = self.converter.convert(value)
+        self.datatypes[type_label] += count
+        if type_label in self.minmax:
+            self.minmax[type_label].consume(val)
+        else:
+            self.minmax[type_label] = MinMaxCollector(first_value=val)
 
     def open(self):
         """Initialize the internal variables that maintain different parts of
         the generated profiling result.
         """
-        self.min = None
-        self.max = None
+        self.minmax = dict()
         self.empty_count = 0
         self.total_count = 0
-        self.datatypes.open()
+        self.datatypes = Counter()
