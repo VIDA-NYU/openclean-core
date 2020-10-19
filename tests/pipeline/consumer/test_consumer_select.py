@@ -7,7 +7,8 @@
 
 """Unit tests for the Select consumer for data streams."""
 
-from openclean.data.stream.consumer import Collector, Select
+from openclean.pipeline.consumer.collector import Collector
+from openclean.pipeline.consumer.producer import Select
 
 
 def test_column_select():

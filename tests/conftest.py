@@ -15,8 +15,6 @@ from openclean.data.load import dataset
 
 DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
 AGENCY_FILE = os.path.join(DIR, 'agencies.csv')
-COUNTRIES_FILE = os.path.join(DIR, 'countries.csv')
-IDI_FILE = os.path.join(DIR, 'ICT-development-index.tsv.gz')
 NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
 SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
 
@@ -25,24 +23,6 @@ SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
 def agencies():
     """List of agency names with NYC borough and US State."""
     return dataset(AGENCY_FILE)
-
-
-@pytest.fixture
-def boroughs():
-    """Return set of boroughs in the 311 dataset."""
-    return {
-        'BRONX',
-        'BROOKLYN',
-        'MANHATTAN',
-        'QUEENS',
-        'STATEN ISLAND'
-    }
-
-
-@pytest.fixture
-def countries():
-    """Get dataset with known countries from restcountries.eu web service."""
-    return dataset(COUNTRIES_FILE)
 
 
 @pytest.fixture
@@ -80,12 +60,6 @@ def employees():
 
 
 @pytest.fixture
-def idi():
-    """Load the ITU ICT Development Index dataset."""
-    return dataset(IDI_FILE)
-
-
-@pytest.fixture
 def nyc311():
     """Load the 311 descriptor dataset."""
     return dataset(NYC311_FILE)
@@ -95,19 +69,3 @@ def nyc311():
 def schools():
     """Load the school level detail dataset."""
     return dataset(SCHOOLS_FILE)
-
-
-@pytest.fixture
-def zipcodes():
-    "Get a simple data frame with misspelled borough names and a zipcode"
-    data = [
-        ['Brooklyn', 11201],
-        ['Manhattan', 10001],
-        ['Manhattan', 10007],
-        ['Queens', 11355],
-        ['Broooklyn', 11207],
-        ['Queens', 11412],
-        ['Quees', 11366]
-    ]
-    columns = [Column(0, 'Borough'), Column(1, 'Zipcode')]
-    return pd.DataFrame(data=data, columns=columns)
