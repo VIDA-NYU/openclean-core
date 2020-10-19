@@ -190,7 +190,7 @@ class DatasetProfile(list):
         profile = DatasetProfile()
         for col, stats in self.profiles():
             total_count = stats['totalValueCount']
-            distinct_values = len(stats['distinctValueCount'])
+            distinct_values = stats['distinctValueCount']
             if total_count == distinct_values:
                 profile.add(name=col, stats=stats)
         return profile
