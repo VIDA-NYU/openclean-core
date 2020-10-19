@@ -7,7 +7,7 @@
 
 """Unit tests for the Collector consumer for data streams."""
 
-from openclean.data.stream.consumer import Collector
+from openclean.pipeline.consumer.collector import Collector
 
 
 def test_row_collector():

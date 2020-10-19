@@ -9,8 +9,8 @@
 
 import pytest
 
-
-from openclean.data.stream.consumer import Collector, Limit
+from openclean.pipeline.consumer.collector import Collector
+from openclean.pipeline.consumer.producer import Limit
 
 
 def test_stop_error():

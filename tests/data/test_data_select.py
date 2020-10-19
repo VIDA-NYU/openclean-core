@@ -7,7 +7,7 @@
 
 import pytest
 
-from openclean.data.column import Column
+from openclean.data.types import Column
 from openclean.data.select import select_clause
 
 

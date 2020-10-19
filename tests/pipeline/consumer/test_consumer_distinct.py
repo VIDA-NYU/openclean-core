@@ -7,7 +7,7 @@
 
 """Unit tests for the Distinct consumer for data streams."""
 
-from openclean.data.stream.consumer import Distinct
+from openclean.pipeline.consumer.collector import Distinct
 
 
 def test_distinct_consumer_ternary():

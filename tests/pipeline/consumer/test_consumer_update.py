@@ -7,8 +7,9 @@
 
 """Unit tests for the Update consumer for data streams."""
 
-from openclean.data.stream.consumer import Collector, Update
 from openclean.function.eval.base import Col, Const
+from openclean.pipeline.consumer.collector import Collector
+from openclean.pipeline.consumer.producer import Update
 
 
 def test_ternary_update_consumer():

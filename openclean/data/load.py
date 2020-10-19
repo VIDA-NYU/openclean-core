@@ -11,10 +11,10 @@ import pandas as pd
 
 from typing import List, Optional, Union
 
-from openclean.data.column import ColumnName
-from openclean.data.stream.processor import StreamProcessor
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
+from openclean.data.types import ColumnName
+from openclean.pipeline.processor.producer import DataPipeline
 
 
 def dataset(
@@ -65,7 +65,7 @@ def stream(
     filename: Union[str, pd.DataFrame],
     header: Optional[List[ColumnName]] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None
-) -> StreamProcessor:
+) -> DataPipeline:
     """Read a CSV file as a data stream. This is a helper method that is
     intended to read and filter large CSV files.
 
@@ -95,4 +95,4 @@ def stream(
             delim=delim,
             compressed=compressed
         )
-    return StreamProcessor(reader=file)
+    return DataPipeline(reader=file)

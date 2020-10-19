@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 
 from typing import Callable, List, Union, Optional
 
-from openclean.data.column import Column
+from openclean.data.types import Column
 from openclean.data.select import select_clause
 from openclean.function.value.base import CallableWrapper, ValueFunction
 

@@ -7,7 +7,7 @@
 
 """Unit tests for the split operator."""
 
-from openclean.data.column import Column
+from openclean.data.types import Column
 from openclean.function.eval.base import Col, Eq
 from openclean.operator.split.split import split
 
