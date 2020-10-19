@@ -16,16 +16,26 @@ processing pipeline to filer, manipulate, or profile rows in teh data stream.
 
 from __future__ import annotations
 from abc import abstractmethod
-from typing import List, Optional, Tuple
+from collections import Counter
+from typing import Dict, List, Optional, Tuple, Type, Union
+
+import pandas as pd
 
 from openclean.data.types import ColumnName, ColumnRef
 from openclean.data.select import select_clause
 from openclean.data.stream.base import DatasetStream
-from openclean.pipeline.consumer.base import StreamConsumer
-from openclean.pipeline.consumer.producer import Filter, Limit, Select, Update
+from openclean.data.stream.csv import CSVFile
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
+from openclean.operator.transform.update import get_update_function
+from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.pipeline.consumer.collector import Distinct, RowCount
+from openclean.pipeline.consumer.producer import Filter, Limit, Select, Update
 from openclean.pipeline.processor.base import StreamProcessor
+from openclean.pipeline.processor.collector import (
+    CollectOperator, DataFrameOperator, WriteOperator
+)
+from openclean.profiling.base import ProfilingFunction
 
 
 # -- Pipeline operators -------------------------------------------------------
@@ -269,11 +279,15 @@ class UpdateOperator(ProducingOperator):
 
 # -- Data pipeline ------------------------------------------------------------
 
+
+"""Type alias for column profiler specifications."""
+ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, ProfilingFunction]]
+ProfilerSpecs = Union[ColumnProfiler, List[ColumnProfiler]]
+
+
 class DataPipeline(DatasetStream):
-    """The data stream class is intended for reading and filtering large CSV
-    files as data frames. The class iterates over the rows of a given CSV file.
-    It allows to define a processing pipeline of stream operators to fitler,
-    manipulate, and profile the rows in the data stream .
+    """The data pipeline allows to iterate over the rows that are the result of
+    streaming an input data set through a pipeline of stream operators.
 
     The class implements the iterrows() function and columns property of the
     pandas DataFrame. Instances of this class can be used as substitues for
@@ -281,28 +295,28 @@ class DataPipeline(DatasetStream):
     iterrows() functions and the columns property for data frame arguments.
     """
     def __init__(
-        self, ds: DatasetStream, columns: Optional[List[ColumnName]] = None,
+        self, reader: DatasetStream,
+        columns: Optional[List[ColumnName]] = None,
         pipeline: Optional[StreamProcessor] = None
     ):
         """Initialize the data stream reader, schema information for the
-        streamed rows, and the optional
-        column filter.
+        streamed rows, and the optional pipeline operators.
 
         Parameters
         ----------
-        ds: openclean.data.stream.base.DatasetReader
+        reader: openclean.data.stream.base.DatasetReader
             Reader for the data stream.
         columns: list of string
             List of column names for the schema of the data stream rows.
-        pipeline: list of openclean.data.stream.processor.StreamOperator,
+        pipeline: list of openclean.data.stream.processor.StreamProcessor,
                 default=None
             List of operators in the pipeline fpr this stream processor.
 
         """
         super(DataPipeline, self).__init__(
-            columns=columns if columns is not None else ds.columns
+            columns=columns if columns is not None else reader.columns
         )
-        self.reader = ds
+        self.reader = reader
         self.pipeline = pipeline if pipeline is not None else list()
 
     def __enter__(self):
@@ -312,6 +326,107 @@ class DataPipeline(DatasetStream):
     def __exit__(self, exc_type, exc_value, traceback):
         """Close the associated file handle when the context manager exits."""
         return False
+
+    def append(
+        self, op: StreamProcessor, columns: Optional[List[ColumnName]] = None
+    ) -> DataPipeline:
+        """Return a modified stream processer with the given operator appended
+        to the stream pipeline.
+
+        Parameters
+        ----------
+        op: openclean.pipeline.processor.base.StreamProcessor
+            Stream operator that is appended to the pipeline of the returned
+            stream processor.
+        columns: list of string, default=None
+            Optional (modified) list of column names for the schema of the data
+            stream rows.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        return DataPipeline(
+            reader=self.reader,
+            columns=columns if columns is not None else self.columns,
+            pipeline=self.pipeline + [op]
+        )
+
+    def count(self) -> int:
+        """Count the number of rows in a data stream.
+
+        Returns
+        -------
+        int
+        """
+        return self.stream(CollectOperator(RowCount))
+
+    def distinct(self, *args) -> Counter:
+        """Get counts for all distinct values over all columns in the
+        associated data stream.
+
+        Parameters
+        ----------
+        args: list of int or str
+            References to the column(s) for which unique values are counted.
+
+        Returns
+        -------
+        collections.Counter
+        """
+        op = CollectOperator(Distinct)
+        # If optional list of columns is given append a select operation first
+        # to filter on those columns before running the data stream.
+        columns = list(args)
+        if len(columns) > 0:
+            return self.select(*args).stream(op)
+        return self.stream(op)
+
+    def filter(
+        self, predicate: EvalFunction, truth_value: Optional[Scalar] = True,
+        limit: Optional[int] = None
+    ):
+        """Filter rows in the data stream that match a given condition. Returns
+        a new data stream with a consumer that filters the rows. Currently
+        expects an evaluation function as the row predicate.
+
+        Allows to limit the number of rows in the returned data stream.
+
+        Parameters
+        ----------
+        predicate: opencelan.function.eval.base.EvalFunction
+            Evaluation function used to filter rows.
+        truth_value: scalar, defaut=True
+            Return value of the predicate that signals that the predicate is
+            satisfied by an input value.
+        limit: int, default=None
+            Limit the number of rows in the filtered data stream.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        # Create a new stream processor with a filter operator appended to the
+        # pipeline.
+        op = FilterOperator(predicate=predicate, truth_value=truth_value)
+        ds = self.append(op)
+        # Append a limit operator to the returned dataset if a limit is given.
+        return ds if limit is None else ds.limit(count=limit)
+
+    def head(self, count: Optional[int] = 10) -> pd.DataFrame:
+        """Return the first n rows in the data stream as a pandas data frame.
+        This is a short-cut for using a pipeline of .limit() and .to_df().
+
+        Parameters
+        ----------
+        count: int, default=10
+            Defines the maximum number of rows in the returned data frame.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        return self.limit(count=count).to_df()
 
     def iterrows(self):
         """Simulate the iterrows() function of a pandas DataFrame as it is used
@@ -337,11 +452,218 @@ class DataPipeline(DatasetStream):
             for rowid, row in self.reader.iterrows():
                 yield rowid, row
 
-    def open(self) -> DataPipeline:
-        """
+    def limit(self, count: int):
+        """Return a data stream for the data frame that will yield at most
+        the first n rows passed to it from an associated producer.
+
+        Parameters
+        ----------
+        count: int
+            Maximum number of rows in the returned data frame.
 
         Returns
         -------
-        openclean.data.stream.csv.CSVReader
+        openclean.data.stream.processor.StreamProcessor
+        """
+        return self.append(LimitOperator(limit=count))
+
+    def open(self) -> DataPipeline:
+        """Return reference to self when the pipeline is opened.
+
+        Returns
+        -------
+        openclean.pipeline.processor.producer.DataPipeline
         """
         return self
+
+    def profile(
+        self, profilers: Optional[ProfilerSpecs] = None,
+        default_profiler: Optional[Type] = None
+    ) -> List[Dict]:
+        """Profile one or more columns in the data stream. Returns a list of
+        profiler results for each profiled column.
+
+        By default each column in the data stream is profiled independently
+        using the default stream profiler. The optional list of profilers
+        allows to override the default behavior by providing a list of column
+        references (with optional profiler function). If only a column
+        reference is given the default stream profiler is used for the
+        referenced column.
+
+        Parameters
+        ----------
+        profilers: int, string, tuple, or list of tuples of column reference
+                and openclean.profiling.base.ProfilingFunction, default=None
+            Specify he list of columns that are profiled and the profiling
+            function. If only a column reference is given (not a tuple) the
+            default stream profiler is used for profiling the column.
+        default_profiler: class, default=None
+            Class object that is instanciated as the profiler for columns
+            that do not have a profiler instance speicified for them.
+
+        Returns
+        -------
+        list
+        """
+        # Ensure that profilers is a list.
+        if profilers is not None and not isinstance(profilers, list):
+            profilers = [profilers]
+        from openclean.profiling.dataset import ProfilingOperator
+        return self.stream(
+            ProfilingOperator(
+                profilers=profilers,
+                default_profiler=default_profiler
+            )
+        )
+
+    def run(self):
+        """Stream all rows from the associated data file to the data pipeline
+        that is associated with this processor. If an optional operator is
+        given, that operator will be appended to the current pipeline before
+        execution.
+
+        The returned value is the result that is returned when the consumer is
+        generated for the pipeline is closed after processing the data stream.
+
+        Returns
+        -------
+        any
+        """
+        # We only need to iterate over the data stream if the pipeline has at
+        # least one operator. Otherwise the instantiated pipeline does not have
+        # any consumer that coule generate a result.
+        if not self.pipeline:
+            return None
+        # Instantiate the consumer for the defined pipeline.
+        consumer = self.pipeline[0].open(
+            ds=self.reader,
+            schema=self.reader.columns,
+            upstream=[],
+            downstream=self.pipeline[1:]
+        )
+        # Stream all rows an pass them to the consumer.
+        for rowid, row in self.reader.iterrows():
+            try:
+                consumer.consume(rowid, row)
+            except StopIteration:
+                break
+        # Return the result from the consumer when closed at the end of the
+        # stream.
+        return consumer.close()
+
+    def select(self, *args):
+        """Select a given list of columns from the streamed data frame. Columns
+        may either be referenced by their index position or their name.
+
+        Returns a new data stream with the column filter set to the columns
+        that were in the argument list.
+
+        Parameters
+        ----------
+        args: list of int or string
+            List of column names or index positions.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        return self.append(SelectOperator(columns=list(args)))
+
+    def stream(self, op: StreamProcessor):
+        """Stream all rows from the associated data file to the data pipeline
+        that is associated with this processor. The given operator is appended
+        to the current pipeline before execution.
+
+        The returned value is the result that is returned when the consumer is
+        generated for the pipeline is closed after processing the data stream.
+
+        Parameters
+        -----------
+        op: openclean.pipeline.processor.base.StreamProcessor
+            Stream operator that is appended to the current pipeline
+            for execution.
+
+        Returns
+        -------
+        any
+        """
+        return self.append(op).run()
+
+    def to_df(self) -> pd.DataFrame:
+        """Collect all rows in the stream that are yielded by the associated
+        consumer into a pandas data frame.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        return self.stream(DataFrameOperator())
+
+    def update(self, *args):
+        """Update rows in a data frame. Expects a list of columns that are
+        updated. The last argument is expected to be an update function that
+        accepts as many arguments as there are columns in the argument list.
+
+        Raises a Value error if not enough arguments (at least two) are given.
+
+        Parameters
+        ----------
+        args: list of int or string
+            List of column names or index positions.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        args = list(args)
+        if len(args) < 1:
+            raise ValueError('not enough arguments for update')
+        columns = args[:-1]
+        func = get_update_function(func=args[-1], columns=columns)
+        return self.append(UpdateOperator(columns=columns, func=func))
+
+    def where(self, predicate: EvalFunction, limit: Optional[int] = None):
+        """Filter rows in the data stream that match a given condition. Returns
+        a new data stream with a consumer that filters the rows. Currently
+        expects an evaluation function as the row predicate.
+
+        Allows to limit the number of rows in the returned data stream.
+
+        This is a synonym for the filter() method.
+
+        Parameters
+        ----------
+        predicate: opencelan.function.eval.base.EvalFunction
+            Evaluation function used to filter rows.
+        limit: int, default=None
+            Limit the number of rows in the filtered data stream.
+
+        Returns
+        -------
+        openclean.data.stream.processor.StreamProcessor
+        """
+        return self.filter(predicate=predicate, limit=limit)
+
+    def write(
+        self, filename: str, delim: Optional[str] = None,
+        compressed: Optional[bool] = None
+    ):
+        """Write the rows in the data stream to a given CSV file.
+
+        Parameters
+        ----------
+        filename: string
+            Path to a CSV file output file on the local file system.
+        delim: string, default=None
+            The column delimiter used for the written CSV file.
+        compressed: bool, default=None
+            Flag indicating if the file contents of the created file are to be
+            compressed using gzip.
+        """
+        file = CSVFile(
+            filename=filename,
+            delim=delim,
+            compressed=compressed,
+            write=True
+        )
+        return self.stream(WriteOperator(file=file))

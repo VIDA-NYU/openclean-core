@@ -136,16 +136,17 @@ class DatasetProfile(list):
             total_count = stats['totalValueCount']
             empty_count = stats['emptyValueCount']
             distinct = stats.get('distinctValueCount')
-            if distinct is not None:
-                uniqueness = float(distinct) / float(total_count - empty_count)
+            non_empty = total_count - empty_count
+            if distinct is not None and non_empty > 0:
+                uniqueness = float(distinct) / float(non_empty)
             else:
                 uniqueness = None
             row = [
                 total_count,
                 empty_count,
                 distinct,
-                stats.get('entropy'),
-                uniqueness
+                uniqueness,
+                stats.get('entropy')
             ]
             data.append(row)
         return pd.DataFrame(data=data, index=self.columns, columns=columns)
