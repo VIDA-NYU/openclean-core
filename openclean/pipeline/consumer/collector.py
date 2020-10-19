@@ -137,54 +137,6 @@ class Distinct(StreamConsumer):
             self.counter[tuple(row)] += 1
 
 
-class PredicateCount(StreamConsumer):
-    """The predicate counter evaluates a given predicate on every row that is
-    passed to this consumer. It returnes the number of rows for which the
-    predicate evaluates to a given truth value.
-    """
-    def __init__(
-        self, predicate: EvalFunction, truth_value: Optional[bool] = True
-    ):
-        """Initialize the internal row counter.
-
-        Parameters
-        ----------
-        predicate: openclean.function.eval.base.EvalFunction, default=None
-            Predicate that is evaluated over a list of values. The predicate
-            has to be prepared.
-        truth_value: scalar, defaut=True
-            Predicate evaluation result that indicates that the predicate is
-            satisfied. The collector counts the number of rows for which the
-            predicate result equals this truth value.
-        """
-        self.predicate = predicate
-        self.truth_value = truth_value
-        self.count = 0
-
-    def close(self) -> int:
-        """Return the couter value.
-
-        Returns
-        -------
-        int
-        """
-        return self.count
-
-    def consume(self, rowid: int, row: List):
-        """Evaluate the predicate on the given row. Increament the counter if
-        the returned result equals the truth value.
-
-        Parameters
-        -----------
-        rowid: int
-            Unique row identifier
-        row: list
-            List of values in the row.
-        """
-        if self.predicate.eval(row) == self.truth_value:
-            self.count += 1
-
-
 class RowCount(StreamConsumer):
     """The row counter is a simple counter for the number of (rowid, row) pairs
     that are passed on to consumer.
