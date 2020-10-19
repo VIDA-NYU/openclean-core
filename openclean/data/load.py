@@ -11,7 +11,7 @@ import pandas as pd
 
 from typing import List, Optional, Union
 
-from openclean.data.column import ColumnName
+from openclean.data.types import ColumnName
 from openclean.data.stream.processor import StreamProcessor
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream

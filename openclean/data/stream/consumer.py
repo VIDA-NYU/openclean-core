@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from openclean.data.column import ColumnName
+from openclean.data.types import ColumnName
 from openclean.data.stream.csv import CSVWriter
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction

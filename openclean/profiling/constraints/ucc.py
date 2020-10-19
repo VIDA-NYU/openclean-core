@@ -14,7 +14,7 @@ from typing import List
 
 import pandas as pd
 
-from openclean.data.column import Columns
+from openclean.data.types import Columns
 
 
 class UniqueColumnCombinationFinder(metaclass=ABCMeta):

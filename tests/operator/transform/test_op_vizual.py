@@ -8,7 +8,7 @@
 import pytest
 
 from openclean import vizual
-from openclean.data.column import Column
+from openclean.data.types import Column
 
 
 def test_delete_columns(employees):
