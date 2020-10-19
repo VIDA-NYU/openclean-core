@@ -7,8 +7,9 @@
 
 """Unit tests for the Filter consumer for data streams."""
 
-from openclean.data.stream.consumer import Collector, Filter
 from openclean.function.eval.base import Col
+from openclean.pipeline.consumer.collector import Collector
+from openclean.pipeline.consumer.producer import Filter
 
 
 def test_filter_consumer():

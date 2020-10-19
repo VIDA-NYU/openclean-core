@@ -5,110 +5,76 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Base classes for counters that count values in a data stream that satisfy a
-given condition or predicate. In most cases, the data stream will be created
-from the values in a data frame column. The counter factory pattern is required
-for counters that are not universal but column specific, e.g., counting the
-number of distinct values in a column.
+"""Counter for profiling purposes. The Count class allows to evaluate a
+predicate on all rows in a data frame and count the number of rows that
+satisfy the predicate.
 """
 
-from collections import Counter
+from typing import Dict, Optional
 
-from typing import Callable, Optional, Union
+import pandas as pd
 
+from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Scalar
-from openclean.function.value.base import CallableWrapper, ValueFunction
-from openclean.profiling.base import Profiler, DistinctSetProfiler
+from openclean.function.eval.base import EvalFunction
+from openclean.pipeline.consumer.collector import RowCount
+from openclean.pipeline.processor.collector import CollectOperator
+from openclean.pipeline.processor.producer import FilterOperator
 
-import openclean.util as util
 
+def Count(
+    predicate=EvalFunction, truth_value: Optional[Scalar] = True
+) -> FilterOperator:
+    """Wrapper for predicates and their truth value. Returns a filter operator
+    that can then be used to count the number of rows that satisfy the
+    predicate.
 
-# -- Counters -----------------------------------------------------------------
+    Parameters
+    ----------
+    predicate: openclean.function.eval.base.EvalFunction
+        Evaluation function that is used as the predicate for filtering
+        data stream rows. The function will be prepared in the
+        create_consumer method.
+    truth_value: scalar, defaut=True
+        Return value of the predicate that signals that the predicate is
+        satisfied by an input value.
 
-class Count(DistinctSetProfiler):
-    """Count number of values in a given list that satisfy a given predicate.
+    Returns
+    -------
+    openclean.pipeline.processor.producer.FilterOperator
     """
-    def __init__(
-        self, predicate: Optional[Union[Callable, ValueFunction]] = None,
-        truth_value: Optional[Scalar] = True, name: Optional[str] = None
-    ):
-        """Initialize the predicate that is being evaluated.
-
-        Parameters
-        ----------
-        predicate: callable or openclean.function.base.ValueFunction
-            Predicate that is evaluated over a list of values.
-        truth_value: scalar, defaut=True
-            Return value of the predicate that signals that the predicate is
-            satisfied by an input value.
-        name: string, default=None
-            Count the occurrence of the truth value in a given set of values.
-        """
-        # Wrap the predicate if it is a simple callable.
-        if predicate is not None:
-            if not isinstance(predicate, ValueFunction):
-                predicate = CallableWrapper(func=predicate)
-        self.predicate = predicate
-        self.truth_value = truth_value
-
-    def process(self, values: Counter):
-        """Count the number of values in the given sequence that satisfy the
-        associated predicate.
-
-        Parameters
-        ----------
-        values: collections.Counter
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
-
-        Returns
-        -------
-        int
-        """
-        if self.predicate is not None:
-            counter = 0
-            for value, count in values.items():
-                if self.predicate.eval(value) == self.truth_value:
-                    counter += count
-            return counter
-        else:
-            return values.get(self.truth_value, 0)
+    return FilterOperator(predicate=predicate, truth_value=truth_value)
 
 
-class Counts(Profiler):
-    """The count operator takes a list of scalar predicates as input. It
-    evaluates the predicates for each value in a given sequence. The operator
-    returns a dictionary that contains the results from the individual
-    counters, keyed by their unique name.
+def counts(df: pd.DataFrame, counters: Dict[str, FilterOperator]) -> Dict:
+    """Evaluate a set of counters (predicates) on a given data frame. Expects
+    a mapping of elements to strema filter that evaluate a predicate. Returns
+    the number of filtered rows for each filter in the resulting dictionary.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Input data frame that is being profiled.
+    counters: dict
+        Dictionary mapping unique keys to filter operators that evaluate a
+        predicate on the rows of the data frame.
+
+    Returns
+    -------
+    dict
     """
-    def __init__(self, *args, **kwargs):
-        """Initialize the list of scalar predicates.
-
-        Parameters
-        ----------
-        args: callable, openclean.function.base.ValueFunction, or
-                openclean.profiling.count.Count
-            Predicates that are evaluated over a list of values.
-        truth_values: list, defaut=True
-            Truth values (one per predicate) that are the result values of the
-            respective predicate that indicate that the predicate is satisfied.
-        name: string, default=None
-            Optional unique function name.
-        """
-        # Ensure that truth values is a list.
-        truth_values = kwargs.get('truth_values')
-        if truth_values is not None:
-            if not isinstance(truth_values, list):
-                truth_values = [truth_values]
-        else:
-            truth_values = [True] * len(args)
-        # Raise an error if the two lists are not of same length
-        if len(args) != len(truth_values):
-            raise ValueError('incompatible lists')
-        counters = dict()
-        for f, truth_value in zip(args, truth_values):
-            key = util.funcname(f)
-            if not isinstance(f, Count):
-                f = Count(predicate=f, truth_value=truth_value)
-            counters[key] = f
-        super(Counts, self).__init__(profilers=counters)
+    ds = DataFrameStream(df)
+    consumers = dict()
+    for key, op in counters.items():
+        consumers[key] = op.open(
+            ds=ds,
+            schema=ds.columns,
+            downstream=[CollectOperator(RowCount)]
+        )
+    for rid, values in ds.iterrows():
+        for consumer in consumers.values():
+            consumer.consume(rowid=rid, row=values)
+    result = dict()
+    for key, consumer in consumers.items():
+        result[key] = consumer.close()
+    return result

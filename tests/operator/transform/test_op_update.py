@@ -7,7 +7,7 @@
 
 import pytest
 
-from openclean.data.column import Column
+from openclean.data.types import Column
 from openclean.function.eval.base import Col, Cols
 from openclean.function.value.mapping import Lookup
 from openclean.operator.transform.update import swap, update

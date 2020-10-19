@@ -14,8 +14,7 @@ import math
 import numpy as np
 
 from datetime import datetime
-from dateutil.parser import isoparse, parse
-from dateutil.tz import UTC
+from dateutil.parser import parse
 
 from openclean.data.types import Scalar
 from openclean.function.value.classifier import ClassLabel, ValueClassifier
@@ -74,15 +73,18 @@ def to_datetime(value, default_value=None, raise_error=False):
     -------
     datetime.datetime
     """
-    try:
-        # Parse timestamp in ISO format. Ensure that the timezone is UTC.
-        dt = isoparse(value)
-        if not dt.tzinfo == UTC:
-            dt = dt.astimezone(UTC)
-        return dt
-    except ValueError as ex:
-        if raise_error:
-            raise ex
+    if isinstance(value, datetime):
+        return value
+    # See below (is_datetime) for more information on our definition of a valid
+    # datetime.
+    if len(value) >= 6 and has_two_spec_chars(value):
+        try:
+            return parse(value, fuzzy=False)
+        except (OverflowError, TypeError, ValueError) as ex:
+            if raise_error:
+                raise ex
+    elif raise_error:
+        raise ValueError("not a valid date '{}'".format(value))
     return default_value
 
 

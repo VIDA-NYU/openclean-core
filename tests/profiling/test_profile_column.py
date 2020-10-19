@@ -16,8 +16,12 @@ def test_profile_single_column(schools):
     """Test profiling a single data frame column using the default profiler."""
     # -- Use default labels for result ----------------------------------------
     metadata = DefaultColumnProfiler(top_k=3).run(schools, 'grade')
-    assert metadata['minimumValue'] == '01'
-    assert metadata['maximumValue'] == 'MS Core'
+    assert len(metadata['minmaxValues']) == 2
+    assert metadata['minmaxValues']['int'] == {'minimum': 1, 'maximum': 8}
+    assert metadata['minmaxValues']['text'] == {
+        'minimum': '09-12',
+        'maximum': 'MS Core'
+    }
     assert metadata['totalValueCount'] == 100
     assert metadata['emptyValueCount'] == 6
     assert metadata['distinctValueCount'] == 12
@@ -30,26 +34,6 @@ def test_profile_single_column(schools):
         ("MS Core", 21),
         ("07", 8)
     ]
-    # -- Use custom labels for result -----------------------------------------
-    metadata = DefaultColumnProfiler(
-        label_datatypes='types',
-        label_distinct_values='distinct',
-        label_empty_count='empty',
-        label_min='min',
-        label_max='max',
-        label_top_values='topk',
-        label_total_count='total'
-    ).run(schools, 'grade')
-    assert metadata['min'] == '01'
-    assert metadata['max'] == 'MS Core'
-    assert metadata['total'] == 100
-    assert metadata['empty'] == 6
-    assert metadata['distinct'] == 12
-    assert metadata['types'] == {
-        'int': {'distinct': 8, 'total': 30},
-        'text': {'distinct': 4, 'total': 64}
-    }
-    assert len(metadata['topk']) == 10
 
 
 def test_profile_single_column_stream(schools):
@@ -58,21 +42,12 @@ def test_profile_single_column_stream(schools):
     """
     # -- Use default labels for result ----------------------------------------
     metadata = DefaultStreamProfiler().run(schools, 'grade')
-    assert metadata['minimumValue'] == '01'
-    assert metadata['maximumValue'] == 'MS Core'
+    assert len(metadata['minmaxValues']) == 2
+    assert metadata['minmaxValues']['int'] == {'minimum': 1, 'maximum': 8}
+    assert metadata['minmaxValues']['text'] == {
+        'minimum': '09-12',
+        'maximum': 'MS Core'
+    }
     assert metadata['totalValueCount'] == 100
     assert metadata['emptyValueCount'] == 6
     assert metadata['datatypes'] == {'int':  30, 'text': 64}
-    # -- Use custom labels for result -----------------------------------------
-    metadata = DefaultStreamProfiler(
-        label_datatypes='types',
-        label_empty_count='empty',
-        label_min='min',
-        label_max='max',
-        label_total_count='total'
-    ).run(schools, 'grade')
-    assert metadata['min'] == '01'
-    assert metadata['max'] == 'MS Core'
-    assert metadata['total'] == 100
-    assert metadata['empty'] == 6
-    assert metadata['types'] == {'int':  30, 'text': 64}

@@ -23,7 +23,8 @@ install_requires = [
     'Shapely>=1.7.0',
     'histore>=0.1.4',
     'fuzzyset==0.0.19',
-    'jellyfish'
+    'jellyfish',
+    'scipy'
 ]
 
 

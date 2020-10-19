@@ -11,7 +11,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import Iterator, List, Tuple
 
-from openclean.data.column import ColumnName
+from openclean.data.types import ColumnName
 
 
 # _- Data frame readers and writers -------------------------------------------

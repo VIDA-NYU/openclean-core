@@ -14,7 +14,7 @@ from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 
-from openclean.data.column import Column, Columns
+from openclean.data.types import Column, Columns
 
 
 def as_list(columns: Columns) -> List[Union[int, str, Column]]:

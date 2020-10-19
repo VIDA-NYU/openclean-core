@@ -14,7 +14,7 @@ import pandas as pd
 from collections import Counter
 from typing import Callable, List, Optional, Tuple, Union
 
-from openclean.data.column import Columns
+from openclean.data.types import Columns
 from openclean.data.select import as_list
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction, Cols, Col

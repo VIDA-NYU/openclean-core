@@ -66,7 +66,7 @@ class DataFrameStream(DatasetStream):
         self.df = df
 
     def open(self) -> DataFrameReader:
-        """Get a CSV reader for the associated CSV file.
+        """Get an iterator for the associated data frame.
 
         Returns
         -------

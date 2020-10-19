@@ -11,7 +11,7 @@ given data type constraint.
 
 from openclean.function.eval.base import Eval
 from openclean.function.value.datatype import (
-    is_datetime, is_float, is_int, is_nan, to_int, to_float
+    is_datetime, is_float, is_int, is_nan, to_datetime, to_int, to_float
 )
 
 
@@ -131,6 +131,42 @@ class IsNaN(Eval):
 
 
 # -- Type converters ----------------------------------------------------------
+
+class Datetime(Eval):
+    """Convert a given value to datetime. Raises an error if the given value
+    cannot be converted to datetime and the raise error flag is True. If the
+    flag is False, a given default value will be returned for thoses values
+    that cannot be converted to datetime.
+    """
+    def __init__(self, columns, default_value=None, raise_error=False):
+        """Create an instance of an float type cast function.
+
+        Parameters
+        ----------
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
+        default_value: scalar, default=None
+            Default value that is being returned for values that cannot be cast
+            to float if the raise_error flag is False.
+        raise_error: bool, default=False
+            Raise ValueError if the value cannot be cast to float.
+        """
+
+        def cast(value):
+            return to_datetime(
+                value,
+                default_value=default_value,
+                raise_error=raise_error
+            )
+
+        super(Datetime, self).__init__(
+            func=cast,
+            columns=columns,
+            is_unary=True
+        )
+
 
 class Float(Eval):
     """Convert a given value to float. Raises an error if the given value

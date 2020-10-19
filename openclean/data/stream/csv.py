@@ -12,7 +12,7 @@ from typing import List, Optional
 import csv
 import gzip
 
-from openclean.data.column import Column, ColumnName
+from openclean.data.types import Column, ColumnName
 from openclean.data.stream.base import DatasetIterator, DatasetStream
 
 

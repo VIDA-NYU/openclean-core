@@ -7,7 +7,7 @@
 
 """Unit tests for the DataFrame consumer for data streams."""
 
-from openclean.data.stream.consumer import DataFrame
+from openclean.pipeline.consumer.collector import DataFrame
 
 
 def test_data_frame_consumer():
