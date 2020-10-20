@@ -66,6 +66,8 @@ def counts(df: pd.DataFrame, counters: Dict[str, FilterOperator]) -> Dict:
     ds = DataFrameStream(df)
     consumers = dict()
     for key, op in counters.items():
+        if isinstance(op, EvalFunction):
+            op = Count(op)
         consumers[key] = op.open(
             ds=ds,
             schema=ds.columns,

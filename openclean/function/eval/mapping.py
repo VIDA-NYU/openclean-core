@@ -7,14 +7,17 @@
 
 """Value mapping and replacement operators."""
 
+from typing import Dict, Optional, Union
+
 import pandas as pd
 
+from openclean.data.types import Columns
 from openclean.data.util import to_lookup
 from openclean.function.base import scalar_pass_through
-from openclean.function.eval.base import Eval
+from openclean.function.eval.base import Eval, EvalFunction, PreparedEvalFunction, Col, Cols  # noqa: E501
 from openclean.function.value.base import ValueFunction
 from openclean.function.value.cond import ConditionalStatement
-from openclean.function.value.mapping import Lookup
+from openclean.function.value.mapping import Lookup as lookup
 
 
 # -- Value mapping ------------------------------------------------------------
@@ -65,7 +68,7 @@ class Map(Eval):
             mapping = to_lookup(mapping, key_columns, target_columns)
         if isinstance(mapping, dict):
             # If the mapping is a dictionary wrap it in a lookup table.
-            mapping = Lookup(
+            mapping = lookup(
                 mapping,
                 raise_error=raise_error,
                 default_value=default_value,
@@ -74,6 +77,88 @@ class Map(Eval):
         if not isinstance(mapping, ValueFunction):
             raise ValueError('could not convert mapping to value function')
         super(Map, self).__init__(columns=columns, func=mapping, is_unary=True)
+
+
+class Lookup(EvalFunction):
+    """A Lookup table is a special mapping function. For a given lookup value
+    the result is the mapped value from a given dictionary if a mapping exists.
+    Otherwise, the returned value is generated from a default value function.
+    If the default value function is not defined then the input value is
+    returned as the result.
+
+    The aim of this lookup function is to allow translation of values in one
+    column based on an incomplete lookup table for a separate column. This
+    allows to keep the current value in the updated column for those values
+    that are not included in the mapping.
+    """
+    def __init__(
+        self, columns: Union[Columns, EvalFunction], mapping: Dict,
+        default: Optional[EvalFunction] = None
+    ):
+        """Initialize the mapping and the default value function.
+
+        Parameters
+        ----------
+        columns: list, tuple, or openclean.function.eval.base.EvalFunction
+            Evaluation function to extract values from data frame rows. This
+            can also be a list or tuple of evaluation functions or a list of
+            column names or index positions.
+        mapping: dict
+            Mapping from input to output values. The type of the keys in the
+            mapping dictionary are expected to match the value type that is
+            defined by the columns list.
+        default: openclean.function.eval.base.EvalFunction, default=None
+            Evaluation function to generate the mapping result for input values
+            that are not in the given mapping.
+        """
+        if isinstance(columns, EvalFunction):
+            self.columns = columns
+        elif isinstance(columns, list):
+            self.columns = Cols(columns)
+        else:
+            self.columns = Col(columns)
+        self.mapping = mapping
+        self.default = default
+
+    def eval(self, values):
+        """Lookup the mapping for the value(s) that are returned by the columns
+        function. If no correspondng entry is found we either invoke the
+        default value function or return the original column value(s).
+
+        Parameters
+        ----------
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        value = self.columns.eval(values)
+        if value in self.mapping:
+            return self.mapping[value]
+        elif self.default is not None:
+            return self.default.eval(values)
+        return value
+
+    def prepare(self, df):
+        """Return a lookup function where all evaluation functions are
+        prepared.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        return Lookup(
+            columns=self.columns.prepare(df),
+            mapping=self.mapping,
+            default=self.default.prepare(df) if self.default else None
+        )
 
 
 class Replace(Eval):
