@@ -42,6 +42,10 @@ def test_keyviolations_parking(parking):
     groups = key_violations(parking, columns='Plate ID')
     assert len(groups) == 3
 
+    # also ensures nan duplicates don't break the violation operations
+    groups = key_violations(parking, columns=['Street'])
+    assert len(groups) == 21
+
     groups = key_violations(parking, columns=['Plate ID', 'Meter Number'])
     assert len(groups) == 2
 
