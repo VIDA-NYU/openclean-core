@@ -19,7 +19,9 @@ from typing import Optional
 from openclean.data.types import Scalar
 from openclean.function.value.null import is_empty
 from openclean.profiling.base import DataStreamProfiler, DistinctSetProfiler
-from openclean.profiling.datatype import DatatypeConverter, DefaultConverter
+from openclean.profiling.datatype.convert import (
+    DatatypeConverter, DefaultConverter
+)
 from openclean.profiling.stats import MinMaxCollector
 
 import openclean.profiling.stats as stats
@@ -138,7 +140,8 @@ class DefaultColumnProfiler(DistinctSetProfiler):
         ----------
         top_k: int, default=10
             Include the k most frequent values in the result.
-        converter: openclean.profiling.datatype.DatatypeConverter, default=None
+        converter: openclean.profiling.datatype.convert.DatatypeConverter,
+                default=None
             Datatype converter that is used to determing the type of the
             values in the data stream.
         """
@@ -189,7 +192,8 @@ class DefaultStreamProfiler(DataStreamProfiler):
 
         Parameters
         ----------
-        converter: openclean.profiling.datatype.DatatypeConverter, default=None
+        converter: openclean.profiling.datatype.convert.DatatypeConverter,
+                default=None
             Datatype converter that is used to determing the type of the
             values in the data stream.
         """

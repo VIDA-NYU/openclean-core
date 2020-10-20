@@ -15,6 +15,7 @@ import numpy as np
 
 from datetime import datetime
 from dateutil.parser import parse
+from typing import Callable, List, Optional, Union
 
 from openclean.data.types import Scalar
 from openclean.function.value.classifier import ClassLabel, ValueClassifier
@@ -22,7 +23,10 @@ from openclean.function.value.classifier import ClassLabel, ValueClassifier
 
 # -- Type cast function -------------------------------------------------------
 
-def cast(value, func, default_value=None, raise_error=False):
+def cast(
+    value: Scalar, func: Callable, default_value: Optional[Scalar] = None,
+    raise_error: Optional[bool] = False
+) -> Scalar:
     """Generic type cast function. Attempts to cast values to a type (by using
     a provided callable). If type cast fails (i.e., the callable raises a
     aValueError) (i) an error is raised if the raise error flag is True, or
@@ -49,13 +53,16 @@ def cast(value, func, default_value=None, raise_error=False):
     """
     try:
         return func(value)
-    except ValueError as ex:
+    except (OverflowError, TypeError, ValueError) as ex:
         if raise_error:
             raise ex
     return default_value
 
 
-def to_datetime(value, default_value=None, raise_error=False):
+def to_datetime(
+    value: Scalar, default_value: Optional[Scalar] = None,
+    raise_error: Optional[bool] = False
+) -> Scalar:
     """Converts a timestamp string in ISO format into a datatime object in
     UTC timezone.
 
@@ -71,7 +78,7 @@ def to_datetime(value, default_value=None, raise_error=False):
 
     Returns
     -------
-    datetime.datetime
+    scalar
     """
     if isinstance(value, datetime):
         return value
@@ -88,7 +95,10 @@ def to_datetime(value, default_value=None, raise_error=False):
     return default_value
 
 
-def to_float(value, default_value=None, raise_error=False):
+def to_float(
+    value: Scalar, default_value: Optional[Scalar] = None,
+    raise_error: Optional[bool] = False
+) -> Scalar:
     """Convert a given value to float. Raises an error if the given value
     cannot be converted to float and the raise error flag is True. If the
     flag is False, a given default value will be returned for thoses values
@@ -103,6 +113,10 @@ def to_float(value, default_value=None, raise_error=False):
         float if the raise_error flag is False.
     raise_error: bool, default=False
         Raise ValueError if the value cannot be cast to float.
+
+    Returns
+    -------
+    scalar
     """
     return cast(
         value,
@@ -112,7 +126,10 @@ def to_float(value, default_value=None, raise_error=False):
     )
 
 
-def to_int(value, default_value=None, raise_error=False):
+def to_int(
+    value: Scalar, default_value: Optional[Scalar] = None,
+    raise_error: Optional[bool] = False
+) -> Scalar:
     """Convert a given value to integer. Raises an error if the given value
     cannot be converted to integer and the raise error flag is True. If the
     flag is False, a given default value will be returned for thoses values
@@ -127,6 +144,10 @@ def to_int(value, default_value=None, raise_error=False):
         integer if the raise_error flag is False.
     raise_error: bool, default=False
         Raise ValueError if the value cannot be cast to integer.
+
+    Returns
+    -------
+    scalar
     """
     return cast(
         value,
@@ -136,10 +157,30 @@ def to_int(value, default_value=None, raise_error=False):
     )
 
 
+def to_string(value: Scalar) -> bool:
+    """Type cast function that tests if a given value is of type string.
+    Returns the value if it is of type string or None, otherwise.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value that is tested for being a number.
+
+    Returns
+    -------
+    bool
+    """
+    if isinstance(value, str):
+        return value
+
+
 # -- Type check functions -----------------------------------------------------
 
 
-def is_datetime(value, formats=None, typecast=True):
+def is_datetime(
+    value: Scalar, formats: Optional[Union[str, List[str]]] = None,
+    typecast: Optional[bool] = True
+) -> bool:
     """Test if a given string value can be converted into a datetime object for
     a given data format. The function accepts a single date format or a list of
     formates. If no format is given, ISO format is assumed as the default.
@@ -206,7 +247,7 @@ def is_datetime(value, formats=None, typecast=True):
     return False
 
 
-def is_float(value, typecast=True):
+def is_float(value: Scalar, typecast: Optional[bool] = True) -> bool:
     """Test if a given value is of type float. If the type cast flag is True,
     any string value that can successfully be converted to float will also be
     accepted.
@@ -234,7 +275,7 @@ def is_float(value, typecast=True):
     return True
 
 
-def is_int(value, typecast=True):
+def is_int(value: Scalar, typecast: Optional[bool] = True) -> bool:
     """Test if a given value is of type integer. If the type cast flag is True,
     any string value that can successfully be converted to integer will also be
     accepted.
@@ -262,7 +303,7 @@ def is_int(value, typecast=True):
     return True
 
 
-def is_nan(value):
+def is_nan(value: Scalar) -> bool:
     """Test if a given value is a number. Returns True if the given value is
     not a number.
 
@@ -283,7 +324,10 @@ def is_nan(value):
         return False
 
 
-def is_numeric(value, typecast=True, ignore_nan=True):
+def is_numeric(
+    value: Scalar, typecast: Optional[bool] = True,
+    ignore_nan: Optional[bool] = True
+) -> bool:
     """Test if a given value is of type integer or float. If the type cast flag
     is True, any string value that can successfully be converted to integer or
     float will also be accepted.
@@ -319,7 +363,7 @@ def is_numeric(value, typecast=True, ignore_nan=True):
     return True
 
 
-def is_numeric_type(value):
+def is_numeric_type(value: Scalar) -> bool:
     """Test if a given value is of type integer or float (or the numpy
     equivalent). Does not attempt to cast string values.
 
@@ -370,7 +414,11 @@ def has_two_spec_chars(value: Scalar) -> bool:
 
 class Datetime(ClassLabel):
     """Class label assigner for datetime values."""
-    def __init__(self, label='datetime', formats=None, typecast=True):
+    def __init__(
+        self, label: Optional[str] = 'datetime',
+        formats: Optional[Union[str, List[str]]] = None,
+        typecast: Optional[bool] = True
+    ):
         """Initialize the class label and set the type cast flag.
 
         Parameters
@@ -392,7 +440,9 @@ class Datetime(ClassLabel):
 
 class Float(ClassLabel):
     """Class label assigner for float values."""
-    def __init__(self, label='float', typecast=True):
+    def __init__(
+        self, label: Optional[str] = 'float', typecast: Optional[bool] = True
+    ):
         """Initialize the class label and set the type cast flag.
 
         Parameters
@@ -411,7 +461,9 @@ class Float(ClassLabel):
 
 class Int(ClassLabel):
     """Class label assigner for integer values."""
-    def __init__(self, label='int', typecast=True):
+    def __init__(
+        self, label: Optional[str] = 'int', typecast: Optional[bool] = True
+    ):
         """Initialize the class label and set the type cast flag.
 
         Parameters

@@ -15,11 +15,13 @@ from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import ColumnName
 from openclean.pipeline.processor.producer import DataPipeline
+from openclean.profiling.datatype.convert import DatatypeConverter
 
 
 def dataset(
     filename: str, header: Optional[List[ColumnName]] = None,
-    delim: Optional[str] = None, compressed: Optional[bool] = None
+    delim: Optional[str] = None, compressed: Optional[bool] = None,
+    typecast: Optional[DatatypeConverter] = None
 ) -> pd.DataFrame:
     """Read a pandas data frame from a CSV file. This function infers the
     CSV file delimiter and compression from the file name (if not specified).
@@ -42,6 +44,9 @@ def dataset(
     compressed: bool, default=None
         Flag indicating if the file contents have been compressed using
         gzip.
+    typecast: openclean.profiling.datatype.convert.DatatypeConverter,
+            default=None
+        Optional type cnverter that is applied to all data rows.
 
     Returns
     -------
@@ -56,6 +61,8 @@ def dataset(
     with file.open() as reader:
         data, index = list(), list()
         for rowid, row in reader:
+            if typecast is not None:
+                row = [typecast.cast(v) for v in row]
             data.append(row)
             index.append(rowid)
         return pd.DataFrame(data=data, columns=file.columns, index=index)
@@ -84,7 +91,7 @@ def stream(
 
     Returns
     -------
-    openclean.data.stream.processor.StreamProcessor
+    openclean.pipeline.processor.DataPipeline
     """
     if isinstance(filename, pd.DataFrame):
         file = DataFrameStream(df=filename)

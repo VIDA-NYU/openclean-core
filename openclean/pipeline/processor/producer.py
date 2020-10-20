@@ -36,6 +36,7 @@ from openclean.pipeline.processor.collector import (
     CollectOperator, DataFrameOperator, WriteOperator
 )
 from openclean.profiling.base import ProfilingFunction
+from openclean.profiling.datatype.convert import DatatypeConverter
 
 
 # -- Pipeline operators -------------------------------------------------------
@@ -62,7 +63,7 @@ class ProducingOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.data.stream.consumer.StreamConsumer, list of string
+        openclean.pipeline.consumer.base.StreamConsumer, list of string
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -93,7 +94,7 @@ class ProducingOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.data.stream.consumer.StreamConsumer
+        openclean.pipeline.consumer.base.StreamConsumer
         """
         # Get an instance of the consumer. Defer setting the downstream
         # consumer.
@@ -152,7 +153,7 @@ class FilterOperator(ProducingOperator):
 
         Returns
         -------
-        openclean.data.stream.consumer.Filter
+        openclean.pipeline.consumer.producer.Filter
         """
         # Prepare the predicate.
         prep_pred = self.predicate.prepare(ds)
@@ -191,7 +192,7 @@ class LimitOperator(ProducingOperator):
 
         Returns
         -------
-        openclean.data.stream.consumer.Limit
+        openclean.pipeline.consumer.producer.Limit
         """
         return Limit(limit=self.limit), ds.columns
 
@@ -226,7 +227,7 @@ class SelectOperator(ProducingOperator):
 
         Returns
         -------
-        openclean.data.stream.consumer.Select
+        openclean.pipeline.consumer.producer.Select
         """
         # Get names and index positions for the filtered columns.
         colnames, colidxs = select_clause(ds, self.columns)
@@ -267,7 +268,7 @@ class UpdateOperator(ProducingOperator):
 
         Returns
         -------
-        openclean.data.stream.consumer.Update
+        openclean.pipeline.consumer.producer.Update
         """
         # Get index positions for the updated columns.
         _, colidxs = select_clause(ds, self.columns)
@@ -344,7 +345,7 @@ class DataPipeline(DatasetStream):
 
         Returns
         -------
-        openclean.data.stream.processor.StreamProcessor
+        openclean.pipeline.processor.DataPipeline
         """
         return DataPipeline(
             reader=self.reader,
@@ -385,7 +386,7 @@ class DataPipeline(DatasetStream):
     def filter(
         self, predicate: EvalFunction, truth_value: Optional[Scalar] = True,
         limit: Optional[int] = None
-    ):
+    ) -> DataPipeline:
         """Filter rows in the data stream that match a given condition. Returns
         a new data stream with a consumer that filters the rows. Currently
         expects an evaluation function as the row predicate.
@@ -404,7 +405,7 @@ class DataPipeline(DatasetStream):
 
         Returns
         -------
-        openclean.data.stream.processor.StreamProcessor
+        openclean.pipeline.processor.DataPipeline
         """
         # Create a new stream processor with a filter operator appended to the
         # pipeline.
@@ -452,7 +453,7 @@ class DataPipeline(DatasetStream):
             for rowid, row in self.reader.iterrows():
                 yield rowid, row
 
-    def limit(self, count: int):
+    def limit(self, count: int) -> DataPipeline:
         """Return a data stream for the data frame that will yield at most
         the first n rows passed to it from an associated producer.
 
@@ -463,7 +464,7 @@ class DataPipeline(DatasetStream):
 
         Returns
         -------
-        openclean.data.stream.processor.StreamProcessor
+        openclean.pipeline.processor.DataPipeline
         """
         return self.append(LimitOperator(limit=count))
 
@@ -551,7 +552,7 @@ class DataPipeline(DatasetStream):
         # stream.
         return consumer.close()
 
-    def select(self, *args):
+    def select(self, *args) -> DataPipeline:
         """Select a given list of columns from the streamed data frame. Columns
         may either be referenced by their index position or their name.
 
@@ -565,7 +566,7 @@ class DataPipeline(DatasetStream):
 
         Returns
         -------
-        openclean.data.stream.processor.StreamProcessor
+        openclean.pipeline.processor.DataPipeline
         """
         return self.append(SelectOperator(columns=list(args)))
 
@@ -599,7 +600,27 @@ class DataPipeline(DatasetStream):
         """
         return self.stream(DataFrameOperator())
 
-    def update(self, *args):
+    def typecast(
+        self, converter: Optional[DatatypeConverter] = None
+    ) -> DataPipeline:
+        """Typecast operator that converts cell values in data stream rows to
+        different raw types that are represented by the given type converter.
+
+        Parameters
+        ----------
+        converter: openclean.profiling.datatype.convert.DatatypeConverter,
+                default=None
+            Datatype converter for values data stream. Uses the default
+            converter if no converter is given.
+
+        Returns
+        -------
+        openclean.pipeline.processor.DataPipeline
+        """
+        from openclean.profiling.datatype.operator import TypecastOperator
+        return self.append(TypecastOperator(converter=converter))
+
+    def update(self, *args) -> DataPipeline:
         """Update rows in a data frame. Expects a list of columns that are
         updated. The last argument is expected to be an update function that
         accepts as many arguments as there are columns in the argument list.
@@ -622,7 +643,9 @@ class DataPipeline(DatasetStream):
         func = get_update_function(func=args[-1], columns=columns)
         return self.append(UpdateOperator(columns=columns, func=func))
 
-    def where(self, predicate: EvalFunction, limit: Optional[int] = None):
+    def where(
+        self, predicate: EvalFunction, limit: Optional[int] = None
+    ) -> DataPipeline:
         """Filter rows in the data stream that match a given condition. Returns
         a new data stream with a consumer that filters the rows. Currently
         expects an evaluation function as the row predicate.
@@ -640,7 +663,7 @@ class DataPipeline(DatasetStream):
 
         Returns
         -------
-        openclean.data.stream.processor.StreamProcessor
+        openclean.pipeline.processor.DataPipeline
         """
         return self.filter(predicate=predicate, limit=limit)
 

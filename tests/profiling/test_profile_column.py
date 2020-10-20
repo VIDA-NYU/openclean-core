@@ -18,7 +18,7 @@ def test_profile_single_column(schools):
     metadata = DefaultColumnProfiler(top_k=3).run(schools, 'grade')
     assert len(metadata['minmaxValues']) == 2
     assert metadata['minmaxValues']['int'] == {'minimum': 1, 'maximum': 8}
-    assert metadata['minmaxValues']['text'] == {
+    assert metadata['minmaxValues']['str'] == {
         'minimum': '09-12',
         'maximum': 'MS Core'
     }
@@ -27,7 +27,7 @@ def test_profile_single_column(schools):
     assert metadata['distinctValueCount'] == 12
     assert metadata['datatypes'] == {
         'int': {'distinct': 8, 'total': 30},
-        'text': {'distinct': 4, 'total': 64}
+        'str': {'distinct': 4, 'total': 64}
     }
     assert metadata['topValues'] == [
         ("09-12", 38),
@@ -44,10 +44,10 @@ def test_profile_single_column_stream(schools):
     metadata = DefaultStreamProfiler().run(schools, 'grade')
     assert len(metadata['minmaxValues']) == 2
     assert metadata['minmaxValues']['int'] == {'minimum': 1, 'maximum': 8}
-    assert metadata['minmaxValues']['text'] == {
+    assert metadata['minmaxValues']['str'] == {
         'minimum': '09-12',
         'maximum': 'MS Core'
     }
     assert metadata['totalValueCount'] == 100
     assert metadata['emptyValueCount'] == 6
-    assert metadata['datatypes'] == {'int':  30, 'text': 64}
+    assert metadata['datatypes'] == {'int':  30, 'str': 64}
