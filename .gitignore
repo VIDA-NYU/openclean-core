@@ -105,3 +105,6 @@ ENV/
 # Local dev config
 
 resources/config/localdev
+
+# Example data for NYC Restaurant Inspection Demo
+examples/notebooks/NYCRestaurantInspections/data/
