@@ -30,7 +30,7 @@ class CollectOperator(StreamProcessor):
 
         Parameters
         ----------
-        cls: class definition of openclean.data.stream.consumer.StreamConsumer
+        cls: class of openclean.pipeline.consumer.base.StreamConsumer
             Class of the consumer that is instantiated by the operator.
         args: variable argument list
             Additional arguments for the consumer class constructor.
@@ -66,7 +66,7 @@ class CollectOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.data.stream.consumer.StreamConsumer
+        oopenclean.pipeline.consumer.base.StreamConsumer
         """
         return self.cls(*self.args, **self.kwargs)
 
@@ -99,7 +99,7 @@ class DataFrameOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.data.stream.consumer.DataFrame
+        openclean.pipeline.consumer.collector.DataFrame
         """
         return DataFrame(columns=schema)
 
@@ -143,6 +143,6 @@ class WriteOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.data.stream.consumer.Write
+        openclean.pipeline.consumer.collector.Write
         """
         return Write(self.file.write(header=schema))

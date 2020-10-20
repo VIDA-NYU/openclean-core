@@ -65,6 +65,22 @@ class DatatypeConverter(object):
         # have a raw data type associated with them.
         self.rawtypes = [(rt, lbl) for rt, lbl, _ in datatypes if rt]
 
+    def cast(self, value: Scalar) -> Scalar:
+        """Convert a given value. Returns the resulting value without the type
+        label.
+
+        Parameters
+        ----------
+        value: scalar
+            Value that is converted for data type detection.
+
+        Returns
+        -------
+        scalar
+        """
+        val, _ = self.convert(value)
+        return val
+
     def convert(self, value: Scalar) -> Tuple[Scalar, str]:
         """Convert a given value. Returns a tuple of converted value and type
         label.
@@ -99,7 +115,7 @@ def DefaultConverter() -> DatatypeConverter:
 
     Returns
     -------
-    openclean.profiling.datatype.DatatypeConverter
+    openclean.profiling.datatype.convert.DatatypeConverter
     """
     return DatatypeConverter(
         datatypes=[

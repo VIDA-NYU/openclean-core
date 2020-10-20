@@ -328,7 +328,7 @@ class ProfilingOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.data.stream.consumer.Profile
+        openclean.profiling.dataset.Profile
         """
         # Create a list of (column index, profiling function)-pairs that is
         # passed to the profiling cnsumer. That consumer will (i) open the

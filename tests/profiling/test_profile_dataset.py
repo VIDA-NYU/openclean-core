@@ -73,7 +73,7 @@ def test_dataset_profile_minmax(schools):
     grades_1 = dataset_profile(schools).minmax('grade')
     assert len(grades_1) == 2
     assert list(grades_1.loc['int']) == [1, 8]
-    assert list(grades_1.loc['text']) == ['09-12', 'MS Core']
+    assert list(grades_1.loc['str']) == ['09-12', 'MS Core']
 
 
 def test_dataset_profile_stats(nyc311):
@@ -102,7 +102,7 @@ def test_dataset_profile_types(schools):
     """Test getting data frame with data type statistics using the dataset
     profile class that wraps the profiler results.
     """
-    TYPES_SCHEMA = ['float', 'int', 'text']
+    TYPES_SCHEMA = ['float', 'int', 'str']
     # -- Test the default stream profiler -------------------------------------
     df_dist = dataset_profile(schools).types()
     assert df_dist.shape == (6, len(TYPES_SCHEMA))

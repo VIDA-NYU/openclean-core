@@ -84,7 +84,7 @@ def stream(
 
     Returns
     -------
-    openclean.data.stream.processor.StreamProcessor
+    openclean.pipeline.processor.DataPipeline
     """
     if isinstance(filename, pd.DataFrame):
         file = DataFrameStream(df=filename)
