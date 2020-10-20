@@ -60,6 +60,21 @@ class DatasetProfile(list):
         self.append({'column': name, 'stats': stats})
         self.columns.append(name)
 
+    def column(self, name: ColumnRef) -> Dict:
+        """Get the profiling results for a given column.
+
+        Parameters
+        ----------
+        name: int or string
+            Name or index position of the referenced column.
+
+        Returns
+        -------
+        dict
+        """
+        _, colidx = select_clause(self.columns, name)
+        return self[colidx[0]]['stats']
+
     def minmax(self, column: Union[int, str]) -> pd.DataFrame:
         """Get data frame with (min, max)-values for all data types in a given
         column.
