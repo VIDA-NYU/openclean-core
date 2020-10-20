@@ -38,6 +38,7 @@ def groupby(df, columns, func=None, having=None):
         If given, group by only returns groups that (i) have a number of rows that equals a given int or
         (ii) (if a callable is given) we pass the group to that callable as an argument and if
         the returned result is True the group is included in the returned result.
+        The callable should expect a pandas dataframe and return a boolean
 
     Returns
     -------
@@ -46,10 +47,13 @@ def groupby(df, columns, func=None, having=None):
     gpby = GroupBy(columns=columns, func=func)
     all_groups = gpby.map(df=df)
 
-    selected_groups = DataFrameGrouping(df=df)
-    for key, group in all_groups.groups():
-        if GroupBy.select(group, having):
-            selected_groups.add(key=key, rows=list(group.index))
+    if having is not None:
+        selected_groups = DataFrameGrouping(df=df)
+        for key, group in all_groups.groups():
+            if GroupBy.select(group, having):
+                selected_groups.add(key=key, rows=list(group.index))
+    else:
+        selected_groups = all_groups
 
     return selected_groups
 

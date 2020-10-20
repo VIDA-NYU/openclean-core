@@ -5,10 +5,10 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for FDViolation operator."""
+"""Unit tests for the violations operators"""
 
 from openclean.operator.collector.count import distinct
-from openclean.operator.map.violations import fd_violations, key_violations, n_violations
+from openclean.operator.map.violations import fd_violations, key_violations
 
 
 def test_fdviolation_operator(agencies):
@@ -47,5 +47,8 @@ def test_keyviolations_parking(parking):
 
 def test_nviolations_parking(parking):
     """Ensure we can select groups with exactly n=2 violations"""
-    groups = n_violations(df=parking, columns='Plate ID', n=2)
+    groups = key_violations(df=parking, columns='Plate ID', n=2)
     assert len(groups) == 3
+
+    groups = key_violations(df=parking, columns=['Plate ID', 'Meter Number'], n=2)
+    assert len(groups) == 2
