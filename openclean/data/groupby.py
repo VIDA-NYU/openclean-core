@@ -4,6 +4,7 @@
 #
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
+from collections import defaultdict
 
 """Base class for data frame groupings. A data frame grouping splits a data
 frame into multiple (potentially overlapping) data frames with the same schema.
@@ -131,3 +132,59 @@ class DataFrameGrouping(object):
         set
         """
         return set(self._groups.keys())
+
+
+class DataFrameViolation(DataFrameGrouping):
+    """Subclass of DataFrame Grouping which maintains extra meta value information related to a violation
+    """
+    def __init__(self, df, lhs, rhs):
+        """
+        Initializes the DataFrameViolation object
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            the input dataframe
+        lhs: list or str
+            the left hand side of the violation operation / determinant column(s)
+        rhs: list or str
+            the right side of the violation operaion / dependant column(s)
+        """
+        super(DataFrameViolation, self).__init__(df)
+        self._meta = defaultdict() # this is a dict of collections.Counter
+        self._lhs = lhs
+        self._rhs = rhs
+
+    def get_meta(self, key):
+        """Returns the counter for a key
+
+        Parameters
+        ----------
+        key: str
+            the key for the dataframe group
+        Returns
+        -------
+        collections.Counter
+        """
+        if key not in self._meta:
+            return None
+        return self._meta[key]
+
+    def add(self, key, rows, meta=None):
+        """Adds key:meta and key:rows to self._meta and self._groups respectively
+
+        Parameters
+        ----------
+        key: str
+            key for the group
+        rows: list
+            list of indices for the group
+        meta: Counter (Optional)
+            meta data counters for the group
+
+        Returns
+        -------
+        openclean.data.groupby.DataFrameViolation
+        """
+        self._meta[key] = meta
+        return super(DataFrameViolation, self).add(key, rows)
