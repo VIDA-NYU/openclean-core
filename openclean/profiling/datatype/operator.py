@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple
 
 from openclean.data.types import ColumnName
 from openclean.data.stream.base import DatasetStream
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 from openclean.pipeline.consumer.producer import ProducingConsumer
 from openclean.pipeline.processor.producer import ProducingOperator
 from openclean.profiling.datatype.convert import (
@@ -35,7 +35,7 @@ class Typecast(ProducingConsumer):
                 default=None
             Datatype converter for values data stream. Uses the default
             converter if no converter is given.
-        consumer: openclean.pipeline.consumer.base.StreamConsumer, default=None
+        consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer for converted rows.
         """
         super(Typecast, self).__init__(consumer)

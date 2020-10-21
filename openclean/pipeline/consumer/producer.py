@@ -15,7 +15,7 @@ from typing import Any, List, Optional
 
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 
 
 class ProducingConsumer(StreamConsumer):
@@ -29,7 +29,7 @@ class ProducingConsumer(StreamConsumer):
 
         Parameters
         ----------
-        consumer: openclean.pipeline.consumer.base.StreamConsumer, default=None
+        consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer for processed rows.
         """
         self.consumer = consumer
@@ -105,7 +105,7 @@ class Filter(ProducingConsumer):
         truth_value: scalar, defaut=True
             Return value of the predicate that signals that the predicate is
             satisfied by an input value.
-        consumer: openclean.pipeline.consumer.base.StreamConsumer, default=None
+        consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer for rows that satisfy the given predicate.
         """
         super(Filter, self).__init__(consumer)
@@ -144,7 +144,7 @@ class Limit(ProducingConsumer):
         limit: int
             Maximum number of rows that are passed on to the downstream
             consumer.
-        consumer: openclean.pipeline.consumer.base.StreamConsumer, default=None
+        consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer.
         """
         super(Limit, self).__init__(consumer)
@@ -188,7 +188,7 @@ class Select(ProducingConsumer):
         columns: list of int
             List of column index positions for the columns that are included in
             the processed rows.
-        consumer: openclean.pipeline.consumer.base.StreamConsumer, default=None
+        consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer.
         """
         super(Select, self).__init__(consumer)
@@ -232,7 +232,7 @@ class Update(ProducingConsumer):
         func: openclean.function.eval.base.EvalFunction
             Evaluation function that is used to generate values for the updated
             columns in each row of the data stream.
-        consumer: openclean.pipeline.consumer.base.StreamConsumer, default=None
+        consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer for updated rows.
         """
         super(Update, self).__init__(consumer)

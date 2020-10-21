@@ -20,7 +20,7 @@ import pandas as pd
 from openclean.data.types import ColumnName
 from openclean.data.stream.csv import CSVWriter
 from openclean.function.eval.base import EvalFunction
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 
 
 class Collector(StreamConsumer):

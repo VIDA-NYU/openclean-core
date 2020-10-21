@@ -658,6 +658,9 @@ class Const(PreparedEvalFunction):
         """
         return self.value
 
+    def filter(self, df):
+        return self.value
+
 
 # -- Column function ----------------------------------------------------------
 
@@ -715,6 +718,10 @@ class Col(EvalFunction):
         """
         _, colidx = select_clause(df, columns=self.columns)
         return Col(columns=self.columns, colidx=colidx[0])
+
+    def filter(self, df):
+        _, colidx = select_clause(df, columns=self.columns)
+        return df.iloc[:, colidx[0]]
 
 
 class Cols(EvalFunction):
@@ -875,7 +882,6 @@ class Eq(BinaryOperator):
             raise_error=raise_error,
             default_value=False
         )
-        self.ignore_case = ignore_case
 
     def compare(self, lhs, rhs):
         """Compare two values and return True if they are equal.
@@ -901,6 +907,9 @@ class Eq(BinaryOperator):
             else:
                 rhs = rhs.lower()
         return lhs == rhs
+
+    def filter(self, df):
+        return self.lhs.filter(df) == self.rhs.filter(df)
 
 
 class EqIgnoreCase(Eq):

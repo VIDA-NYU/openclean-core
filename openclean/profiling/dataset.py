@@ -18,7 +18,7 @@ from openclean.data.select import select_clause
 from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import ColumnRef
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 from openclean.pipeline.processor.base import StreamProcessor
 from openclean.profiling.base import ProfilingFunction
 from openclean.profiling.column import (

@@ -124,6 +124,9 @@ class Filter(DataFrameTransformer):
         -------
         pandas.DataFrame
         """
+        smap = self.predicate.filter(df)
+        return df[smap]
+        """
         # Prepare the predicate if it is an evaluation function.
         f = self.predicate.prepare(df)
         # Create a Boolean array to maintain information about the rows that
@@ -139,7 +142,7 @@ class Filter(DataFrameTransformer):
         # Return data frame containing only those rows for which the predicate
         # was satisfied.
         return df[smap]
-
+        """
 
 # -- Helper Methods -----------------------------------------------------------
 

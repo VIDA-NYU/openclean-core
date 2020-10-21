@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from openclean.data.stream.base import DatasetStream
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 from openclean.pipeline.consumer.collector import DataFrame, Write
 from openclean.pipeline.processor.base import StreamProcessor
 
@@ -30,7 +30,7 @@ class CollectOperator(StreamProcessor):
 
         Parameters
         ----------
-        cls: class of openclean.pipeline.consumer.base.StreamConsumer
+        cls: class of openclean.data.stream.base.StreamConsumer
             Class of the consumer that is instantiated by the operator.
         args: variable argument list
             Additional arguments for the consumer class constructor.
@@ -66,7 +66,7 @@ class CollectOperator(StreamProcessor):
 
         Returns
         -------
-        oopenclean.pipeline.consumer.base.StreamConsumer
+        oopenclean.data.stream.base.StreamConsumer
         """
         return self.cls(*self.args, **self.kwargs)
 

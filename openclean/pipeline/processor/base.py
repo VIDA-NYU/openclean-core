@@ -16,7 +16,7 @@ from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
 from openclean.data.stream.base import DatasetStream
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 
 
 # -- Stream operators ---------------------------------------------------------
@@ -56,6 +56,6 @@ class StreamProcessor(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.pipeline.consumer.base.StreamConsumer
+        openclean.data.stream.base.StreamConsumer
         """
         raise NotImplementedError()  # pragma: no cover

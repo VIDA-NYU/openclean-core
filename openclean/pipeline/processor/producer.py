@@ -28,7 +28,7 @@ from openclean.data.stream.csv import CSVFile
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
 from openclean.operator.transform.update import get_update_function
-from openclean.pipeline.consumer.base import StreamConsumer
+from openclean.data.stream.base import StreamConsumer
 from openclean.pipeline.consumer.collector import Distinct, RowCount
 from openclean.pipeline.consumer.producer import Filter, Limit, Select, Update
 from openclean.pipeline.processor.base import StreamProcessor
@@ -63,7 +63,7 @@ class ProducingOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.pipeline.consumer.base.StreamConsumer, list of string
+        openclean.data.stream.base.StreamConsumer, list of string
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -94,7 +94,7 @@ class ProducingOperator(StreamProcessor):
 
         Returns
         -------
-        openclean.pipeline.consumer.base.StreamConsumer
+        openclean.data.stream.base.StreamConsumer
         """
         # Get an instance of the consumer. Defer setting the downstream
         # consumer.
@@ -542,15 +542,9 @@ class DataPipeline(DatasetStream):
             upstream=[],
             downstream=self.pipeline[1:]
         )
-        # Stream all rows an pass them to the consumer.
-        for rowid, row in self.reader.iterrows():
-            try:
-                consumer.consume(rowid, row)
-            except StopIteration:
-                break
-        # Return the result from the consumer when closed at the end of the
-        # stream.
-        return consumer.close()
+        # Stream all rows to the consumer. THe returned result is the result
+        # returned when the consumer is closed by the reader.
+        return self.reader.stream(consumer)
 
     def select(self, *args) -> DataPipeline:
         """Select a given list of columns from the streamed data frame. Columns
