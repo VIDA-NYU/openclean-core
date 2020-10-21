@@ -5,17 +5,20 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Base classes for value generating functions. Evaluation functions are
-applied to tuples (series) in a dataset (data frame). Functions are expected to
-return either a scalar value or a tuple of scalar values.
+"""Base classes for data frame manipulating functions. Evaluation functions are
+applied to one or more columns in a data frame. Functions are expected to
+return either a data series or a list of scalar values.
 """
 
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-
 from typing import Callable, List, Union, Optional
 
-from openclean.data.types import Column
-from openclean.data.select import select_clause
+import pandas as pd
+
+from openclean.data.stream.base import DataRow, StreamFunction
+from openclean.data.select import column_ref, select_clause
+from openclean.data.types import Column, Columns, Scalar, Schema, Value
 from openclean.function.value.base import CallableWrapper, ValueFunction
 
 
@@ -23,13 +26,30 @@ from openclean.function.value.base import CallableWrapper, ValueFunction
 
 class EvalFunction(metaclass=ABCMeta):
     """Evaluation functions are used to compute results over rows in a data
-    frame. Evaluation functions are evaluated for each row in a data frame and
-    are expected to return a single scalar value or a list/tuple of values.
+    frame or a data stream. Conceptually, evaluation functions are evaluated
+    over one or more columns for each row in the input data. For each row, the
+    function is expected to generate one (or more) (transformed) value(s) for
+    the column (columns) on which it operates.
 
-    Evaluation functions may be prepared in that they compute statistics
-    or maintain column indices for the data frame proior to being evaluated.
+    Evaluation functions are building blocks for data frame operators as well
+    as data stream pipelines. Each of these two use cases is supported by a
+    different (abstract) method:
+
+    - eval: The eval function is used by data frame operators. The function
+      receives the full data frame as an anrgument. It returns a data series
+      (or list) of values with one value for each row in the input data frame.
+      Functions that operate over multiple columns will return a series with
+      multiple columns.
+    - prepare: If an evaluation function is used as part of a data stream
+      operator the function needs to be prepared. That is, the function will
+      need to know the schema of the rows in the data frame before streaming
+      starts. The prepate method recived the data stream schema as an argument.
+      It returns a callable function that accepts a data stream row as the
+      only argument and that returns a single value or a tuple of values
+      depending on whether the evaluation function operators on on or more
+      columns.
     """
-    def __add__(self, other):
+    def __add__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Add class to compute the sum of two
         evaluation function values.
 
@@ -44,21 +64,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Add(self, other)
 
-    def __call__(self, values):
-        """Make the function callable.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.eval(values)
-
-    def __eq__(self, other):
+    def __eq__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Eq class to compare the results of two
         evaluation functions for equality.
 
@@ -73,7 +79,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Eq(self, other)
 
-    def __floordiv__(self, other):
+    def __floordiv__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Add class to compute the (floor) division
         of two evaluation function values.
 
@@ -88,7 +94,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return FloorDivide(self, other)
 
-    def __gt__(self, other):
+    def __gt__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Eq class to compare the results of two
         evaluation functions using '>'.
 
@@ -103,7 +109,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Gt(self, other)
 
-    def __ge__(self, other):
+    def __ge__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Eq class to compare the results of two
         evaluation functions using '>='.
 
@@ -118,7 +124,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Geq(self, other)
 
-    def __le__(self, other):
+    def __le__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Eq class to compare the results of two
         evaluation functions using '<='.
 
@@ -133,7 +139,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Leq(self, other)
 
-    def __lt__(self, other):
+    def __lt__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Eq class to compare the results of two
         evaluation functions using '<'.
 
@@ -148,7 +154,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Lt(self, other)
 
-    def __mul__(self, other):
+    def __mul__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Subtract class to compute the product
         of two evaluation function values.
 
@@ -163,7 +169,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Multiply(self, other)
 
-    def __ne__(self, other):
+    def __ne__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Eq class to compare the results of two
         evaluation functions for inequality.
 
@@ -178,7 +184,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Neq(self, other)
 
-    def __sub__(self, other):
+    def __sub__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Subtract class to compute the subtraction
         of two evaluation function values.
 
@@ -193,7 +199,7 @@ class EvalFunction(metaclass=ABCMeta):
         """
         return Subtract(self, other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Add class to compute the division of two
         evaluation function values.
 
@@ -209,448 +215,74 @@ class EvalFunction(metaclass=ABCMeta):
         return Divide(self, other)
 
     @abstractmethod
-    def eval(self, values):
-        """Evaluate the function on a given data frame row. The result type is
-        implementation dependent. The result could either be a single scalar
-        value or a tuple of scalar values.
+    def eval(self, df: pd.DataFrame) -> EvalResult:
+        """Evaluate the function on a given data frame. The result is either
+        a data series or a list of values. The length of the returned series
+        is equal to the number of rows in the data frame (i.e., one output
+        value per input row). If the evaluation function operates over multiple
+        columns then the result will also have multiple columns (or be a tuple
+        if the result is a list), with the number of output columns matching
+        the number of columns the function operates on.
 
         Parameters
         ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
+        df: pd.DataFrame
+            Pandas data frame.
 
         Returns
         -------
-        scalar or tuple
+        pd.Series or list
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def prepare(self, df):
-        """Prepare the evaluation function before the first call to the eval()
-        method for the given data frame. This allows to compute statistics or
-        column indices for the data frame.
+    def prepare(self, columns: Schema) -> StreamFunction:
+        """Prepare the evaluation function to be able to process rows in a data
+        stream. This method is called before streaming starts to inform the
+        function about the schema of the rows in the data stream.
 
-        Functions that need preparation should return a new instance of the
-        evaluation function as the result of this method.
+        Prepare is expected to return a callable that accepts a single data
+        stream row as input and that returns a single value (if the function
+        operates on a single column) or a tuple of values (for functions that
+        operate over multiple columns).
 
         Parameters
         ----------
-        df: pandas.DataFrame
-            Input data frame.
+        columns: list of string
+            List of column names in the schema of the data stream.
 
         Returns
         -------
-        openclean.function.eval.base.EvalFunction
+        openclean.data.stream.base.StreamFunction
         """
         raise NotImplementedError()
 
 
-class PreparedEvalFunction(EvalFunction):
-    """Evaluation function that does not need to be prepared nor has it an
-    associated function that would need preparation.
-    row.
-    """
-    def prepare(self, df):
-        """Since the function is prepared it can return a reference to itself.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        return self
-
-
-class FullRowEval(PreparedEvalFunction):
-    """Evaluation function that passes each data frame row as an argument to a
-    given consumer function. Note that neither the evaluation function nor the
-    consumer will get prepared.
-    """
-    def __init__(self, func: Callable):
-        """Initialize the consumer function.
-
-        Parameters
-        ----------
-        func: callable
-            Consumer that is called with each data frame row as argument to
-            produce the result for this function.
-        """
-        self.consumer = func
-
-    def eval(self, values):
-        """Evaluate the function on the given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.consumer(values)
-
-
-# Type alias for a single input column.
-InputColumn = Union[int, str, Column, EvalFunction]
-
-
-class TernaryEvalFunction(PreparedEvalFunction):
-    """A ternary evaluation function extracts values from multiple columns in
-    a data frame. It passes these values to a consumer function to generate the
-    function result.
-
-    The consumer may either be a unary or a ternary function. An unary function
-    will receive a tuple of extracted values as the argument.
-
-    Consumers may return a single (scalar) value or a tuple of values.
-    """
-    def __init__(
-        self, columns: List[InputColumn], func: Union[Callable, ValueFunction],
-        is_unary: Optional[bool] = False
-    ):
-        """Initialize the list of columns from which values are extracted and
-        the consumer function. The input columns may eitehr be referenced by
-        index position (in a data frame schema) or name. Inputs may also be
-        generated by an evaluation function.
-
-
-        Parameters
-        ----------
-        columns: list of input columns
-            Specifies the columns from which values are extracted. This is
-            expected to be a list of the following elements: (i) integers
-            referencing the input column by index (in the data frame schema),
-            (ii) strings giving the column name, or (iii) evaluation functions.
-        func: callable or ValueFunction
-            Callable (consumer) that is applied on the extracted values. This
-            function is either a unary or ternary function (as specified by the
-            `is_unary` flag).
-        is_unary: bool, default=False
-            Determines whether the consumer expects a single value or multiple
-            values as argument. By default a ternary consumer is expected for
-            a ternary evaluation function.
-        """
-        # Convert all elements in the input list to evaluation functions that
-        # extract values from the columns of a data frame.
-        self.producers = list()
-        for val in columns:
-            if not isinstance(val, EvalFunction):
-                val = Col(val)
-            self.producers.append(val)
-        # Note that we do not enforce the consumer function to be a instance of
-        # ValueFunction since these functions do not accept ternary argument
-        # lists. If the user needs to prepare a ternaty consumer they have to
-        # wrap their function inside the implementation of a ValueFunction and
-        # pass an instance of that class as an argument here.
-        self.consumer = func
-        self.is_unary = is_unary
-
-    def eval(self, values):
-        """Evaluate the function on the given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        # Extract a tuple of argument values from the data frame row.
-        args = tuple([f.eval(values) for f in self.producers])
-        # Pass arguments to consumer either as single tuple (for unary
-        # consumers) or as a variable argument list (for ternary consumers).
-        if self.is_unary:
-            return self.consumer(args)
-        else:
-            return self.consumer(*args)
-
-    def prepare(self, df):
-        """Prepare the producer and the consumer for a given data frame.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.UnaryEvalFunction
-        """
-        prepared_producers = [f.prepare(df) for f in self.producers]
-        prepared_consumer = self.consumer
-        # If the consumer is a value function that needs to be prepared we have
-        # to extract the list of values from the data frame to prepare the
-        # consumer.
-        if isinstance(prepared_consumer, ValueFunction):
-            if not prepared_consumer.is_prepared():
-                # Generate the list of values to prepare the associated value
-                # function.
-                values = list()
-                for _, row in df.iterrows():
-                    values.append([f.eval(row) for f in prepared_producers])
-                prepared_consumer = self.func.prepare(values)
-            # Ensure that the producers are 'fresh' prepared in case that any
-            # of them maintains an internal state.
-            prepared_producers = [f.prepare(df) for f in self.producers]
-        return TernaryEvalFunction(
-            columns=prepared_producers,
-            func=prepared_consumer,
-            is_unary=self.is_unary
-        )
-
-
-class UnaryEvalFunction(PreparedEvalFunction):
-    """An unary evaluation function extracts values from a single column in a
-    data frame and passes the value on to an unary consumer.
-    """
-    def __init__(
-        self, column: InputColumn, func: Union[Callable, ValueFunction]
-    ):
-        """Initialize the input column or evaluation function that is used to
-        extract a value from data frame rows as well as the consumer that is
-        called to process the extracted value.
-
-        Raises a TypeError if the column argument does not specify a valid
-        input column (or evaluation function) or if the consumer is not a
-        callable or a value function.
-
-        Parameters
-        ----------
-        column: single input column
-            Specifies the column from which values are extracted. There are
-            three different options to specify the input column: (i) as an
-            integer referencing the input column by index (in the data frame
-            schema), (ii) as a string giving the column name, or (iii) as an
-            evaluation function that is expected to return a single value.
-        func: callable or ValueFunction
-            Callable (consumer) that is applied on the extracted values. This
-            function is expected to be a unary function.
-
-        Raises
-        ------
-        TypeError
-        """
-        # The producer is a evaluation function that will be used to extract
-        # a single value from each data frame row. We use a single column
-        # evaluation function as producer if the given argument references
-        # a column in a data frame schema.
-        if isinstance(column, EvalFunction):
-            self.producer = column
-        else:
-            self.producer = Col(column)
-        # The consumer if a value function. We use a callable wrapper if the
-        # given argument is not a value function.
-        if isinstance(func, ValueFunction):
-            self.consumer = func
-        else:
-            self.consumer = CallableWrapper(func)  # noqa: E501
-
-    def eval(self, values):
-        """Evaluate the function on the given data frame row.
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        return self.consumer.eval(self.producer.eval(values))
-
-    def prepare(self, df):
-        """Prepare the producer and the consumer for a given data frame.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.UnaryEvalFunction
-        """
-        # Get a prepared producer.
-        prepared_producer = self.producer.prepare(df)
-        # If the consumer has to be prepared we need to extract the list of
-        # values from the data frame to prepare the consumer.
-        if not self.consumer.is_prepared():
-            values = list()
-            for _, row in df.iterrows():
-                values.append(prepared_producer.eval(row))
-            prepared_consumer = self.consumer.prepare(values)
-            # Make sure to get a fresh copy of the prepared producer in case
-            # that the object maintains an internal state that has been
-            # modified when generating the value list for preparing the
-            # consumer.
-            prepared_producer = self.producer.prepare(df)
-        else:
-            prepared_consumer = self.consumer
-        return UnaryEvalFunction(
-            column=prepared_producer,
-            func=prepared_consumer
-        )
-
-
-# -- Factory ------------------------------------------------------------------
-
-
-class Eval(EvalFunction):
-    """Eval is a factory for evaluation functions that extract values from one
-    or more columns in data frame rows and that evaluate a given function
-    (consumer) on the extracted values.
-
-    We distinguish between unary evaluation functions that extract values from
-    a single column and ternary evaluation functions that extract values from
-    two or more columns. For the consumer we also distinguish between unary and
-    ternary functions.
-
-    The arity of an evaluation function is detemined by the number of input
-    columns that are specified when calling the Eval factory. The arity of the
-    consumer cannot be determined automatically but has to be specified by the
-    user in the `is_unary` parameter.
-
-    A ternary evaluation function with a unary consumer will pass a tuple with
-    the extracted values to the consumer. A unary evaluation function with a
-    ternary consumer will raise a TypeError error in the constructor.
-
-    The Eval factory itself only handles the preparation of the encapsuled
-    consumer. It does not implement the eval() function of the super class.
-    Instead, the prepare() function returns an instance of either a unary or
-    ternary evaluation function that implement eval().
-    """
-    def __init__(
-        self, columns: Union[InputColumn, List[InputColumn]],
-        func: Union[Callable, ValueFunction], is_unary: Optional[bool] = None
-    ):
-        """Create an instance of an evaluation function that extractes values
-        from the specified columns and passes the extracted values to a given
-        consumer.
-
-        The `is_unary` flag indicates if the consumer expects a single argument
-        value or a tuple of values.
-
-        Raises a TypeError if the list of inputs specifies a single column only
-        but the consumer expects a ternary input.
-
-        Parameters
-        ----------
-        columns: single input column or list of input columns
-            Specifies the column(s) from which values are extracted that are
-            then passed to the given function (func) for processing. There are
-            several different ways of specifying input columns. The type of an
-            argument value for this parameter may either be (i) an integer
-            referencing the input column by index (in the data frame schama),
-            (ii) a string giving the column name, (iii) an evaluation function
-            that is expected to return a single value, or (iv) a list of either
-            (i)-(iii). If the argument type is a list a ternary evaluation
-            function will be returned. Otherwise, the result is a unary
-            evalaution function.
-        func: callable or ValueFunction
-            Callable (consumer) that is applied on the values that are returned
-            by the producer. Whether this function is a unary or ternary
-            function has to be specified by the user in the `is_unary` flag.
-        is_unary: bool, default=None
-            Determines whether the consumer expects a single value or multiple
-            values as argument. The default is None and the flag is ignored for
-            unary evaluation functions. For ternary evaluation functions by
-            default it is assumed that the consumer is a ternary function as
-            well.
-
-        Raises
-        ------
-        TypeError
-        """
-        # The type of evaluation function is determined based on the type of
-        # the columns argument.
-        if isinstance(columns, list):
-            # By default we assume that the consumer for a ternary evaluation
-            # function is ternary as well unless specified otherwise via the
-            # is_unary flag.
-            self.is_unary = is_unary if is_unary is not None else False
-        elif is_unary is not None and not is_unary:
-            # Raise TypeError if inputs are unary but the consumer is ternary.
-            raise TypeError('cannot call ternary consumer with unary input')
-        self.columns = columns
-        self.func = func
-
-    def eval(self, values):
-        """The eval function of this class is not implemented. It is assumed
-        that each evaluation function will be prepared before the first call
-        to eval(). The prepare() function for this class should return an
-        instance of an evaluation function with an implemented eval().
-
-        Parameters
-        ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        raise NotImplementedError('Eval function has not been prepared')
-
-    def prepare(self, df):
-        """Prepare the producer(s) and the consumer for a given data frame.
-
-        Parameters
-        ----------
-        df: pandas.DataFrame
-            Input data frame.
-
-        Returns
-        -------
-        openclean.function.eval.base.EvalFunction
-        """
-        # The type of the returned evaluation function is determined based on
-        # the type of the columns argument.
-        if isinstance(self.columns, list):
-            func = TernaryEvalFunction(
-                columns=self.columns,
-                func=self.func,
-                is_unary=self.is_unary
-            )
-        else:
-            func = UnaryEvalFunction(column=self.columns, func=self.func)
-        # Return a perpared version of the instantiated evaluation function.
-        return func.prepare(df)
-
-
 # -- Constant function --------------------------------------------------------
 
-class Const(PreparedEvalFunction):
+class Const(EvalFunction):
     """Evaluation function that returns a constant value for each data frame
-    row.
+    row. Extends the abstract evaluation function and implements the stream
+    function interface.
     """
-    def __init__(self, value):
+    def __init__(self, value: Value):
         """Initialize the constant return value.
 
         Parameters
         ----------
-        value: scalar
+        value: scalar or tuple
             Constant return value for the function.
         """
         self.value = value
 
-    def eval(self, values):
-        """Execute method for the evaluation function. Returns the defined
-        constant value.
+    def __call__(self, row: DataRow) -> Value:
+        """Make the object a stream function. Returns the constant value for
+        every row that the function is called with.
 
         Parameters
         ----------
-        values: pandas.core.series.Series
-            Row in a pandas data frame.
+        row: list of scalar
+            Row in a data stream.
 
         Returns
         -------
@@ -658,22 +290,51 @@ class Const(PreparedEvalFunction):
         """
         return self.value
 
-    def filter(self, df):
-        return self.value
+    def eval(self, df: pd.DataFrame) -> List[Value]:
+        """Execute method for the evaluation function. Returns a list in the
+        length of the data frame (row count) with the defined constant value.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Pandas data frame.
+
+        Returns
+        -------
+        list
+        """
+        return [self.value] * df.shape[0]
+
+    def prepare(self, columns: Schema) -> StreamFunction:
+        """The prepare method returns a callable that returns the constant
+        value for evary input row.
+
+        Parameters
+        ----------
+        columns: list of string
+            List of column names in the schema of the data stream.
+
+        Returns
+        -------
+        openclean.data.stream.base.StreamFunction
+        """
+        return self
 
 
-# -- Column function ----------------------------------------------------------
+# -- Column functions ---------------------------------------------------------
 
 class Col(EvalFunction):
     """Evaluation function that returns the value from a single column in a
-    data frame row.
+    data frame row. Extends the abstract evaluation function and implements the
+    stream function interface. For a stream function the internal _colidx has
+    to be defined (given at object construction).
     """
-    def __init__(self, columns: InputColumn, colidx: Optional[int] = None):
+    def __init__(self, column: InputColumn, colidx: Optional[int] = None):
         """Initialize the source column.
 
         Parameters
         ----------
-        columns: int, string, or Column
+        column: int, string, or Column
             Single column specified either via the column index position in the
             data frame schema or the column name.
         colidx: list(int), default=None
@@ -684,13 +345,29 @@ class Col(EvalFunction):
         ------
         TypeError
         """
-        if not isinstance(columns, int) and not isinstance(columns, str):
-            raise TypeError('invalid column specification {}'.format(columns))
-        self.columns = columns
+        if not isinstance(column, int) and not isinstance(column, str):
+            raise TypeError('invalid column specification {}'.format(column))
+        self.column = column
         self._colidx = colidx
 
-    def eval(self, values):
-        """Get value from the lookup columns.
+    def __call__(self, row: DataRow) -> Scalar:
+        """Make the object a stream function. Returns the cell value from the
+        column that was specified at object construction.
+
+        Parameters
+        ----------
+        row: list of scalar
+            Row in a data stream.
+
+        Returns
+        -------
+        scalar
+        """
+        return row[self._colidx]
+
+    def eval(self, df: pd.DataFrame) -> EvalResult:
+        """Get the values from the data frame column that is referenced by this
+        function.
 
         Parameters
         ----------
@@ -699,49 +376,47 @@ class Col(EvalFunction):
 
         Returns
         -------
-        scalar or tuple
+        pd.Series
         """
-        return values[self._colidx]
+        _, colidx = column_ref(schema=df.columns, column=self.column)
+        return df.iloc[:, colidx[0]]
 
-    def prepare(self, df):
-        """Get index positions of the value columns for the schema of the
-        given data frame.
+    def prepare(self, columns: Schema) -> StreamFunction:
+        """Return a Col function that is prepared, i.e., that has the column
+        index for the column that it operates on initialized.
 
         Parameters
         ----------
-        df: pandas.DataFrame
-            Input data frame.
+        columns: list of string
+            List of column names in the schema of the data stream.
 
         Returns
         -------
-        openclean.function.eval.base.EvalFunction
+        openclean.data.stream.base.StreamFunction
         """
-        _, colidx = select_clause(df, columns=self.columns)
-        return Col(columns=self.columns, colidx=colidx[0])
-
-    def filter(self, df):
-        _, colidx = select_clause(df, columns=self.columns)
-        return df.iloc[:, colidx[0]]
+        _, colidx = column_ref(schema=columns, column=self.column)
+        return Col(column=self.column, colidx=colidx)
 
 
 class Cols(EvalFunction):
     """Evaluation function that returns a tuple of values from one or more
     column(s) in the data frame row.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, columns: Columns, colidxs: Optional[List[int]] = None):
         """Initialize the source column(s).
 
         Parameters
         ----------
-        args: int, string, or list(int or string)
+        columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
-        colidx: list(int), default=None
+        colidxs: list(int), default=None
             Prepared list of index positions for columns.
         """
-        self.columns = args
-        self._colidx = kwargs.get('colidx', None)
+        # Ensure that columns is a list.
+        self.columns = columns if isinstance(columns, list) else [columns]
+        self._colidxs = colidxs
 
-    def eval(self, values):
+    def __call__(self, values):
         """Get value from the lookup columns.
 
         Parameters
@@ -758,21 +433,37 @@ class Cols(EvalFunction):
         else:
             return tuple([values[i] for i in self._colidx])
 
-    def prepare(self, df):
-        """Get index positions of the value columns for the schema of the
-        given data frame.
+    def eval(self, df: pd.DataFrame) -> EvalResult:
+        """Get the values from the data frame column that is referenced by this
+        function.
 
         Parameters
         ----------
-        df: pandas.DataFrame
-            Input data frame.
+        values: pandas.core.series.Series
+            Row in a pandas data frame.
 
         Returns
         -------
-        openclean.function.eval.base.EvalFunction
+        pd.Series
         """
-        _, colidx = select_clause(df, columns=list(self.columns))
-        return Cols(*self.columns, colidx=colidx)
+        _, colidxs = select_clause(schema=df.columns, columns=self.columns)
+        return df.iloc[:, colidxs]
+
+    def prepare(self, columns: Schema) -> StreamFunction:
+        """Return a Cols function that is prepared, i.e., that has the column
+        indexes for the columns that it operates on initialized.
+
+        Parameters
+        ----------
+        columns: list of string
+            List of column names in the schema of the data stream.
+
+        Returns
+        -------
+        openclean.data.stream.base.StreamFunction
+        """
+        _, colidxs = select_clause(schema=columns, columns=self.columns)
+        return Cols(columns=self.columns, colidxs=colidxs)
 
 
 # -- Binary operators ---------------------------------------------------------
@@ -1388,3 +1079,9 @@ def to_column_eval(value):
     if not isinstance(value, EvalFunction):
         return Col(value)
     return value
+
+
+"""Type aliases for parameters and return values of evaluation functions."""
+EvalResult = Union[pd.Series, List[Value]]
+EvalSpec = Union[Scalar, Callable, EvalFunction]
+InputColumn = Union[int, str, Column, EvalFunction]

@@ -30,7 +30,8 @@ ColumnRef = Union[int, str, Column]
 # or represented as a Column object. A single index (int) or column name (str)
 # are also accepted as 'a list with a single element'.
 Columns = Union[ColumnRef, List[ColumnRef]]
-
+# The schema of a dataset is a list of column names.
+Schema = List[ColumnName]
 
 # Scalar values.
 Scalar = Union[int, float, str, datetime]
