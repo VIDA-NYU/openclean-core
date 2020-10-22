@@ -42,11 +42,7 @@ class IsDatetime(Eval):
         def func(value):
             return is_datetime(value, formats=formats, typecast=typecast)
 
-        super(IsDatetime, self).__init__(
-            func=func,
-            columns=columns,
-            is_unary=True
-        )
+        super(IsDatetime, self).__init__(func=func, columns=columns, is_unary=True)
 
 
 class IsInt(Eval):
@@ -72,11 +68,7 @@ class IsInt(Eval):
         def func(value):
             return is_int(value, typecast=typecast)
 
-        super(IsInt, self).__init__(
-            func=func,
-            columns=columns,
-            is_unary=True
-        )
+        super(IsInt, self).__init__(func=func, columns=columns, is_unary=True)
 
 
 class IsFloat(Eval):
@@ -101,11 +93,7 @@ class IsFloat(Eval):
         def func(value):
             return is_float(value, typecast=typecast)
 
-        super(IsFloat, self).__init__(
-            func=func,
-            columns=columns,
-            is_unary=True
-        )
+        super(IsFloat, self).__init__(func=func, columns=columns, is_unary=True)
 
 
 class IsNaN(Eval):
@@ -123,14 +111,34 @@ class IsNaN(Eval):
             This can also be a single evalaution function or a list of
             functions.
         """
-        super(IsNaN, self).__init__(
-            func=is_nan,
-            columns=columns,
-            is_unary=True
-        )
+        super(IsNaN, self).__init__(func=is_nan, columns=columns, is_unary=True)
 
 
 # -- Type converters ----------------------------------------------------------
+
+class Bool(Eval):
+    """Convert a given value to bool."""
+    def __init__(self, columns, default_value=None, raise_error=False):
+        """Create an instance of an float type cast function.
+
+        Parameters
+        ----------
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
+        default_value: scalar, default=None
+            Default value that is being returned for values that cannot be cast
+            to float if the raise_error flag is False.
+        raise_error: bool, default=False
+            Raise ValueError if the value cannot be cast to float.
+        """
+
+        def cast(value):
+            return True if value else False
+
+        super(Bool, self).__init__(func=cast, columns=columns, is_unary=True)
+
 
 class Datetime(Eval):
     """Convert a given value to datetime. Raises an error if the given value
@@ -161,11 +169,7 @@ class Datetime(Eval):
                 raise_error=raise_error
             )
 
-        super(Datetime, self).__init__(
-            func=cast,
-            columns=columns,
-            is_unary=True
-        )
+        super(Datetime, self).__init__(func=cast, columns=columns, is_unary=True)
 
 
 class Float(Eval):
@@ -197,11 +201,7 @@ class Float(Eval):
                 raise_error=raise_error
             )
 
-        super(Float, self).__init__(
-            func=cast,
-            columns=columns,
-            is_unary=True
-        )
+        super(Float, self).__init__(func=cast, columns=columns, is_unary=True)
 
 
 class Int(Eval):
@@ -233,8 +233,4 @@ class Int(Eval):
                 raise_error=raise_error
             )
 
-        super(Int, self).__init__(
-            func=cast,
-            columns=columns,
-            is_unary=True
-        )
+        super(Int, self).__init__(func=cast, columns=columns, is_unary=True)

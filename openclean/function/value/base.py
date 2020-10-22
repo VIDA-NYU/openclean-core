@@ -7,7 +7,11 @@
 
 """Base class for value function. Collection of basic helper functions."""
 
+from __future__ import annotations
 from abc import ABCMeta, abstractmethod
+from typing import Callable, Dict, List
+
+from openclean.data.types import Value
 
 
 # -- Abstract base class for value functions ----------------------------------
@@ -16,7 +20,7 @@ class ValueFunction(metaclass=ABCMeta):
     """The abstract class for value functions defines the interface for methods
     that need to be implemented for preparing and evaluating the function.
     """
-    def __call__(self, value):
+    def __call__(self, value: Value) -> Value:
         """Make the function callable for individual values.
 
         Parameters
@@ -30,7 +34,7 @@ class ValueFunction(metaclass=ABCMeta):
         """
         return self.eval(value)
 
-    def apply(self, values):
+    def apply(self, values: List[Value]) -> List[Value]:
         """Apply the function to each value in a given set. Returns a list of
         values that are the result of the eval method for the respective input
         values.
@@ -51,7 +55,7 @@ class ValueFunction(metaclass=ABCMeta):
         return [f.eval(v) for v in values]
 
     @abstractmethod
-    def eval(self, value):
+    def eval(self, value: Value) -> Value:
         """Evaluate the function on a given value. The value may either be a
         scalar or a tuple. The value will be from the list of values that was
         passed to the object in the prepare call.
@@ -70,7 +74,7 @@ class ValueFunction(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def is_prepared(self):
+    def is_prepared(self) -> bool:
         """Returns True if the prepare method is ignored by an implementation
         of this function. Containing classes will only call the prepare method
         for those value functions that are not prepared.
@@ -81,7 +85,7 @@ class ValueFunction(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def map(self, values):
+    def map(self, values: List[Value]) -> Dict:
         """The map function takes a list of values and outputs a dictionary.
         The keys in the returned dictionary are the distinct values in the
         input list. The values that are associated with the keys are the result
@@ -103,7 +107,7 @@ class ValueFunction(metaclass=ABCMeta):
         return result
 
     @abstractmethod
-    def prepare(self, values):
+    def prepare(self, values: List[Value]) -> ValueFunction:
         """Optional step to prepare the function for a given set of values.
         This step allows to compute additional statistics over the set of
         values.
@@ -130,7 +134,7 @@ class PreparedFunction(ValueFunction):
     prepare method. These functions are considered as initialized and ready
     to operate without the need for calling the prepare method first.
     """
-    def is_prepared(self):
+    def is_prepared(self) -> bool:
         """Instances of this class do not need to be further prepared.
 
         Returns
@@ -139,7 +143,7 @@ class PreparedFunction(ValueFunction):
         """
         return True
 
-    def prepare(self, values):
+    def prepare(self, values: List[Value]) -> ValueFunction:
         """The prepare step is ignored for a wrapped callable.
 
         Parameters
@@ -155,7 +159,7 @@ class CallableWrapper(PreparedFunction):
     """Wrapper for callable functions as value functions. This value function
     does not prepare the wrapped callable.
     """
-    def __init__(self, func):
+    def __init__(self, func: Callable):
         """Initialize the wrapped callable function. Raises a ValueError if the
         function is not a callable.
 
@@ -173,7 +177,7 @@ class CallableWrapper(PreparedFunction):
             raise TypeError('not a callable function')
         self.func = func
 
-    def eval(self, value):
+    def eval(self, value: Value) -> Value:
         """Evaluate the wrapped function on a given value. The value may either
         be a scalar or a tuple. The return value of the function is dependent
         on the wrapped function.
@@ -192,7 +196,7 @@ class CallableWrapper(PreparedFunction):
 
 class ConstantValue(PreparedFunction):
     """Value function that returns a given constant value for all inputs."""
-    def __init__(self, value):
+    def __init__(self, value: Value):
         """Initialize the constant return values for the function.
 
         Parameters
@@ -202,7 +206,7 @@ class ConstantValue(PreparedFunction):
         """
         self.value = value
 
-    def eval(self, value):
+    def eval(self, value: Value) -> Value:
         """Return the constant result value.
 
         Parameters

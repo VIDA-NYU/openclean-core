@@ -482,7 +482,7 @@ class Eval(EvalFunction):
         # Generate a list of producers. Producers are evaluation functions that
         # generate the input values for the consumer.
         self.producers = list()
-        if isinstance(columns, list):
+        if isinstance(columns, list) or isinstance(columns, tuple):
             # By default we assume that the consumer for a ternary evaluation
             # function is ternary as well unless specified otherwise via the
             # is_unary flag.
@@ -522,10 +522,10 @@ class Eval(EvalFunction):
             data = self.producers[0].eval(df)
             # Prepare the consumer if necessary.
             if not self._is_prepared:
-                f = self.consumer.prepare(data)
+                prep_consumer = self.consumer.prepare(data)
             else:
-                f = self.consumer
-            return [f(v) for v in data]
+                prep_consumer = self.consumer
+            return [prep_consumer(v) for v in data]
         else:
             # Inputs for the consumer come from multiple producers. Start by a
             # list of lists by evaluating the producers on the given data
@@ -533,17 +533,17 @@ class Eval(EvalFunction):
             data = [f.eval(df) for f in self.producers]
             # Prepare the consumer if necessary.
             if not self._is_prepared:
-                f = self.consumer.prepare([t for t in zip(*data)])
+                prep_consumer = self.consumer.prepare([t for t in zip(*data)])
             else:
-                f = self.consumer
+                prep_consumer = self.consumer
             # Iterate over all result tuples and pass them to the consumer. The
             # implementation differes depending on the arity of the consumer.
             # A unary consumer receives a tuple of values. For a n-ary consumer
             # we need to unpack the tuple.
             if self.is_unary:
-                return [f(v) for v in zip(*data)]
+                return [prep_consumer(v) for v in zip(*data)]
             else:
-                return [f(*t) for t in zip(*data)]
+                return [prep_consumer(*t) for t in zip(*data)]
 
     def prepare(self, columns: Schema) -> StreamFunction:
         """Create a stream function that applies the consumer on the results
@@ -750,10 +750,10 @@ class Cols(EvalFunction):
         -------
         scalar or tuple
         """
-        if len(self._colidx) == 1:
-            return values[self._colidx[0]]
+        if len(self._colidxs) == 1:
+            return values[self._colidxs[0]]
         else:
-            return tuple([values[i] for i in self._colidx])
+            return tuple([values[i] for i in self._colidxs])
 
     def eval(self, df: pd.DataFrame) -> EvalResult:
         """Get the values from the data frame columns that are referenced by
@@ -1058,6 +1058,31 @@ class Subtract(BinaryOperator):
 
 # -- Helper Functions ---------------------------------------------------------
 
+def get_values(df: pd.DataFrame, producers: List[EvalFunction]) -> EvalResult:
+    """Helper method to extract values from a data frame using one or more
+    producers. If a single producer is given the result from that producer
+    will be returned. If multiple producer are given a list of tuples with
+    results from each consumer will be returned.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Pandas data frame.
+    producers: list of openclean.function.eval.base.EvalFunctions
+        List of evaluation functions that are used as data (series) producer.
+
+    Returns
+    -------
+    pd.Series or list
+    """
+    if len(producers) == 1:
+        # The input values for the consumer come from a single producer.
+        return producers[0].eval(df)
+    else:
+        # Inputs for the consumer come from multiple producers.
+        return [t for t in zip(*[f.eval(df) for f in producers])]
+
+
 def to_const_eval(value):
     """Ensure that the value is an evaluation function. If the given argument
     is not an evaluation function the value is wrapped as a constant value.
@@ -1092,3 +1117,26 @@ def to_column_eval(value):
     if not isinstance(value, EvalFunction):
         return Col(value)
     return value
+
+
+def to_eval(producers: Union[InputColumn, List[InputColumn]]) -> List[EvalFunction]:
+    """Convert a single input column or a list of input column into a list of
+    evaluation functions.
+
+    Parameters
+    ----------
+    producers: int, string, EvaluationFunction, or list
+        Specification of one or more input producers for an evaluation
+        function.
+
+    Returns
+    -------
+    list
+    """
+    result = list()
+    if isinstance(producers, list) or isinstance(producers, tuple):
+        for c in producers:
+            result.append(to_column_eval(c))
+    else:
+        result.append(to_column_eval(producers))
+    return result

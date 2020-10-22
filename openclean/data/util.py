@@ -74,7 +74,7 @@ def to_lookup(df, key_columns=None, target_columns=None, override=True):
     if not isinstance(target_columns, list):
         target_columns = [target_columns]
     _, targetcols = select_clause(df.columns, columns=target_columns)
-    for _, values in df.iterrows():
+    for values in df.iterrows(index=False, name=None):
         key = get_value(values, colidx=keycols)
         if not override and key in lookup_dict:
             raise ValueError('duplicate key {}'.format(key))
@@ -104,10 +104,7 @@ def to_set(data):
         return set(data)
     elif isinstance(data, pd.DataFrame):
         if len(data.columns) > 1:
-            result = set()
-            for _, values in data.iterrows():
-                result.add(tuple(values))
-            return result
+            return set([t for t in data.itertuples(index=False, name=None)])
         else:
             return set(data.iloc[:, 0])
     elif isinstance(data, list):

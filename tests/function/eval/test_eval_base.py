@@ -38,11 +38,14 @@ def dataset():
 def test_col_eq_const(col, dataset):
     """Test filter of columns based on equality."""
     op = Col(col) == 5
-    op.eval(dataset) == [False, False, False, True, False]
+    result = [False, False, False, True, False]
+    op.eval(dataset) == result
+    f = op.prepare(dataset.columns)
+    assert [f(row) for row in dataset.itertuples(index=False, name=None)] == result
     # Switch the operants to ensure that this has no effect (not repeated for
     # following tests).
     op = 5 == Col(col)
-    op.eval(dataset) == [False, False, False, True, False]
+    op.eval(dataset) == result
 
 
 @pytest.mark.parametrize('col', ['A', 0])

@@ -29,65 +29,54 @@ def people():
 
 def test_string_capitalize(people):
     """Test string capitalization function for column values."""
-    f = Capitalize(Col('Name')).prepare(people)
-    names = []
-    for _, values in people.iterrows():
-        names.append(f.eval(values))
+    op = Capitalize(Col('Name'))
+    names = op.eval(people)
     assert names == ['Alice davies', 'Bob smith']
-    # Test for non-string columns.
-    f = Capitalize(Col('Age')).prepare(people)
-    with pytest.raises(ValueError):
-        f.eval(people.iloc[0])
-    f = Capitalize(Col('Age'), as_string=True).prepare(people)
-    assert f.eval(people.iloc[0]) == '23'
+    f = op.prepare(people.columns)
+    names = [f(row) for row in people.itertuples(index=False, name=None)]
+    assert names == ['Alice davies', 'Bob smith']
 
 
 def test_string_format(people):
     """Test formating strings using one or more values extracted from data
     frame columns.
     """
-    f = Format('My name is {}', 'Name').prepare(people)
-    assert f.eval(people.iloc[0]) == 'My name is alice davies'
-    f = Format('{1}, {0}', Capitalize(Split('Name'))).prepare(people)
-    assert f.eval(people.iloc[0]) == 'Davies, Alice'
-    f = Format('{} is {}', Col('Name'), Col('Age')).prepare(people)
-    assert f.eval(people.iloc[0]) == 'alice davies is 23'
-    # Use a list of producers.
-    f = Format('{1} is {0}', Col('Age'), Col('Name')).prepare(people)
-    assert f.eval(people.iloc[0]) == 'alice davies is 23'
+    tmpl = 'My name is {}'
+    op = Format(tmpl, 'Name')
+    texts = op.eval(people)
+    results = [tmpl.format('alice davies'), tmpl.format('bob Smith')]
+    assert texts == results
+    f = op.prepare(people.columns)
+    texts = [f(row) for row in people.itertuples(index=False, name=None)]
+    assert texts == results
 
 
 def test_string_length(people):
     """Test string character count function for column values."""
-    f = Length(Col('Name')).prepare(people)
-    length = []
-    for _, values in people.iterrows():
-        length.append(f.eval(values))
+    op = Length(Col('Name'))
+    length = op.eval(people)
+    assert length == [12, 9]
+    f = op.prepare(people.columns)
+    length = [f(row) for row in people.itertuples(index=False, name=None)]
     assert length == [12, 9]
 
 
 def test_string_lower(people):
     """Test string to lower characters function for column values."""
-    f = Lower(Col('Name')).prepare(people)
-    names = []
-    for _, values in people.iterrows():
-        names.append(f.eval(values))
+    names = Lower(Col('Name')).eval(people)
     assert names == ['alice davies', 'bob smith']
 
 
 def test_string_split_and_concat(people):
     """Test splitting and concatenating strings extracted from column values.
     """
-    f = Split(Lower(Col('Name'))).prepare(people)
-    assert f.eval(people.iloc[1]) == ['bob', 'smith']
-    f = Concat(Split(Lower(Col('Name'))), '|').prepare(people)
-    assert f.eval(people.iloc[1]) == 'bob|smith'
+    result = Split(Lower(Col('Name'))).eval(people)
+    assert result == [['alice', 'davies'], ['bob', 'smith']]
+    result = Concat(Split(Lower(Col('Name'))), '|').eval(people)
+    assert result == ['alice|davies', 'bob|smith']
 
 
 def test_string_upper(people):
     """Test string to upper characters function for column values."""
-    f = Upper(Col('Name')).prepare(people)
-    names = []
-    for _, values in people.iterrows():
-        names.append(f.eval(values))
+    names = Upper(Col('Name')).eval(people)
     assert names == ['ALICE DAVIES', 'BOB SMITH']
