@@ -12,11 +12,9 @@ normalization.
 import pytest
 
 from openclean.function.matching.base import DefaultVocabularyMatcher
-from openclean.function.matching.fuzzy import FuzzyVocabularyMatcher
 from openclean.function.matching.mapping import Mapping, best_matches
 from openclean.function.matching.tests import DummyStringMatcher
-from openclean.function.value.domain import BestMatch
-from openclean.operator.transform.update import update
+
 
 VOCABULARY = [
     'Tokyo',
@@ -182,13 +180,23 @@ def test_update_mapping():
 
 def test_tolookup_mapping(nyc311):
     """test translate converts Mapping to a dict of keys:matches"""
-    domain_boroughs = ['MANHATTAN', 'BROOKLYN', 'QUEENS', 'STATEN ISLAND', 'BRONX']
+    domain_boroughs = [
+        'MANHATTAN',
+        'BROOKLYN',
+        'QUEENS',
+        'STATEN ISLAND',
+        'BRONX'
+    ]
     vocabulary = DefaultVocabularyMatcher(
         vocabulary=domain_boroughs,
         matcher=DummyStringMatcher(),
         no_match_threshold=0.
     )
-    map = best_matches(values=nyc311['borough'].unique(), matcher=vocabulary, include_vocab=True)
+    map = best_matches(
+        values=nyc311['borough'].unique(),
+        matcher=vocabulary,
+        include_vocab=True
+    )
     lookup = map.to_lookup()
     assert len(lookup) == 5
     assert sorted(list(lookup.values())) == sorted(domain_boroughs)
@@ -198,42 +206,10 @@ def test_tolookup_mapping(nyc311):
     assert len(lookup) == 4 and 'BROOKLYN' not in lookup.keys()
 
     # test error cases
-    with pytest.raises(RuntimeError): # duplicate matches
+    with pytest.raises(RuntimeError):  # duplicate matches
         map['BROOKLYN'] = [('Brook', .4), ('Lyn', .1)]
         map.to_lookup(raise_exceptions=True)
 
-    with pytest.raises(RuntimeError): # malformed values
+    with pytest.raises(RuntimeError):  # malformed values
         map['BROOKLYN'] = ['Brook', .4]
         map.to_lookup()
-
-
-def test_update_bestmatch_column(nyc311):
-    """Test updating values in a single column with their best match mappings of a data frame."""
-    domain_pronounciation = [
-        'bronks',
-        'brooklen',
-        'manhatn',
-        'kweenz',
-        'staten islen'
-    ]
-
-    vocabulary = FuzzyVocabularyMatcher(
-        vocabulary=domain_pronounciation,
-        no_match_threshold=0.
-    )
-
-    # replace with the best match in the given vocabulary
-    df = update(nyc311, 'borough', BestMatch(vocabulary=vocabulary))
-    values = df['borough'].unique()
-    assert len(values) == 5
-    assert sorted(values) == sorted(domain_pronounciation)
-
-    # manually create a mapping to let user manipulate it before updating the df
-    map = best_matches(values=nyc311['borough'].unique(), matcher=vocabulary)
-    # override best match from the vocabulary
-    map.update({'STATEN ISLAND': 'statn ayeln'})
-
-    df = update(nyc311, 'borough', map.to_lookup())
-    values = df['borough'].unique()
-    assert len(values) == 5
-    assert sorted(values) == sorted(map.to_lookup().values())

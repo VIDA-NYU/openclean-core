@@ -105,7 +105,7 @@ class Repair(DataFrameSplitter):
         pandas.DataFrame, pandas.DataFrame
         """
         # Call the prepare method
-        _, colidxs = select_clause(df=df, columns=self.columns)
+        _, colidxs = select_clause(df=df.columns, columns=self.columns)
         # Call the prepare method of the update function.
         f = self.func.prepare(df)
         # Create two data frame, one with the successfully modified rows and

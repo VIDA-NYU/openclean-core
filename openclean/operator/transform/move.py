@@ -126,7 +126,7 @@ class MoveColumns(DataFrameTransformer):
         else:
             inspos = len(df.columns)
         # Get sort column names and their index positions for the sort columns.
-        _, colidx = select_clause(df, columns=self.columns)
+        _, colidx = select_clause(df.columns, columns=self.columns)
         colorder = [i for i in range(len(df.columns)) if i not in colidx]
         if inspos < len(colorder):
             colorder = colorder[:inspos] + colidx + colorder[inspos:]

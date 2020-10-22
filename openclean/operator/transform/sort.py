@@ -114,7 +114,7 @@ class Sort(DataFrameTransformer):
         pandas.DataFrame
         """
         # Get sort column names and their index positions for the sort columns.
-        colnames, colidx = select_clause(df, columns=self.columns)
+        colnames, colidx = select_clause(df.columns, columns=self.columns)
         # If the list of column names contains duplicates we cannot sort the
         # data frame without temporarily renaming columns.
         if len(df.columns) != len(set(df.columns)):

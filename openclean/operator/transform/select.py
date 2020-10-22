@@ -135,7 +135,7 @@ class Select(DataFrameTransformer):
         ValueError
         """
         # Ensure that all elements in the selected column list are names.
-        colnames, colidx = select_clause(df, columns=self.columns)
+        colnames, colidx = select_clause(df.columns, columns=self.columns)
         result = df.iloc[:, colidx]
         # Rename columns if a list of new nmaes was given. Ensure to keep the
         # unique column identifier for all columns in the result.

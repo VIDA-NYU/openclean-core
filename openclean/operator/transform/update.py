@@ -175,7 +175,7 @@ class Update(DataFrameTransformer):
         pandas.DataFrame
         """
         # Get list of indices for updated columns.
-        _, colidxs = select_clause(df=df, columns=self.columns)
+        _, colidxs = select_clause(df=df.columns, columns=self.columns)
         # Call the prepare method of the update function.
         f = self.func.prepare(df)
         # Create a modified data frame where rows are modified by the update

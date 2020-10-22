@@ -70,10 +70,10 @@ def to_lookup(df, key_columns=None, target_columns=None, override=True):
     # Get indices for key and target columns.
     if not isinstance(key_columns, list):
         key_columns = [key_columns]
-    _, keycols = select_clause(df, columns=key_columns)
+    _, keycols = select_clause(df.columns, columns=key_columns)
     if not isinstance(target_columns, list):
         target_columns = [target_columns]
-    _, targetcols = select_clause(df, columns=target_columns)
+    _, targetcols = select_clause(df.columns, columns=target_columns)
     for _, values in df.iterrows():
         key = get_value(values, colidx=keycols)
         if not override and key in lookup_dict:

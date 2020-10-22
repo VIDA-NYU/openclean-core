@@ -14,12 +14,13 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import Callable, List, Union, Optional
 
+import operator
 import pandas as pd
 
 from openclean.data.stream.base import DataRow, StreamFunction
 from openclean.data.select import column_ref, select_clause
 from openclean.data.types import Column, Columns, Scalar, Schema, Value
-from openclean.function.value.base import CallableWrapper, ValueFunction
+from openclean.function.value.base import ValueFunction
 
 
 # -- Evaluation Functions -----------------------------------------------------
@@ -36,16 +37,16 @@ class EvalFunction(metaclass=ABCMeta):
     different (abstract) method:
 
     - eval: The eval function is used by data frame operators. The function
-      receives the full data frame as an anrgument. It returns a data series
+      receives the full data frame as an argument. It returns a data series
       (or list) of values with one value for each row in the input data frame.
-      Functions that operate over multiple columns will return a series with
-      multiple columns.
+      Functions that operate over multiple columns will return a list of
+      tuples.
     - prepare: If an evaluation function is used as part of a data stream
       operator the function needs to be prepared. That is, the function will
       need to know the schema of the rows in the data frame before streaming
-      starts. The prepate method recived the data stream schema as an argument.
-      It returns a callable function that accepts a data stream row as the
-      only argument and that returns a single value or a tuple of values
+      starts. The prepare method receives the schema of the data stream as an
+      argument. It returns a callable function that accepts a data stream row
+      as the only argument and that returns a single value or a tuple of values
       depending on whether the evaluation function operators on on or more
       columns.
     """
@@ -80,8 +81,8 @@ class EvalFunction(metaclass=ABCMeta):
         return Eq(self, other)
 
     def __floordiv__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Add class to compute the (floor) division
-        of two evaluation function values.
+        """Return an instance of the FloorDivide class to compute the floor
+        division of two evaluation function values.
 
         Parameters
         ----------
@@ -95,7 +96,7 @@ class EvalFunction(metaclass=ABCMeta):
         return FloorDivide(self, other)
 
     def __gt__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Eq class to compare the results of two
+        """Return an instance of the Gt class to compare the results of two
         evaluation functions using '>'.
 
         Parameters
@@ -110,7 +111,7 @@ class EvalFunction(metaclass=ABCMeta):
         return Gt(self, other)
 
     def __ge__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Eq class to compare the results of two
+        """Return an instance of the Geq class to compare the results of two
         evaluation functions using '>='.
 
         Parameters
@@ -125,7 +126,7 @@ class EvalFunction(metaclass=ABCMeta):
         return Geq(self, other)
 
     def __le__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Eq class to compare the results of two
+        """Return an instance of the Leq class to compare the results of two
         evaluation functions using '<='.
 
         Parameters
@@ -140,7 +141,7 @@ class EvalFunction(metaclass=ABCMeta):
         return Leq(self, other)
 
     def __lt__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Eq class to compare the results of two
+        """Return an instance of the Lt class to compare the results of two
         evaluation functions using '<'.
 
         Parameters
@@ -155,7 +156,7 @@ class EvalFunction(metaclass=ABCMeta):
         return Lt(self, other)
 
     def __mul__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Subtract class to compute the product
+        """Return an instance of the Multiply class to compute the product
         of two evaluation function values.
 
         Parameters
@@ -170,7 +171,7 @@ class EvalFunction(metaclass=ABCMeta):
         return Multiply(self, other)
 
     def __ne__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Eq class to compare the results of two
+        """Return an instance of the Neq class to compare the results of two
         evaluation functions for inequality.
 
         Parameters
@@ -183,6 +184,21 @@ class EvalFunction(metaclass=ABCMeta):
         openclean.function.eval.base.Neq
         """
         return Neq(self, other)
+
+    def __pow__(self, other: EvalSpec) -> EvalFunction:
+        """Return an instance of the Pow class to compute to compute the value
+        of this expression to the power of other.
+
+        Parameters
+        ----------
+        other: scalar, callable, or opencelan.function.base.EvalFunction
+            Right-hand side value of the operator.
+
+        Returns
+        -------
+        openclean.function.eval.base.Pow
+        """
+        return Pow(self, other)
 
     def __sub__(self, other: EvalSpec) -> EvalFunction:
         """Return an instance of the Subtract class to compute the subtraction
@@ -200,8 +216,8 @@ class EvalFunction(metaclass=ABCMeta):
         return Subtract(self, other)
 
     def __truediv__(self, other: EvalSpec) -> EvalFunction:
-        """Return an instance of the Add class to compute the division of two
-        evaluation function values.
+        """Return an instance of the Divide class to compute the division of
+        two evaluation function values.
 
         Parameters
         ----------
@@ -217,12 +233,10 @@ class EvalFunction(metaclass=ABCMeta):
     @abstractmethod
     def eval(self, df: pd.DataFrame) -> EvalResult:
         """Evaluate the function on a given data frame. The result is either
-        a data series or a list of values. The length of the returned series
-        is equal to the number of rows in the data frame (i.e., one output
-        value per input row). If the evaluation function operates over multiple
-        columns then the result will also have multiple columns (or be a tuple
-        if the result is a list), with the number of output columns matching
-        the number of columns the function operates on.
+        a data series or a list of values. The resulting data contains one
+        output value per input row. If the evaluation function operates over
+        multiple columns then the result will be a list of tuples with the size
+        of each tuple matching the number of columns the function operates on.
 
         Parameters
         ----------
@@ -256,6 +270,314 @@ class EvalFunction(metaclass=ABCMeta):
         openclean.data.stream.base.StreamFunction
         """
         raise NotImplementedError()
+
+
+"""Type aliases for parameters and return values of evaluation functions."""
+EvalResult = Union[pd.Series, List[Value]]
+EvalSpec = Union[Scalar, Callable, EvalFunction]
+InputColumn = Union[int, str, Column, EvalFunction]
+ValueExpression = Union[Scalar, EvalFunction]
+
+
+# -- Factory ------------------------------------------------------------------
+
+class BinaryStreamFunction(object):
+    """Binary operator for data streams. Evaluates a given binary function on
+    the result of two stream functions.
+    """
+    def __init__(self, lhs: StreamFunction, rhs: StreamFunction, op: Callable):
+        """Initialize the column(s) (lhs and rhs) whose values are input for
+        the binary operator.
+
+        Parameters
+        ----------
+        lhs: openclean.data.stream.base.StreamFunction
+            Stream function for left-hand-size value(s) of the operator.
+        rhs: openclean.data.stream.base.StreamFunction
+            Stream function for right-hand-side value(s) of the operator.
+        op: callable
+            Callable that accepts two arguments, the left-hand side and
+            right-hand side values.
+        """
+        self.lhs = to_const_eval(lhs)
+        self.rhs = to_const_eval(rhs)
+        self.op = op
+
+    def __call__(self, row: DataRow) -> Scalar:
+        """Make the object a stream function. Returns the result of evaluating
+        the operator on the row values that are extracted by the left-hand-side
+        and right-hand-side stream functions.
+
+        Parameters
+        ----------
+        row: list of scalar
+            Row in a data stream.
+
+        Returns
+        -------
+        scalar
+        """
+        return self.op(self.lhs(row), self.rhs(row))
+
+
+class TernaryStreamFunction(object):
+    """A ternary stream function extracts values using multiple producers and
+    passes them to a single consumer. The consumer may either be a unary or a
+    ternary function. An unary function will receive a tuple of extracted
+    values as the argument.
+    """
+    def __init__(
+        self, producers: StreamFunction, consumer: Callable,
+        is_unary: Optional[bool] = False
+    ):
+        """Initialize the list of producers and the consumer for values that
+        are extracted (by the producers) from data stream rows.
+
+
+        Parameters
+        ----------
+        producers: list of openclean.data.stream.base.StreamFunction
+            List of stream functions that are used to extract values from data
+            stream rows.
+        consumer: callable
+            Callable (consumer) that is applied on the extracted values. This
+            function is either a unary or ternary function (as specified by the
+            `is_unary` flag).
+        is_unary: bool, default=False
+            Determines whether the consumer expects a single value or multiple
+            values as argument. By default a ternary consumer is expected for
+            a ternary evaluation function.
+        """
+        self.producers = producers
+        self.consumer = consumer
+        self.is_unary = is_unary
+
+    def __call__(self, row: DataRow) -> Scalar:
+        """Make the object a stream function. Returns the result of evaluating
+        the consumer on the row value that is extracted by the producer.
+
+        Parameters
+        ----------
+        row: list of scalar
+            Row in a data stream.
+
+        Returns
+        -------
+        scalar
+        """
+        # Extract values from the data stream row using the given producers.
+        values = tuple([f(row) for f in self.producers])
+        # Pass extracted values to the consumer to compute the function result.
+        # For n-ary consumers we need to unpack the argument values.
+        if self.is_unary:
+            return self.consumer(values)
+        else:
+            return self.consumer(*values)
+
+
+class UnaryStreamFunction(object):
+    """Unary operator for data streams. Evaluates a given unary function on
+    the result of another stream function.
+    """
+    def __init__(self, producer: StreamFunction, consumer: Callable):
+        """Initialize the producer and consumer for data stream rows. The
+        producer extracts a value from a given data frame row that is then
+        passed on to the consumer to compute the function result.
+
+        Parameters
+        ----------
+        producer: openclean.data.stream.base.StreamFunction
+            Stream function for extracting values from data stream rows.
+        rhs: openclean.data.stream.base.StreamFunction
+            Stream function for right-hand-side value(s) of the operator.
+        consumer: callable
+            Callable that accepts two arguments, the left-hand side and
+            right-hand side values.
+        """
+        self.producer = producer
+        self.consumer = consumer
+
+    def __call__(self, row: DataRow) -> Scalar:
+        """Make the object a stream function. Returns the result of evaluating
+        the consumer on the row value that is extracted by the producer.
+
+        Parameters
+        ----------
+        row: list of scalar
+            Row in a data stream.
+
+        Returns
+        -------
+        scalar
+        """
+        return self.consumer(self.producer(row))
+
+
+class Eval(EvalFunction):
+    """Eval is a factory for evaluation functions that extract values from one
+    or more columns in data frame rows and that evaluate a given function
+    (consumer) on the extracted values.
+
+    We distinguish between unary evaluation functions that extract values from
+    a single column and ternary evaluation functions that extract values from
+    two or more columns. For the consumer we also distinguish between unary and
+    ternary functions.
+
+    The arity of an evaluation function is detemined by the number of input
+    columns that are specified when calling the Eval factory. The arity of the
+    consumer cannot be determined automatically but has to be specified by the
+    user in the `is_unary` parameter.
+
+    A ternary evaluation function with a unary consumer will pass a tuple with
+    the extracted values to the consumer. A unary evaluation function with a
+    ternary consumer will raise a TypeError error in the constructor.
+
+    The Eval factory itself only handles the preparation of the encapsuled
+    consumer. It does not implement the eval() function of the super class.
+    Instead, the prepare() function returns an instance of either a unary or
+    ternary evaluation function that implement eval().
+    """
+    def __init__(
+        self, columns: Union[InputColumn, List[InputColumn]],
+        func: Union[Callable, ValueFunction], is_unary: Optional[bool] = None
+    ):
+        """Create an instance of an evaluation function that extracts values
+        from the specified columns and applies a given function (consumer) on
+        the extracted values.
+
+        The `is_unary` flag indicates if the consumer expects a single argument
+        value or a tuple of values.
+
+        Raises a TypeError if the list of inputs specifies a single column only
+        but the consumer expects a ternary input.
+
+        Parameters
+        ----------
+        columns: single input column or list of input columns
+            Specifies the column(s) from which values are extracted that are
+            then passed to the given function (func) for processing. There are
+            several different ways of specifying input columns. The type of an
+            argument value for this parameter may either be (i) an integer
+            referencing the input column by index (in the data frame schama),
+            (ii) a string giving the column name, (iii) an evaluation function
+            that is expected to return a single value, or (iv) a list of either
+            (i)-(iii). If the argument type is a list a ternary evaluation
+            function will be returned. Otherwise, the result is a unary
+            evalaution function.
+        func: callable or ValueFunction
+            Callable (consumer) that is applied on the values that are returned
+            by the producer. Whether this function is a unary or ternary
+            function has to be specified by the user in the `is_unary` flag.
+        is_unary: bool, default=None
+            Determines whether the consumer expects a single value or multiple
+            values as argument. The default is None and the flag is ignored for
+            unary evaluation functions. For ternary evaluation functions by
+            default it is assumed that the consumer is a ternary function as
+            well.
+
+        Raises
+        ------
+        TypeError
+        """
+        # Generate a list of producers. Producers are evaluation functions that
+        # generate the input values for the consumer.
+        self.producers = list()
+        if isinstance(columns, list):
+            # By default we assume that the consumer for a ternary evaluation
+            # function is ternary as well unless specified otherwise via the
+            # is_unary flag.
+            self.is_unary = is_unary if is_unary is not None else False
+            for c in columns:
+                self.producers.append(to_column_eval(c))
+        elif is_unary is not None and not is_unary:
+            # Raise TypeError if inputs are unary but the consumer is ternary.
+            raise TypeError('cannot call ternary consumer with unary input')
+        else:
+            # Columns is a single value.
+            self.producers.append(to_column_eval(columns))
+            self.is_unary = True
+        # The consumer is either a value function or a callable. If it is a
+        # value function it might require preparation. A callable will never
+        # require preparation.
+        self._is_prepared = func.is_prepared() if isinstance(func, ValueFunction) else True  # noqa: E501
+        self.consumer = func
+
+    def eval(self, df: pd.DataFrame) -> EvalResult:
+        """Evaluate the consumer on the lists of values that are generated by
+        the referenced columns.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Pandas data frame.
+
+        Returns
+        -------
+        pd.Series or list
+        """
+        # We distinguish three main cases based on the number of producers and
+        # the arity of the consumer.
+        if len(self.producers) == 1:
+            # The input values for the consumer come from a single producer.
+            data = self.producers[0].eval(df)
+            # Prepare the consumer if necessary.
+            if not self._is_prepared:
+                f = self.consumer.prepare(data)
+            else:
+                f = self.consumer
+            return [f(v) for v in data]
+        else:
+            # Inputs for the consumer come from multiple producers. Start by a
+            # list of lists by evaluating the producers on the given data
+            # frame.
+            data = [f.eval(df) for f in self.producers]
+            # Prepare the consumer if necessary.
+            if not self._is_prepared:
+                f = self.consumer.prepare([t for t in zip(*data)])
+            else:
+                f = self.consumer
+            # Iterate over all result tuples and pass them to the consumer. The
+            # implementation differes depending on the arity of the consumer.
+            # A unary consumer receives a tuple of values. For a n-ary consumer
+            # we need to unpack the tuple.
+            if self.is_unary:
+                return [f(v) for v in zip(*data)]
+            else:
+                return [f(*t) for t in zip(*data)]
+
+    def prepare(self, columns: Schema) -> StreamFunction:
+        """Create a stream function that applies the consumer on the results
+        from one or more stream functions for the producers.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Input data frame.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        # Raises an error if the consumer needs to be prepared. Value function
+        # preparation is not supported for data streams since we do not have
+        # access to the full list of values at this point.
+        if not self._is_prepared:
+            raise RuntimeError('cannot prepare value function for stream')
+        # Create stream functions for all producers.
+        prep_prods = [f.prepare(columns) for f in self.producers]
+        # Distinguish between unary and ternary stream functions based on the
+        # number of producers.
+        if len(prep_prods) == 1:
+            return UnaryStreamFunction(
+                producer=prep_prods[0],
+                consumer=self.consumer
+            )
+        else:
+            return TernaryStreamFunction(
+                producers=prep_prods,
+                consumer=self.consumer,
+                is_unary=self.is_unary
+            )
 
 
 # -- Constant function --------------------------------------------------------
@@ -379,7 +701,7 @@ class Col(EvalFunction):
         pd.Series
         """
         _, colidx = column_ref(schema=df.columns, column=self.column)
-        return df.iloc[:, colidx[0]]
+        return df.iloc[:, colidx]
 
     def prepare(self, columns: Schema) -> StreamFunction:
         """Return a Col function that is prepared, i.e., that has the column
@@ -434,8 +756,9 @@ class Cols(EvalFunction):
             return tuple([values[i] for i in self._colidx])
 
     def eval(self, df: pd.DataFrame) -> EvalResult:
-        """Get the values from the data frame column that is referenced by this
-        function.
+        """Get the values from the data frame columns that are referenced by
+        this function. Returns a list of tuples with one value for each of
+        the referenced columns.
 
         Parameters
         ----------
@@ -444,10 +767,18 @@ class Cols(EvalFunction):
 
         Returns
         -------
-        pd.Series
+        list
         """
         _, colidxs = select_clause(schema=df.columns, columns=self.columns)
-        return df.iloc[:, colidxs]
+        # Generating the tuples over the resulting data differs depending on
+        # whether one or multiple columns are referenced.
+        if len(colidxs) == 1:
+            # For a single column we iterate over a data series.
+            return [(v, ) for v in df.iloc[:, colidxs][0]]
+        else:
+            # For multiple columns we iterate over a data frame.
+            data = df.iloc[:, colidxs]
+            return [tuple(r) for r in data.itertuples(index=False, name=None)]
 
     def prepare(self, columns: Schema) -> StreamFunction:
         """Return a Cols function that is prepared, i.e., that has the column
@@ -469,81 +800,71 @@ class Cols(EvalFunction):
 # -- Binary operators ---------------------------------------------------------
 
 class BinaryOperator(EvalFunction):
-    """Generic comparator for comparing two column value expressions."""
-    def __init__(self, lhs, rhs, op, raise_error=False, default_value=None):
-        """Initialize the column(s) (lhs) whose values are compared against the
-        given value expression (rhs). For both arguments a evaluation function
-        is expected.
+    """Generic operator for comparing or transforming two column value
+    expressions (that are represented as evaluation functions).
+    """
+    def __init__(
+        self, lhs: ValueExpression, rhs: ValueExpression, op: Callable
+    ):
+        """Initialize the two value expressions and the binary operator. For
+        the value expressions evaluation functions are expected.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
-            Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
-            Value expression for right value(s) of the comparison.
+        lhs: scalar or openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: scalar or openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
         op: callable
             Callable that accepts two arguments, the left-hand side and
             right-hand side values.
-        raise_error: bool, optional
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
-        default_value: any, default=None
-            Default value that is returned instead of raising an error.
         """
         self.lhs = to_const_eval(lhs)
         self.rhs = to_const_eval(rhs)
         self.op = op
-        self.raise_error = raise_error
-        self.default_value = default_value
 
-    def eval(self, values):
-        """Evaluate the compare expression on the given data frame row.
-        Evaluates the value expression first to get a (scalar) value. That
-        value is then used to create an instance of the compare operator using
-        the factory function.
+    def eval(self, df: pd.DataFrame) -> EvalResult:
+        """Evaluate the binary operator on a given data frame. The result is
+        either as single data series or a list of scalarn values.
 
         Parameters
         ----------
-        values: pandas.core.series.Series
-            Pandas data frame row object
+        df: pd.DataFrame
+            Pandas data frame.
 
         Returns
         -------
-        bool
+        pd.Series or list
         """
-        # Evaluate the left hand side and right hand side function to get the
-        # values that are passed to the compare function.
-        # Call compare method of the implementing subclass. If a TypeError
-        # occurs due to incompatible data types the result is False unless the
-        # raise type error flag is True.
-        try:
-            return self.op(self.lhs(values), self.rhs(values))
-        except TypeError as ex:
-            if self.raise_error:
-                raise ex
-            else:
-                return self.default_value
-        except AttributeError:
-            return self.default_value
+        # Extract values for lhs and rhs of the comparison from the data frame.
+        lhs_data = self.lhs.eval(df)
+        rhs_data = self.rhs.eval(df)
+        # Evaluation of the comparison depends on whether the lhs and rhs are
+        # both data series or not.
+        if isinstance(lhs_data, pd.Series) and isinstance(rhs_data, pd.Series):
+            # We can apply the operator directly on the two data series.
+            return self.op(lhs_data, rhs_data)
+        else:
+            # Iterate over the values in the two results and apply the
+            # comparison operator to each pair of values.
+            return [self.op(v1, v2) for v1, v2 in zip(lhs_data, rhs_data)]
 
-    def prepare(self, df):
-        """Prepare both evaluation functions (lhs and rhs).
+    def prepare(self, columns: Schema) -> StreamFunction:
+        """Prepare both evaluation functions (lhs and rhs) and return a
+        binary operator stream function.
 
         Parameters
         ----------
         df: pandas.DataFrame
             Input data frame.
-
         Returns
         -------
-        openclean.function.eval.base.EvalFunction
+        openclean.data.stream.base.StreamFunction
         """
-        return BinaryOperator(
-            lhs=self.lhs.prepare(df),
-            rhs=self.rhs.prepare(df),
-            op=self.op,
-            raise_error=self.raise_error,
-            default_value=self.default_value
+        return BinaryStreamFunction(
+            lhs=self.lhs.prepare(columns),
+            rhs=self.rhs.prepare(columns),
+            op=self.op
         )
 
 
@@ -551,496 +872,188 @@ class BinaryOperator(EvalFunction):
 
 class Eq(BinaryOperator):
     """Binary equality comparison predicate."""
-    def __init__(self, lhs, rhs, ignore_case=False, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs_: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the comparison.
-        ignore_case: bool, default=False
-            Ignore case in comparison if set to True.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
         """
-        super(Eq, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compare,
-            raise_error=raise_error,
-            default_value=False
-        )
-
-    def compare(self, lhs, rhs):
-        """Compare two values and return True if they are equal.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the comparison.
-        rhs: scalar or tuple
-            Right value of the comparison.
-
-        Returns
-        -------
-        bool
-        """
-        if self.ignore_case:
-            if isinstance(lhs, tuple):
-                lhs = tuple([v.lower() for v in lhs])
-            else:
-                lhs = lhs.lower()
-            if isinstance(rhs, tuple):
-                rhs = tuple([v.lower() for v in rhs])
-            else:
-                rhs = rhs.lower()
-        return lhs == rhs
-
-    def filter(self, df):
-        return self.lhs.filter(df) == self.rhs.filter(df)
-
-
-class EqIgnoreCase(Eq):
-    """Shortcut for comparing single column values in a case-insenstive manner.
-    """
-    def __init__(self, lhs, rhs, raise_error=False):
-        """Initialize the expressions of the operator.
-
-        Parameters
-        ----------
-        lhs_: openclean.function.eval.base.EvalFunction
-            Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
-            Value expression for right value(s) of the comparison.
-        raise_error: bool, optional
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
-        """
-        super(EqIgnoreCase, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            ignore_case=True,
-            raise_error=raise_error
-        )
+        super(Eq, self).__init__(lhs=lhs, rhs=rhs, op=operator.eq)
 
 
 class Geq(BinaryOperator):
     """Predicate for '>=' comparison."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the comparison.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
         """
-        super(Geq, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compare,
-            raise_error=raise_error,
-            default_value=False
-        )
-
-    def compare(self, lhs, rhs):
-        """Return True if the left value is greater or equal than the right
-        value.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the comparison.
-        rhs: scalar or tuple
-            Right value of the comparison.
-
-        Returns
-        -------
-        bool
-        """
-        return lhs >= rhs
+        super(Geq, self).__init__(lhs=lhs, rhs=rhs, op=operator.ge)
 
 
 class Gt(BinaryOperator):
     """Predicate for '>' comparison."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the comparison.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
         """
-        super(Gt, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compare,
-            raise_error=raise_error,
-            default_value=False
-        )
-
-    def compare(self, lhs, rhs):
-        """Return True if the left value is greater than the right value.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the comparison.
-        rhs: scalar or tuple
-            Right value of the comparison.
-
-        Returns
-        -------
-        bool
-        """
-        return lhs > rhs
+        super(Gt, self).__init__(lhs=lhs, rhs=rhs, op=operator.gt)
 
 
 class Leq(BinaryOperator):
     """Predicate for '<=' comparison."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the comparison.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
         """
-        super(Leq, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compare,
-            raise_error=raise_error,
-            default_value=False
-        )
-
-    def compare(self, lhs, rhs):
-        """Return True if the left value is lower or equal that the right
-        value.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the comparison.
-        rhs: scalar or tuple
-            Right value of the comparison.
-
-        Returns
-        -------
-        bool
-        """
-        return lhs <= rhs
+        super(Leq, self).__init__(lhs=lhs, rhs=rhs, op=operator.le)
 
 
 class Lt(BinaryOperator):
     """Predicate for '<' comparison."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the comparison.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
         """
-        super(Lt, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compare,
-            raise_error=raise_error,
-            default_value=False
-        )
-
-    def compare(self, lhs, rhs):
-        """Return True if the left value is lower than the right value.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the comparison.
-        rhs: scalar or tuple
-            Right value of the comparison.
-
-        Returns
-        -------
-        bool
-        """
-        return lhs < rhs
+        super(Lt, self).__init__(lhs=lhs, rhs=rhs, op=operator.lt)
 
 
 class Neq(BinaryOperator):
     """Predicate for '!=' comparison."""
-    def __init__(self, lhs, rhs, ignore_case=False, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the comparison.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the comparison.
-        ignore_case: bool, default=False
-            Ignore case in comparison if set to True.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being compared. By default, the comparison result is False.
         """
-        super(Neq, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compare,
-            raise_error=raise_error,
-            default_value=False
-        )
-        self.ignore_case = ignore_case
-
-    def compare(self, lhs, rhs):
-        """Compare two values and return True if they are not equal.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the comparison.
-        rhs: scalar or tuple
-            Right value of the comparison.
-
-        Returns
-        -------
-        bool
-        """
-        if self.ignore_case:
-            if isinstance(lhs, tuple):
-                lhs = tuple([v.lower() for v in lhs])
-            else:
-                lhs = lhs.lower()
-            if isinstance(rhs, tuple):
-                rhs = tuple([v.lower() for v in rhs])
-            else:
-                rhs = rhs.lower()
-        return lhs != rhs
+        super(Neq, self).__init__(lhs=lhs, rhs=rhs, op=operator.ne)
 
 
 # -- Arithmetic operators -----------------------------------------------------
 
 class Add(BinaryOperator):
     """Arithmetic '+' operator."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the operator.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the operator.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being added.
         """
-        super(Add, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compute,
-            raise_error=raise_error,
-            default_value=0
-        )
-
-    def compute(self, lhs, rhs):
-        """Compute sum of the given values.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the operator.
-        rhs: scalar or tuple
-            Right value of the operator.
-
-        Returns
-        -------
-        scalar
-        """
-        return lhs + rhs
+        super(Add, self).__init__(lhs=lhs, rhs=rhs, op=operator.add)
 
 
 class Divide(BinaryOperator):
     """Arithmetic '/' operator."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the operator.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the operator.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being added.
         """
-        super(Divide, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compute,
-            raise_error=raise_error,
-            default_value=0
-        )
-
-    def compute(self, lhs, rhs):
-        """Compute division of the given values.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the operator.
-        rhs: scalar or tuple
-            Right value of the operator.
-
-        Returns
-        -------
-        scalar
-        """
-        return lhs / rhs
+        super(Divide, self).__init__(lhs=lhs, rhs=rhs, op=operator.truediv)
 
 
 class FloorDivide(BinaryOperator):
     """Arithmetic '//' operator."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the operator.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the operator.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being added.
         """
         super(FloorDivide, self).__init__(
             lhs=lhs,
             rhs=rhs,
-            op=self.compute,
-            raise_error=raise_error,
-            default_value=0
+            op=operator.floordiv
         )
-
-    def compute(self, lhs, rhs):
-        """Compute floor division of the given values.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the operator.
-        rhs: scalar or tuple
-            Right value of the operator.
-
-        Returns
-        -------
-        scalar
-        """
-        return lhs // rhs
 
 
 class Multiply(BinaryOperator):
     """Arithmetic '*' operator."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the operator.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the operator.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being added.
         """
-        super(Multiply, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compute,
-            raise_error=raise_error,
-            default_value=0
-        )
+        super(Multiply, self).__init__(lhs=lhs, rhs=rhs, op=operator.mul)
 
-    def compute(self, lhs, rhs):
-        """Compute product of the given values.
+
+class Pow(BinaryOperator):
+    """Arithmetic '**' operator."""
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
+        """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: scalar or tuple
-            Left value of the operator.
-        rhs: scalar or tuple
-            Right value of the operator.
-
-        Returns
-        -------
-        scalar
+        lhs: scalar or openclean.function.eval.base.EvalFunction
+            Value expression for left value(s) of the operator.
+        rhs: scalar or openclean.function.eval.base.EvalFunction
+            Value expression for right value(s) of the operator.
         """
-        return lhs * rhs
+        super(Pow, self).__init__(lhs=lhs, rhs=rhs, op=operator.pow)
 
 
 class Subtract(BinaryOperator):
     """Arithmetic '-' operator."""
-    def __init__(self, lhs, rhs, raise_error=False):
+    def __init__(self, lhs: ValueExpression, rhs: ValueExpression):
         """Initialize the expressions of the operator.
 
         Parameters
         ----------
-        lhs: openclean.function.eval.base.EvalFunction
+        lhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for left value(s) of the operator.
-        rhs: openclean.function.eval.base.EvalFunction
+        rhs: scalar or openclean.function.eval.base.EvalFunction
             Value expression for right value(s) of the operator.
-        raise_error: bool, default=False
-            Raise TypeError exception if values of incompatible data types are
-            being added.
         """
-        super(Subtract, self).__init__(
-            lhs=lhs,
-            rhs=rhs,
-            op=self.compute,
-            raise_error=raise_error,
-            default_value=0
-        )
-
-    def compute(self, lhs, rhs):
-        """Compute subtraction of the given values.
-
-        Parameters
-        ----------
-        lhs: scalar or tuple
-            Left value of the operator.
-        rhs: scalar or tuple
-            Right value of the operator.
-
-        Returns
-        -------
-        scalar
-        """
-        return lhs - rhs
+        super(Subtract, self).__init__(lhs=lhs, rhs=rhs, op=operator.sub)
 
 
 # -- Helper Functions ---------------------------------------------------------
@@ -1079,9 +1092,3 @@ def to_column_eval(value):
     if not isinstance(value, EvalFunction):
         return Col(value)
     return value
-
-
-"""Type aliases for parameters and return values of evaluation functions."""
-EvalResult = Union[pd.Series, List[Value]]
-EvalSpec = Union[Scalar, Callable, EvalFunction]
-InputColumn = Union[int, str, Column, EvalFunction]

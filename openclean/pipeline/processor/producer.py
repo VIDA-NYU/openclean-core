@@ -230,7 +230,7 @@ class SelectOperator(ProducingOperator):
         openclean.pipeline.consumer.producer.Select
         """
         # Get names and index positions for the filtered columns.
-        colnames, colidxs = select_clause(ds, self.columns)
+        colnames, colidxs = select_clause(ds.columns, self.columns)
         return Select(columns=colidxs), colnames
 
 
@@ -271,7 +271,7 @@ class UpdateOperator(ProducingOperator):
         openclean.pipeline.consumer.producer.Update
         """
         # Get index positions for the updated columns.
-        _, colidxs = select_clause(ds, self.columns)
+        _, colidxs = select_clause(ds.columns, self.columns)
         # Prepate the update funnction
         prep_func = self.func.prepare(ds)
         # Return instance of the update consumer.

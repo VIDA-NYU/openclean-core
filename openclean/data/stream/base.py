@@ -9,9 +9,9 @@
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import Any, Iterator, List, Tuple
+from typing import Any, Callable, Iterator, List, Tuple
 
-from openclean.data.types import ColumnName
+from openclean.data.types import ColumnName, Scalar, Value
 
 
 # -- Data stream consumer -----------------------------------------------------
@@ -69,6 +69,13 @@ class StreamConsumer(metaclass=ABCMeta):
         for rid, row in ds.iterrows():
             self.consume(rowid=rid, row=row)
         return self.close()
+
+
+"""Type alias for stream functions. Stream functions are callables that
+accept a data frame row as the only argument. They return a Value.
+"""
+DataRow = List[Scalar]
+StreamFunction = Callable[[DataRow], Value]
 
 
 # _- Data frame readers and writers -------------------------------------------
