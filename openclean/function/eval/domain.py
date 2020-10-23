@@ -15,7 +15,7 @@ from openclean.data.stream.base import DataRow, StreamFunction
 from openclean.data.types import Schema, Value
 from openclean.data.util import to_set
 from openclean.function.eval.base import InputColumn, Eval, EvalFunction, EvalResult
-from openclean.function.eval.base import get_values, to_eval
+from openclean.function.eval.base import evaluate, to_eval
 from openclean.function.value.domain import IsInDomain, IsNotInDomain
 
 
@@ -139,11 +139,11 @@ class Lookup(EvalFunction):
         pd.Series or list
         """
         # Start by getting the lookup values from the producers.
-        values = get_values(df=df, producers=self.producers)
+        values = evaluate(df=df, producers=self.producers)
         # Generate default values (if default producer(s) are given). If no
         # default was specified the lookup values are used as defaults.
         if self.default is not None:
-            defaults = get_values(df=df, producers=self.default)
+            defaults = evaluate(df=df, producers=self.default)
         else:
             defaults = values
         # Generate a list with a lookup result per data frame row.
