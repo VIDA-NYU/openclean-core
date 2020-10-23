@@ -431,11 +431,6 @@ class Eval(EvalFunction):
     A ternary evaluation function with a unary consumer will pass a tuple with
     the extracted values to the consumer. A unary evaluation function with a
     ternary consumer will raise a TypeError error in the constructor.
-
-    The Eval factory itself only handles the preparation of the encapsuled
-    consumer. It does not implement the eval() function of the super class.
-    Instead, the prepare() function returns an instance of either a unary or
-    ternary evaluation function that implement eval().
     """
     def __init__(
         self, columns: Union[InputColumn, List[InputColumn]],
@@ -722,7 +717,9 @@ class Col(EvalFunction):
 
 class Cols(EvalFunction):
     """Evaluation function that returns a tuple of values from one or more
-    column(s) in the data frame row.
+    column(s) in the data frame row. Extends the abstract evaluation function
+    and implements the stream function interface. For a stream function the
+    internal _colidxs have to be defined (given at object construction).
     """
     def __init__(self, columns: Columns, colidxs: Optional[List[int]] = None):
         """Initialize the source column(s).
