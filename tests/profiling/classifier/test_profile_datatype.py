@@ -29,21 +29,23 @@ def test_datatype_profiler(employees, schools):
     assert types['int'] == 3/7
     assert types['float'] == 2/7
     assert types['text'] == 2/7
-    # Types from school level detail grades: 8 (30) x int, 5 (70) x string.
+    # Types from school level detail grades: 8 (30) x int, 1 (6) float, 4 (64) x string.
     classifier = ValueClassifier(Int(), Float(), default_label='str')
     types = datatypes(schools, columns='grade', classifier=classifier)
-    assert len(types) == 2
+    assert len(types) == 3
+    assert types['float'] == 6
     assert types['int'] == 30
-    assert types['str'] == 70
+    assert types['str'] == 64
     types = datatypes(
         schools,
         columns='grade',
         classifier=classifier,
         features=ResultFeatures.DISTINCT
     )
-    assert len(types) == 2
+    assert len(types) == 3
+    assert types['float'] == 1
     assert types['int'] == 8
-    assert types['str'] == 5
+    assert types['str'] == 4
     types = datatypes(
         schools,
         columns='grade',
@@ -51,18 +53,20 @@ def test_datatype_profiler(employees, schools):
         features=ResultFeatures.TOTAL,
         normalizer=divide_by_total
     )
-    assert len(types) == 2
+    assert len(types) == 3
+    assert types['float'] == 6/100
     assert types['int'] == 30/100
-    assert types['str'] == 70/100
+    assert types['str'] == 64/100
     types = datatypes(
         schools,
         columns='grade',
         classifier=classifier,
         features=ResultFeatures.BOTH
     )
-    assert len(types) == 2
+    assert len(types) == 3
+    assert types['float'] == {'distinct': 1, 'total': 6}
     assert types['int'] == {'distinct': 8, 'total': 30}
-    assert types['str'] == {'distinct': 5, 'total': 70}
+    assert types['str'] == {'distinct': 4, 'total': 64}
     types = datatypes(
         schools,
         columns='grade',
@@ -71,9 +75,10 @@ def test_datatype_profiler(employees, schools):
         normalizer=divide_by_total,
         labels=['dist', 'ttl']
     )
-    assert len(types) == 2
+    assert len(types) == 3
+    assert types['float'] == {'dist': 1/13, 'ttl': 6/100}
     assert types['int'] == {'dist': 8/13, 'ttl': 30/100}
-    assert types['str'] == {'dist': 5/13, 'ttl': 70/100}
+    assert types['str'] == {'dist': 4/13, 'ttl': 64/100}
 
 
 def test_datatypes_error_cases():

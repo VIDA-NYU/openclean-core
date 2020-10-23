@@ -16,13 +16,13 @@ from openclean.function.value.normalize import divide_by_total
 from openclean.profiling.base import DistinctSetProfiler
 from openclean.profiling.classifier.base import ResultFeatures
 from openclean.profiling.classifier.datatype import Datatypes
-from openclean.profiling.util import get_threshold
+from openclean.util.threshold import to_threshold
 
 
 # -- Majority type picker ----------------------------------------------------
 
 def majority_typepicker(
-    df, columns=None, classifier=None, threshold=None, use_total_counts=False,
+    df, columns=None, classifier=None, threshold=0, use_total_counts=False,
     at_most_one=False
 ):
     """Pick the most frequent type assigned by a given classifier to the values
@@ -46,7 +46,7 @@ def majority_typepicker(
             , default=None
         Classifier that assigns data type class labels for scalar column
         values.
-    threshold: callable or int or float
+    threshold: callable or int or float, default=0
         Callable predicate or numeric value that is used to constrain the
         possible candidates based on their normalized frequency.
     use_total_counts: bool, default=False
@@ -80,7 +80,7 @@ class MajorityTypePicker(DistinctSetProfiler):
     threshold.
     """
     def __init__(
-        self, classifier=None, threshold=None, use_total_counts=False,
+        self, classifier=None, threshold=0, use_total_counts=False,
         at_most_one=False
     ):
         """Initialize the classifier for data type assignement. The optional
@@ -93,7 +93,7 @@ class MajorityTypePicker(DistinctSetProfiler):
                 , default=None
             Classifier that assigns data type class labels for scalar column
             values.
-        threshold: callable or int or float
+        threshold: callable or int or float, default=0
             Callable predicate or numeric value that is used to constrain the
             possible candidates based on their normalized frequency.
         use_total_counts: bool, default=False
@@ -105,7 +105,7 @@ class MajorityTypePicker(DistinctSetProfiler):
             empty dictionary will be returned.
         """
         self.classifier = classifier
-        self.threshold = get_threshold(threshold)
+        self.threshold = to_threshold(threshold)
         self.use_total_counts = use_total_counts
         self.at_most_one = at_most_one
 
@@ -156,7 +156,7 @@ class MajorityTypePicker(DistinctSetProfiler):
 # -- Threshold type picker ----------------------------------------------------
 
 def threshold_typepicker(
-    df, columns=None, classifier=None, threshold=None, use_total_counts=False
+    df, columns=None, classifier=None, threshold=0, use_total_counts=False
 ):
     """Identify all types assigned by a given classifier to the values in a
     list having a frequency that exceeds a specified threshold. Generates a
@@ -178,7 +178,7 @@ def threshold_typepicker(
             , default=None
         Classifier that assigns data type class labels for scalar column
         values.
-    threshold: callable or int or float
+    threshold: callable or int or float, default=0
         Callable predicate or numeric value that is used to constrain the
         possible candidates based on their normalized frequency.
     use_total_counts: bool, default=False
@@ -202,7 +202,7 @@ class ThresholdTypePicker(DistinctSetProfiler):
     given list or the absolute value counts.
     """
     def __init__(
-        self, classifier=None, threshold=None, use_total_counts=False
+        self, classifier=None, threshold=0, use_total_counts=False
     ):
         """Initialize the classifier for data type assignement. The threshold
         constrains the results by requiring a type to have a minimal frequency.
@@ -213,7 +213,7 @@ class ThresholdTypePicker(DistinctSetProfiler):
                 , default=None
             Classifier that assigns data type class labels for scalar column
             values.
-        threshold: callable or int or float
+        threshold: callable or int or float, default=0
             Callable predicate or numeric value that is used to constrain the
             possible candidates based on their normalized frequency.
         use_total_counts: bool, default=False
@@ -221,7 +221,7 @@ class ThresholdTypePicker(DistinctSetProfiler):
             frequencies.
         """
         self.classifier = classifier
-        self.threshold = get_threshold(threshold)
+        self.threshold = to_threshold(threshold)
         self.use_total_counts = use_total_counts
 
     def process(self, values):
