@@ -35,7 +35,7 @@ from openclean.pipeline.processor.base import StreamProcessor
 from openclean.pipeline.processor.collector import (
     CollectOperator, DataFrameOperator, WriteOperator
 )
-from openclean.profiling.base import ProfilingFunction
+from openclean.profiling.base import DataProfiler
 from openclean.profiling.datatype.convert import DatatypeConverter
 
 
@@ -282,7 +282,7 @@ class UpdateOperator(ProducingOperator):
 
 
 """Type alias for column profiler specifications."""
-ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, ProfilingFunction]]
+ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, DataProfiler]]
 ProfilerSpecs = Union[ColumnProfiler, List[ColumnProfiler]]
 
 

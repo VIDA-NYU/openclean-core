@@ -9,47 +9,16 @@
 openclean.
 """
 
-from typing import List, Optional, Union
+from typing import Optional
 
 import pandas as pd
 
 from openclean.data.types import Column
-from openclean.data.select import as_list, select_clause, select_by_id
+from openclean.data.select import as_list, select_clause
 from openclean.operator.base import Columns, DataFrameTransformer, Names
 
 
 # -- Functions ----------------------------------------------------------------
-
-def filter_columns(
-    df: pd.DataFrame, colids: Union[int, List[int]],
-    names: Optional[Names] = None
-) -> pd.DataFrame:
-    """Filter columns by their identifier. Returns a data frame that contains
-    the columns whose identifier are included in the given list. Raises a
-    ValueError if the column identifier list contains values that do not
-    reference columns in the data frame schema.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colids: int or list(int)
-        Single column identifier or list of column indentifier.
-    names: string or list(string)
-        Single name or list of names for the resulting columns.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    # Get index positions for referenced columns.
-    columns = select_by_id(df=df, colids=colids)
-    return Select(columns=columns, names=names).transform(df)
-
 
 def select(
     df: pd.DataFrame, columns: Columns, names: Optional[Names] = None

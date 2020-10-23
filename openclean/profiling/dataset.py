@@ -20,7 +20,7 @@ from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import ColumnRef
 from openclean.data.stream.base import StreamConsumer
 from openclean.pipeline.processor.base import StreamProcessor
-from openclean.profiling.base import ProfilingFunction
+from openclean.profiling.base import DataProfiler
 from openclean.profiling.column import (
     DefaultColumnProfiler, DefaultStreamProfiler
 )
@@ -226,12 +226,12 @@ class DatasetProfile(list):
 # -- Data stream profiling operators ------------------------------------------
 
 """Type alias for column profiler specifications."""
-ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, ProfilingFunction]]
+ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, DataProfiler]]
 ProfilerSpecs = Union[ColumnProfiler, List[ColumnProfiler]]
 
 
 class Profile(StreamConsumer):
-    def __init__(self, profilers: List[Tuple[int, str, ProfilingFunction]]):
+    def __init__(self, profilers: List[Tuple[int, str, DataProfiler]]):
         """Initialize the list of column profilers.
 
         Parameters

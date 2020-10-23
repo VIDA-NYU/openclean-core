@@ -10,7 +10,7 @@ The column class extends the Python String class to be able to be used as a
 column value in a Pandas data frame.
 """
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 import pandas as pd
 
@@ -127,52 +127,3 @@ def select_clause(
         column_names.append(colname)
         column_index.append(colidx)
     return column_names, column_index
-
-
-def select_by_id(
-    df: pd.DataFrame, colids: Union[int, List[int]],
-    raise_error: Optional[bool] = True
-) -> List[int]:
-    """Get the list of column index positions in a data frame for list of
-    columns that are referenced by unique column identifier.
-
-    Raises errors if the identifier list contains values that do not reference
-    columns in the data frame schema and the raise error flag is True.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Pandas data frame.
-    colids: int or list(int)
-        Single column identifier or list of column identifier.
-    raise_error: bool, default=True
-        Raise error if the column list contains unknown identifier.
-
-    Returns
-    -------
-    list
-
-    Raises
-    ------
-    ValueError
-    """
-    # Use a lookup for identifier of columns that are renamed
-    includecols = set(colids) if isinstance(colids, list) else set([colids])
-    # Implemnted using the select operator. For this, we need to get the index
-    # positions for thoses columns that are included in the result.
-    select_clause = list()
-    for colidx, col in enumerate(df.columns):
-        try:
-            # Attempt to access the column id. If the identifier is for a
-            # column that is being rename add the index to the select clause.
-            if col.colid in includecols:
-                select_clause.append(colidx)
-                includecols.remove(col.colid)
-        except AttributeError:
-            pass
-    # Raise an error if not all of the identifier in includecols have been
-    # encountered.
-    if includecols and raise_error:
-        missing = list(includecols)
-        raise ValueError("unknown column identifier {}".format(missing))
-    return select_clause

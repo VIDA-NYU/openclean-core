@@ -7,7 +7,7 @@
 
 """Data frame transformation operator for sorting by data frame columns."""
 
-from openclean.data.select import as_list, select_clause, select_by_id
+from openclean.data.select import as_list, select_clause
 from openclean.operator.base import DataFrameTransformer
 
 
@@ -33,31 +33,6 @@ def movecols(df, columns, pos):
     ------
     ValueError
     """
-    return MoveColumns(columns=columns, pos=pos).transform(df)
-
-
-def move_columns(df, colids, pos):
-    """Move one or more columns in a data frame to a given position. Columns
-    are referenced by their unique column identifier.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colids: int or list(int)
-        Single column identifier or list of column indentifier.
-    pos: int
-        Insert position for the moved columns.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    columns = select_by_id(df=df, colids=colids)
     return MoveColumns(columns=columns, pos=pos).transform(df)
 
 

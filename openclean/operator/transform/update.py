@@ -11,7 +11,7 @@ frame.
 
 import pandas as pd
 
-from openclean.data.select import select_clause, select_by_id
+from openclean.data.select import select_clause
 from openclean.function.eval.base import Const, EvalFunction, Eval
 from openclean.function.value.base import ValueFunction
 from openclean.function.value.mapping import Lookup
@@ -50,50 +50,6 @@ def update(df, columns, func):
     ValueError
     """
     return Update(columns=columns, func=func).transform(df)
-
-
-def update_cell(df, colid, rowid, value):
-    """Update the value for a single cell in a data frame. Cells are referenced
-    by the unique column and row identifier. Raises a ValueError if an unknown
-    cell is specified.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colid: int
-        Unique column identifier.
-    rowid: int
-        Unique row identifier
-    value: scalar
-        New cell value.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    # Get the index position of the specified column.
-    colidx = select_by_id(df=df, colids=[colid])[0]
-    # Create a modified data frame where rows are modified by the update
-    # function.
-    data = list()
-    # Have different implementations for single column or multi-column
-    # updates.
-    found = False
-    for rid, values in df.iterrows():
-        values = list(values)
-        if rid == rowid:
-            values[colidx] = value
-            found = True
-        data.append(values)
-    # Raise an error if the specified row was not found.
-    if not found:
-        raise ValueError("unknown row {}".format(rowid))
-    return pd.DataFrame(data=data, index=df.index, columns=df.columns)
 
 
 def swap(df, col1, col2):
