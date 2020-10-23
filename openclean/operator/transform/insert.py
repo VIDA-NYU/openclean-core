@@ -9,87 +9,52 @@
 data frame.
 """
 
+from typing import List, Optional, Union
+
 import pandas as pd
 
-from openclean.function.eval.base import Const, EvalFunction, FullRowEval
+from openclean.data.types import Scalar
+from openclean.function.eval.base import Const, EvalFunction
+from openclean.function.eval.base import evaluate, to_const_eval, to_eval
 from openclean.operator.base import DataFrameTransformer
 
 
 # -- Functions ----------------------------------------------------------------
 
-def insert(df, names, values, pos=None):
-    """Synonym for inscol function.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    names: string, or list(string)
-        Names of the inserted columns.
-    values: (
-            scalar,
-            list,
-            callable, or
-            openclean.function.eval.base.EvalFunction
-        )
-        Single value, list of constant values, callable that accepts a data
-        frame row as the only argument and returns a (list of) value(s)
-        matching the number of columns inserted or an evaluation function
-        that returns a matchin number of values.
-    pos: int, optional
-        Insert position for the new columns. If None the columns will be
-        appended.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    return inscol(df=df, names=names, values=values, pos=pos)
-
-
-def inscol(df, names, pos=None, values=None):
-    """Insert function for data frames columns. Returns a modified data frame
+def inscol(
+    df: pd.DataFrame, names: Union[str, List[str]], pos: Optional[int] = None,
+    values: Optional[Union[Scalar, EvalFunction]] = None
+) -> pd.DataFrame:
+    """Insert function for data frame columns. Returns a modified data frame
     where columns have been inserted at a given position. Exactly one column is
     inserted for each given column name. If the insert position is undefined,
     columns are appended to the data frame. If the position does not reference
     a valid position (i.e., not between 0 and len(df.columns)) a ValueError is
     raised.
 
-    Values for the inserted columns are generated using the given callable.
-    The funciton is expected to return exactly one value for each of the
-    inserted columns.
+    Values for the inserted columns are generated using a given constant value
+    or evaluation function. If a function is given, it is expected to return
+    exactly one value (e.g., a tuple of len(names)) for each of the inserted
+    columns.
 
     Parameters
     ----------
-    df: pandas.DataFrame
+    df: pd.DataFrame
         Input data frame.
     names: string, or list(string)
         Names of the inserted columns.
-    values: (
-            scalar,
-            list,
-            callable, or
-            openclean.function.eval.base.EvalFunction
-        )
-        Single value, list of constant values, callable that accepts a data
-        frame row as the only argument and returns a (list of) value(s)
-        matching the number of columns inserted or an evaluation function
-        that returns a matching number of values.
     pos: int, default=None
         Insert position for the new columns. If None, the columns will be
         appended.
+    values: scalar, tuple, or openclean.function.eval.base.EvalFunction,
+            default=None
+        Single value, tuple of values, or evaluation function that is used to
+        generate the values for the inserted column(s). If no default is
+        specified all columns will contain None.
 
     Returns
     -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
+    pd.DataFrame
     """
     return InsCol(names=names, pos=pos, values=values).transform(df)
 
@@ -112,10 +77,6 @@ def insrow(df, pos=None, values=None):
     Returns
     -------
     pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
     """
     return InsRow(pos=pos, values=values).transform(df)
 
@@ -145,33 +106,20 @@ class InsCol(DataFrameTransformer):
             frame row as the only argument and returns a (list of) value(s)
             matching the number of columns inserted or an evaluation function
             that returns a matchin number of values.
-
-        Raises
-        ------
-        ValueError
         """
         # Ensure that names is a list
         self.names = names if isinstance(names, list) else [names]
         self.pos = pos
         if values is not None:
-            # If values is not a callable initialize a constant value function.
-            if not callable(values):
-                if isinstance(values, list):
-                    values = Const(values)
-                elif len(self.names) > 1:
-                    values = Const([values] * len(names))
-                else:
-                    values = Const(values)
-            elif not isinstance(values, EvalFunction):
-                # Wrap the callable in a full row evaluation function
-                values = FullRowEval(func=values)
-        else:
-            # Initialize a function that returns a single None or a list of
-            # None values (one for each inserted column)
-            if len(names) == 1:
-                values = Const(None)
+            if len(self.names) > 1:
+                values = to_eval(values, to_const_eval)
             else:
-                values = Const([None] * len(names))
+                values = [to_const_eval(values)]
+        else:
+            if len(self.names) > 1:
+                values = [Const(tuple([None] * len(self.names)))]
+            else:
+                values = [Const(None)]
         self.values = values
 
     def transform(self, df):
@@ -199,23 +147,25 @@ class InsCol(DataFrameTransformer):
             inspos = self.pos
         else:
             inspos = len(df.columns)
-        # Call the prepare method of the value generator function if it is an
-        # evaluation function.
-        f = self.values.prepare(df)
+        # Evaluate the values function(s) to get the default values for the
+        # inserted columns.
+        defaults = evaluate(df, self.values)
         # Create a modified data frame where rows are modified by the update
         # function.
         data = list()
         # Have different implementations for single column or multi-column
         # updates.
+        rowidx = 0
         if len(self.names) == 1:
             for rowid, values in df.iterrows():
-                val = f.eval(values)
+                val = defaults[rowidx]
                 values = list(values)
                 data.append(values[:inspos] + [val] + values[inspos:])
+                rowidx += 1
         else:
             col_count = len(self.names)
             for rowid, values in df.iterrows():
-                vals = f.eval(values)
+                vals = defaults[rowidx]
                 if len(vals) != col_count:
                     msg = 'expected {} values instead of {}'
                     raise ValueError(msg.format(col_count, vals))
@@ -223,6 +173,7 @@ class InsCol(DataFrameTransformer):
                     vals = list(vals)
                 values = list(values)
                 data.append(values[:inspos] + vals + values[inspos:])
+                rowidx += 1
         # Insert the column names into the data frame schema.
         columns = list(df.columns)
         columns = columns[:inspos] + self.names + columns[inspos:]

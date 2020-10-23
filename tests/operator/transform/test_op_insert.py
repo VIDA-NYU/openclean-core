@@ -37,7 +37,7 @@ def test_insert_multiple_columns(employees):
         employees,
         names=['Height', 'Weight'],
         pos=1,
-        values=Cols('Name', 'Age')
+        values=Cols(['Name', 'Age'])
     )
     assert df.shape == (7, 5)
     for _, values in df.iterrows():

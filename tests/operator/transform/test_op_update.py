@@ -7,7 +7,6 @@
 
 import pytest
 
-from openclean.data.types import Column
 from openclean.function.eval.base import Col, Cols
 from openclean.function.value.mapping import Lookup
 from openclean.operator.transform.update import swap, update
@@ -25,17 +24,11 @@ BOROUGHS = [
 def test_swap_columns(nyc311):
     """Test swapping values in two columns of a data frame."""
     df = swap(nyc311, 'borough', 'descriptor')
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['descriptor'].unique()
     assert len(values) == 5
     assert sorted(values) == BOROUGHS
     # Result is independent of the order of col1 and col2
     df = swap(nyc311, 'descriptor', 'borough')
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['descriptor'].unique()
     assert len(values) == 5
     assert sorted(values) == BOROUGHS
@@ -54,16 +47,10 @@ def test_update_single_column(nyc311):
         'STATEN ISLAND': 'SI'
     }
     df = update(nyc311, 'borough', mapping)
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['borough'].unique()
     assert len(values) == 5
     assert sorted(values) == sorted(mapping.values())
     df = update(nyc311, 'borough', Lookup(mapping))
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['borough'].unique()
     assert len(values) == 5
     assert sorted(values) == sorted(mapping.values())
@@ -74,11 +61,9 @@ def test_update_multiple_columns(nyc311):
     df = update(
         df=nyc311,
         columns=['borough', 'descriptor'],
-        func=Cols('descriptor', 'borough')
+        func=Cols(['descriptor', 'borough'])
     )
     # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['descriptor'].unique()
     assert len(values) == 5
     assert sorted(values) == BOROUGHS
