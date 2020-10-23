@@ -10,20 +10,20 @@ general are considered values that do not match a (list of) pattern(s) that
 the values in a list (e.g., data frame column) are expected to satisfy.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 
 from openclean.data.types import Value
-from openclean.operator.collector.count import DistinctColumns
+from openclean.function.eval.base import InputColumn
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
-from openclean.profiling.util import always_false, eval_all
+from openclean.util.core import always_false, eval_all
 
 
 def regex_outliers(
-    df: pd.DataFrame, columns: DistinctColumns, patterns: List[str],
-    fullmatch: Optional[bool] = True
+    df: pd.DataFrame, columns: Union[InputColumn, List[InputColumn]],
+    patterns: List[str], fullmatch: Optional[bool] = True
 ) -> List:
     """Identify values in a (list of) data frame columns(s) that do not match
     any of the given pattern expressions. Patterns are represented as strings
@@ -48,7 +48,7 @@ def regex_outliers(
     list
     """
     op = RegExOutliers(patterns=patterns, fullmatch=fullmatch)
-    return list(op.run(df=df, columns=columns).keys())
+    return op.run(df=df, columns=columns)
 
 
 class RegExOutliers(ConditionalOutliers):
@@ -65,6 +65,7 @@ class RegExOutliers(ConditionalOutliers):
             If True, the pattern has to match a given string fully in order to
             not be considered an outlier.
         """
+        super(RegExOutliers, self).__init__()
         # Ensure that patterns is a list.
         if not isinstance(patterns, list):
             patterns = [patterns]
@@ -101,4 +102,4 @@ class RegExOutliers(ConditionalOutliers):
         bool
         """
         if self.predicate(value):
-            return True
+            return value

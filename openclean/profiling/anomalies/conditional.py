@@ -11,7 +11,7 @@ satisfy a given outlier predicate.
 
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Any, List
+from typing import Any, List, Optional, Type
 
 from openclean.data.types import Value
 from openclean.profiling.anomalies.base import AnomalyDetector
@@ -21,6 +21,19 @@ class ConditionalOutliers(AnomalyDetector, metaclass=ABCMeta):
     """Detect outliers in a given value sequence by testing for each value
     whether they satisfy an implementation-specific outlier condition.
     """
+    def __init__(self, resultcls: Optional[Type] = list):
+        """Initialize the type of the result class. Instances of this class
+        are generated at the start of the process method to collect the outlier
+        results.
+
+        Parameters
+        ----------
+        resultclass: (subcleass of) type list
+            Class that is instantiated to collect results. The should be a
+            subclass of list (or at least support the append method).
+        """
+        self.resultcls = resultcls
+
     def process(self, values: Counter) -> List:
         """Identify values in a given set of values that satisfy the
         outlier condition. This method is called if the outlier detector is
@@ -40,7 +53,7 @@ class ConditionalOutliers(AnomalyDetector, metaclass=ABCMeta):
         -------
         list
         """
-        result = list()
+        result = self.resultcls()
         for value in values:
             outlier = self.outlier(value)
             if outlier is not None:

@@ -9,18 +9,59 @@
 data type for the column.
 """
 
+from collections import defaultdict
 from typing import Callable, Dict, List, Union
 
 import pandas as pd
 
 from openclean.data.types import Scalar, Value
-from openclean.operator.collector.count import DistinctColumns
+from openclean.function.eval.base import InputColumn
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
+# -- Outlier results ----------------------------------------------------------
+
+class DatatypeOutlierResults(list):
+    """Datatype outlier results are a list of dictionaries. Each dictionary
+    contains information about a detected outlier value ('value') and additional
+    metadata ('metadata': {'type'}) about the assigned type label for the
+    outlier value.
+
+    This class provides some basic functionality to access the individual
+    pieces of information from these dictionaries.
+    """
+
+    def types(self) -> Dict:
+        """Get a mapping of outlier types to a list of values of that type.
+
+        Returns
+        -------
+        dict
+
+        Raises
+        ------
+        KeyError
+        """
+        types = defaultdict(list)
+        for o in self:
+            types[o['metadata']['type']].append(o['value'])
+        return types
+
+    def values(self) -> List:
+        """Get only the list of outlier vaues.
+
+        Returns
+        -------
+        list
+        """
+        return [o['value'] for o in self]
+
+
+# -- Datatype outlier detection operators -------------------------------------
+
 def datatype_outliers(
-    df: pd.DataFrame, columns: DistinctColumns, classifier: Callable,
-    domain: Union[Scalar, List[Scalar]]
+    df: pd.DataFrame, columns: Union[InputColumn, List[InputColumn]],
+    classifier: Callable, domain: Union[Scalar, List[Scalar]]
 ) -> Dict:
     """Identify values that do not match the expected data type. The expected
     data type for a (list of) column(s) is defined by the given domain. The
@@ -72,6 +113,7 @@ class DatatypeOutliers(ConditionalOutliers):
             Valid data type value(s). Defines the types that are not considered
             outliers.
         """
+        super(DatatypeOutliers, self).__init__(resultcls=DatatypeOutlierResults)
         # Ensure that the domain is not a scalar value.
         if type(domain) in [int, float, str]:
             self.domain = set([domain])
@@ -79,14 +121,15 @@ class DatatypeOutliers(ConditionalOutliers):
             self.domain = domain
         self.classifier = classifier
 
-    def outlier(self, value: Value) -> Scalar:
+    def outlier(self, value: Value) -> Dict:
         """Use classifier to get the data type for the given value. If the
         returned type label is not included in the set of valid type labels
         the value is considered an outlier.
 
         Returns a dictionary for values that are classified as outliers that
-        contains two elements: 'value' and 'label', containing the tested value
-        and the returned type label, respectively.
+        contains two elements: 'value' and 'metadata', containing the tested
+        value and the returned type label (in the 'metadata' dictionary with
+        key 'type'), respectively.
 
         Parameters
         ----------
@@ -95,8 +138,8 @@ class DatatypeOutliers(ConditionalOutliers):
 
         Returns
         -------
-        bool
+        dict
         """
         type_label = self.classifier(value)
         if type_label not in self.domain:
-            return type_label
+            return {'value': value, 'metadata': {'type': type_label}}

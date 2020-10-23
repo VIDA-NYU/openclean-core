@@ -16,7 +16,7 @@ def test_absolute_frequency_outliers_for_single_column(agencies):
     """Test frequency outlier detection with absolute frequency counts."""
     # Value 'NY' occurs in 9 out of 10 rows in the dataset.
     outlier = frequency_outliers(agencies, 'state', ge(9), normalize=None)
-    assert len(outlier) == 1
+    assert len(outlier.values()) == 1
     assert outlier[0] == {'value': 'NY', 'metadata': {'count':  9}}
 
 
@@ -31,7 +31,7 @@ def test_absolute_frequency_outliers_for_multiple_columns(agencies):
         ge(2),
         normalize=None
     )
-    assert len(outliers) == 2
+    assert len(outliers.values()) == 2
     counts = outliers.counts()
     assert counts[('BK', 'NY')] == 6
     assert counts[('MN', 'NY')] == 2
@@ -43,7 +43,7 @@ def test_normalized_frequency_outliers_for_single_column(agencies):
     # By default, divide by total is used as the normalization function. The
     # state value 'NY' occurs in 9 out of 10 rows in the agencies dataset.
     outliers = frequency_outliers(agencies, 'state', ge(0.9))
-    assert len(outliers) == 1
+    assert len(outliers.values()) == 1
     assert outliers.counts()['NY'] == 9
     assert outliers.frequencies()['NY'] == 0.9
     # Use MaxAbsScale as an alternative normalization function.
@@ -65,7 +65,7 @@ def test_normalized_frequency_outliers_for_multi_columns(agencies):
     # ('BK', 'NY') occurs in 6 out of ten rows in the agencies dataset.
     # state valye 'NY' occurs in 9 out of 10 rows in the agencies dataset.
     outlier = frequency_outliers(agencies, ['borough', 'state'], ge(0.9))
-    assert len(outlier) == 0
+    assert len(outlier.values()) == 0
     outlier = frequency_outliers(agencies, ['borough', 'state'], ge(0.6))
-    assert len(outlier) == 1
+    assert len(outlier.values()) == 1
     assert outlier[0]['metadata'] == {'count': 6, 'frequency': 0.6}

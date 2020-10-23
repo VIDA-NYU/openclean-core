@@ -65,6 +65,7 @@ class DomainOutliers(ConditionalOutliers):
         ignore_case: bool, optional
             Ignore case for domain inclusion checking
         """
+        super(DomainOutliers, self).__init__()
         self.predicate = IsNotInDomain(domain=domain, ignore_case=ignore_case)
 
     def outlier(self, value: Value) -> bool:
