@@ -94,7 +94,7 @@ class MoveColumns(StreamProcessor, DataFrameTransformer):
 
         Returns
         -------
-        openclean.data.stream.base.StreamFunctionHandler
+        openclean.operator.stream.consumer.StreamFunctionHandler
         """
         # Get the new column order.
         colorder = self.reorder(schema)

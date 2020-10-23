@@ -103,7 +103,7 @@ class Filter(StreamProcessor, DataFrameTransformer):
 
         Returns
         -------
-        openclean.data.stream.base.StreamFunctionHandler
+        openclean.operator.stream.consumer.StreamFunctionHandler
         """
         # Get the stream function for the associated predicate.
         func = self.predicate.prepare(columns=schema)

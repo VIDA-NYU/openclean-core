@@ -90,7 +90,7 @@ class Rename(StreamProcessor, DataFrameTransformer):
 
         Returns
         -------
-        openclean.data.stream.base.StreamFunctionHandler
+        openclean.operator.stream.consumer.StreamFunctionHandler
         """
         # Get schema with renamed columns.
         columns = self.rename(schema)

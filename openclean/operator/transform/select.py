@@ -98,7 +98,7 @@ class Select(StreamProcessor, DataFrameTransformer):
 
         Returns
         -------
-        openclean.data.stream.base.StreamFunctionHandler
+        openclean.operator.stream.consumer.StreamFunctionHandler
         """
         # Get the names and index positions for the selected columns.
         colnames, colidxs = select_clause(schema=schema, columns=self.columns)

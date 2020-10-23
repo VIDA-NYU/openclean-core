@@ -157,7 +157,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
 
         Returns
         -------
-        openclean.data.stream.base.StreamFunctionHandler
+        openclean.operator.stream.consumer.StreamFunctionHandler
         """
         # Get the insert position.
         inspos = self.inspos(schema)

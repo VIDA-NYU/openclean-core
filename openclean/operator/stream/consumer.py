@@ -131,7 +131,7 @@ class ProducingConsumer(StreamConsumer):
         row: list
             List of values in the row.
         """
-        values = self.handle(rowid, row)
+        values = self.handle(row)
         if values is not None:
             if self.consumer is not None:
                 return self.consumer.consume(rowid, values)

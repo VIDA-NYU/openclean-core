@@ -138,7 +138,7 @@ class Update(StreamProcessor, DataFrameTransformer):
 
         Returns
         -------
-        openclean.data.stream.base.StreamFunctionHandler
+        openclean.operator.stream.consumer.StreamFunctionHandler
         """
         # Get the index positions for the updated column(s).
         _, colidxs = select_clause(schema=schema, columns=self.columns)
