@@ -9,9 +9,7 @@
 
 import pandas as pd
 
-from openclean.data.stream.base import (
-    DatasetIterator, DatasetStream, StreamConsumer
-)
+from openclean.data.stream.base import DatasetIterator, DatasetStream
 
 
 class DataFrameReader(DatasetIterator):
@@ -75,31 +73,3 @@ class DataFrameStream(DatasetStream):
         openclean.data.stream.csv.CSVReader
         """
         return DataFrameReader(df=self.df)
-
-    def stream(self, consumer: StreamConsumer):
-        """Stream all rows in the data framee to the given stream consumer.
-        Closes the consumer at the end of the stream and returns the result.
-
-        Parameters
-        ----------
-        consumer: openclean.data.stream.base.StreamConsumer
-            Consumer for dataset rows.
-
-        Returns
-        -------
-        any
-        """
-        csvreader, csvfile = self._openreader()
-        try:
-            rowidx = 0
-            rowcount = self.df.shape[0]
-            while rowidx < rowcount:
-                rowid = self.df.index[rowidx]
-                row = list(self.df.iloc[rowidx])
-                consumer.consume(rowid=rowid, row=row)
-                rowidx += 1
-        except StopIteration:
-            pass
-        finally:
-            csvfile.close()
-        return consumer.close()

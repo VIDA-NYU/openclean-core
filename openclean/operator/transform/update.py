@@ -13,12 +13,15 @@ from typing import Callable, Dict, Union
 
 import pandas as pd
 
+from openclean.data.stream.base import DataRow
 from openclean.data.select import select_clause
-from openclean.data.types import ColumnRef, Columns, Scalar
+from openclean.data.types import ColumnRef, Columns, Scalar, Schema
 from openclean.function.eval.base import Const, EvalFunction, Eval
 from openclean.function.eval.domain import Lookup
 from openclean.function.value.base import ValueFunction
 from openclean.operator.base import DataFrameTransformer
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
 
 """Type alias for update function specifications."""
@@ -98,7 +101,7 @@ def swap(df: pd.DataFrame, col1: ColumnRef, col2: ColumnRef) -> pd.DataFrame:
 
 # -- Operators ----------------------------------------------------------------
 
-class Update(DataFrameTransformer):
+class Update(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that updates values in data frame column(s) using
     a given update function. The function is executed for each row and the
     resulting values replace the original cell values in the row for all listed
@@ -123,6 +126,40 @@ class Update(DataFrameTransformer):
         # Ensure that columns is a list
         self.columns = columns
         self.func = get_update_function(func=func, columns=self.columns)
+
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that updates values in a data stream row.
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.data.stream.base.StreamFunctionHandler
+        """
+        # Get the index positions for the updated column(s).
+        _, colidxs = select_clause(schema=schema, columns=self.columns)
+        # Get the stream function that updates the values in data stream rows.
+        func = self.predicate.prepare(columns=schema)
+
+        def updfunc(row: DataRow) -> DataRow:
+            """Update columns in a data stream row using func."""
+            val = func(row)
+            values = list(row)
+            if len(colidxs) == 1:
+                values[colidxs[0]] = val
+            else:
+                if len(val) != len(colidxs):
+                    msg = 'expected {} values instead of {}'
+                    raise ValueError(msg.format(len(colidxs), len(val)))
+                for i, col in enumerate(colidxs):
+                    values[col] = val[i]
+            return values
+
+        return StreamFunctionHandler(columns=schema, func=updfunc)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Modify rows in the given data frame. Returns a modified data frame

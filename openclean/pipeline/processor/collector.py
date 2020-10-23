@@ -13,9 +13,9 @@ from __future__ import annotations
 from typing import List, Optional
 
 from openclean.data.stream.base import DatasetStream
-from openclean.data.stream.base import StreamConsumer
+from openclean.operator.stream.consumer import StreamConsumer
 from openclean.pipeline.consumer.collector import DataFrame, Write
-from openclean.pipeline.processor.base import StreamProcessor
+from openclean.operator.stream.processor import StreamProcessor
 
 
 class CollectOperator(StreamProcessor):
@@ -57,16 +57,16 @@ class CollectOperator(StreamProcessor):
             Data stream that the consumer will receive as an input.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        upstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of upstream operators for the received data stream. Ignored.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        downstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of downstream operators for the generated consumer. Ignored,
 
         Returns
         -------
-        oopenclean.data.stream.base.StreamConsumer
+        openclean.data.stream.base.StreamConsumer
         """
         return self.cls(*self.args, **self.kwargs)
 
@@ -90,10 +90,10 @@ class DataFrameOperator(StreamProcessor):
             Data stream that the consumer will receive as an input.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        upstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of upstream operators for the received data stream. Ignored.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        downstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of downstream operators for the generated consumer. Ignored,
 
@@ -134,10 +134,10 @@ class WriteOperator(StreamProcessor):
             Data stream that the consumer will receive as an input.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        upstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of upstream operators for the received data stream. Ignored.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        downstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of downstream operators for the generated consumer. Ignored,
 

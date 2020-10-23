@@ -13,9 +13,7 @@ import csv
 import gzip
 
 from openclean.data.types import Column, ColumnName
-from openclean.data.stream.base import (
-    DatasetIterator, DatasetStream, StreamConsumer
-)
+from openclean.data.stream.base import DatasetIterator, DatasetStream
 
 
 class CSVReader(DatasetIterator):
@@ -191,31 +189,6 @@ class CSVFile(DatasetStream):
         else:
             csvfile = open(self.filename, 'r')
         return csv.reader(csvfile, delimiter=self.delim), csvfile
-
-    def stream(self, consumer: StreamConsumer):
-        """Stream all rows in the csv file to the given stream consumer. Closes
-        the consumer at the end of the stream and returns the result.
-
-        Parameters
-        ----------
-        consumer: openclean.data.stream.base.StreamConsumer
-            Consumer for dataset rows.
-
-        Returns
-        -------
-        any
-        """
-        csvreader, csvfile = self._openreader()
-        try:
-            rowid = 0
-            for row in csvreader:
-                consumer.consume(rowid=rowid, row=row)
-                rowid += 1
-        except StopIteration:
-            pass
-        finally:
-            csvfile.close()
-        return consumer.close()
 
     def write(self, header: Optional[List[ColumnName]] = None) -> CSVWriter:
         """Get a CSV writer for the associated CSV file. Writes the dataset

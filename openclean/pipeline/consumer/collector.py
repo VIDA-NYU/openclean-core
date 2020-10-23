@@ -13,14 +13,13 @@ This module contains imlementations for various basic collectors.
 """
 
 from collections import Counter
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
 
 from openclean.data.types import ColumnName
 from openclean.data.stream.csv import CSVWriter
-from openclean.function.eval.base import EvalFunction
-from openclean.data.stream.base import StreamConsumer
+from openclean.operator.stream.consumer import StreamConsumer
 
 
 class Collector(StreamConsumer):

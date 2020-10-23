@@ -13,10 +13,13 @@ from typing import List, Optional, Union
 
 import pandas as pd
 
-from openclean.data.types import Scalar
+from openclean.data.stream.base import DataRow
+from openclean.data.types import Scalar, Schema
 from openclean.function.eval.base import Const, EvalFunction
 from openclean.function.eval.base import evaluate, to_const_eval, to_eval
 from openclean.operator.base import DataFrameTransformer
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
 
 # -- Functions ----------------------------------------------------------------
@@ -83,7 +86,7 @@ def insrow(df, pos=None, values=None):
 
 # -- Operators ----------------------------------------------------------------
 
-class InsCol(DataFrameTransformer):
+class InsCol(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that inserts columns into a data frame. Values
     for the new column(s) are generated using a given value generator function.
     """
@@ -122,6 +125,77 @@ class InsCol(DataFrameTransformer):
                 values = [Const(None)]
         self.values = values
 
+    def inspos(self, schema: Schema) -> int:
+        """Get the insert position for the new column.
+
+        Raises a ValueError if the position is invalid.
+
+        Parameters
+        ----------
+        schema: list of string
+            Dataset input schema.
+
+        Returns
+        -------
+        int
+        """
+        if self.pos is not None:
+            if self.pos < 0 or self.pos > len(schema):
+                raise ValueError('invalid insert position {}'.format(self.pos))
+            return self.pos
+        else:
+            return len(schema)
+
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that re-orders values in a data stream row.
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.data.stream.base.StreamFunctionHandler
+        """
+        # Get the insert position.
+        inspos = self.inspos(schema)
+        # Get the modified schema.
+        columns = list(schema)
+        columns = columns[:inspos] + self.names + columns[inspos:]
+
+        if len(self.names) == 1:
+            # Prepare the value generator.
+            func = self.values[0].prepare(schema)
+
+            def unaryfunc(row: DataRow) -> DataRow:
+                """Reorder columns in a given data stream row."""
+                values = list(row)
+                return values[:inspos] + [func(row)] + values[inspos:]
+
+            streamfunc = unaryfunc
+
+        else:
+            # Prepare the value generator.
+            funcs = [f.prepare(schema) for f in self.values]
+            col_count = len(self.names)
+
+            def ternaryfunc(row: DataRow) -> DataRow:
+                """Reorder columns in a given data stream row."""
+                vals = [f(row) for f in funcs]
+                values = list(row)
+                if len(vals) != len(col_count):
+                    msg = 'expected {} values instead of {}'
+                    raise ValueError(msg.format(col_count, vals))
+                if isinstance(vals, tuple):
+                    vals = list(vals)
+                return values[:inspos] + vals + values[inspos:]
+
+            streamfunc = ternaryfunc
+
+        return StreamFunctionHandler(columns=columns, func=streamfunc)
+
     def transform(self, df):
         """Modify rows in the given data frame. Returns a modified data frame
         where columns have been inserted containing results of evaluating the
@@ -140,13 +214,8 @@ class InsCol(DataFrameTransformer):
         ------
         ValueError
         """
-        # Ensure that position is valid.
-        if self.pos is not None:
-            if self.pos < 0 or self.pos > len(df.columns):
-                raise ValueError('invalid insert position {}'.format(self.pos))
-            inspos = self.pos
-        else:
-            inspos = len(df.columns)
+        # Get the insert position.
+        inspos = self.inspos(df.columns)
         # Evaluate the values function(s) to get the default values for the
         # inserted columns.
         defaults = evaluate(df, self.values)

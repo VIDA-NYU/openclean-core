@@ -28,10 +28,10 @@ from openclean.data.stream.csv import CSVFile
 from openclean.data.types import Scalar
 from openclean.function.eval.base import EvalFunction
 from openclean.operator.transform.update import get_update_function
-from openclean.data.stream.base import StreamConsumer
+from openclean.operator.stream.consumer import StreamConsumer
 from openclean.pipeline.consumer.collector import Distinct, RowCount
 from openclean.pipeline.consumer.producer import Filter, Limit, Select, Update
-from openclean.pipeline.processor.base import StreamProcessor
+from openclean.operator.stream.processor import StreamProcessor
 from openclean.pipeline.processor.collector import (
     CollectOperator, DataFrameOperator, WriteOperator
 )
@@ -85,10 +85,10 @@ class ProducingOperator(StreamProcessor):
             consumer.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        upstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of upstream operators for the received data stream.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        downstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of downstream operators for the generated consumer.
 
@@ -336,7 +336,7 @@ class DataPipeline(DatasetStream):
 
         Parameters
         ----------
-        op: openclean.pipeline.processor.base.StreamProcessor
+        op: openclean.operator.stream.processor.StreamProcessor
             Stream operator that is appended to the pipeline of the returned
             stream processor.
         columns: list of string, default=None
@@ -574,7 +574,7 @@ class DataPipeline(DatasetStream):
 
         Parameters
         -----------
-        op: openclean.pipeline.processor.base.StreamProcessor
+        op: openclean.operator.stream.processor.StreamProcessor
             Stream operator that is appended to the current pipeline
             for execution.
 

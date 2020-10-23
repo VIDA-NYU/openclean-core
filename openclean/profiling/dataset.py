@@ -19,7 +19,7 @@ from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import ColumnRef
 from openclean.data.stream.base import StreamConsumer
-from openclean.pipeline.processor.base import StreamProcessor
+from openclean.operator.stream.processor import StreamProcessor
 from openclean.profiling.base import DataProfiler
 from openclean.profiling.column import (
     DefaultColumnProfiler, DefaultStreamProfiler
@@ -319,10 +319,10 @@ class ProfilingOperator(StreamProcessor):
             consumer.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        upstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of upstream operators for the received data stream.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
+        downstream: list of openclean.operator.stream.processor.StreamProcessor,
                 default=None
             List of downstream operators for the generated consumer.
 

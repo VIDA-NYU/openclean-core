@@ -13,9 +13,12 @@ from typing import Optional
 
 import pandas as pd
 
-from openclean.data.types import Column
+from openclean.data.stream.base import DataRow
+from openclean.data.types import Column, Schema
 from openclean.data.select import as_list, select_clause
 from openclean.operator.base import Columns, DataFrameTransformer, Names
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
 
 # -- Functions ----------------------------------------------------------------
@@ -51,7 +54,7 @@ def select(
 
 # -- Operators ----------------------------------------------------------------
 
-class Select(DataFrameTransformer):
+class Select(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that selects a list of columns from a data frame.
     The output is a data frame that contains all rows from an input data frame
     but only those columns that are included in a given select clause.
@@ -82,6 +85,29 @@ class Select(DataFrameTransformer):
                 raise ValueError('incompatible lists for columns and names')
         else:
             self.names = None
+
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that filters columns from data frame rows using the
+        associated list of columns (i.e., the select clause).
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.data.stream.base.StreamFunctionHandler
+        """
+        # Get the names and index positions for the selected columns.
+        colnames, colidxs = select_clause(schema=schema, columns=self.columns)
+
+        def streamfunc(row: DataRow) -> DataRow:
+            """Include only columns in the select clause."""
+            return [row[i] for i in colidxs]
+
+        return StreamFunctionHandler(columns=colnames, func=streamfunc)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Return a data frame that contains all rows but only those columns
