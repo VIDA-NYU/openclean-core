@@ -276,7 +276,6 @@ class EvalFunction(metaclass=ABCMeta):
 EvalResult = Union[pd.Series, List[Value]]
 EvalSpec = Union[Scalar, Callable, EvalFunction]
 InputColumn = Union[int, str, Column, EvalFunction]
-Producer = Union[InputColumn, Scalar]
 ValueExpression = Union[Scalar, EvalFunction]
 
 
@@ -1121,6 +1120,13 @@ def to_column_eval(value):
     if not isinstance(value, EvalFunction):
         return Col(value)
     return value
+
+
+"""Type alias for to_eval input parameters. Since the function can be used to
+instantiate Col and Const functions (depending on the given factory) it has to
+accepts either column references or scalars.
+"""
+Producer = Union[InputColumn, Scalar]
 
 
 def to_eval(

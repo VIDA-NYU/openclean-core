@@ -19,44 +19,50 @@ discovering patterns in the data.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Dict, Optional, Union
+from typing import Dict, List, Union
 
 import pandas as pd
 
 from openclean.data.types import Scalar
-from openclean.operator.collector.count import DistinctColumns, distinct
+from openclean.function.eval.base import InputColumn, evaluate, to_eval
+
+
+"""Type alias for data profiler results. Data profilers return either a
+dictionary or a list of values. The structure of either is implementation
+dependent.
+"""
+ProfilerResult = Union[Dict, List]
 
 
 # --Profler base classes ------------------------------------------------------
 
-class ProfilingFunction(metaclass=ABCMeta):
-    """Profiler for a stream of (scalar) values. Profiling functions compute
-    statistics or informative summaries over all values in a data stream, i.e.,
-    the values form a single column or multiple columns in a dataset.
+class DataProfiler(metaclass=ABCMeta):
+    """Profiler for a stream of (scalar) values. A data profiler computes
+    statistics (informative summaries) over all values in a data stream, i.e.,
+    values from a single column or multiple columns in a dataset.
 
-    Profiling functions are stream-aware so that an implementation of a
-    profiling function can be used on data frames as well as with streams over
-    rows in a dataset.
+    Data profiler are stream-aware so that an implementation of a profiler can
+    be used on data frames as well as with streams over rows in a dataset.
 
-    Data is passed to the function either as pairs of (value, count) where
+    Data is passed to the profiler either as pairs of (value, count) where
     count is a frequency count (using the methods open, consume, close) or as a
-    Counter with distinct values and their absulute counts (using the process
-    method). In the case of a stream of (value, count), the values in the
+    Counter with distinct values and their absolute counts (using the process
+    method). In the case of a stream of (value, count)-pairs, the values in the
     stream are not guaranteed to be unique, i.e., the same value may be passed
     to the profiler multiple times (with potentially different counts).
 
-    The profiler returns a dictionary containing the profiling results. The
-    elements and structure of that disctionary are implementation dependent.
+    The profiler returns a dictionary or a list with the profiling results. The
+    elements and structure of the result are implementation dependent.
     """
     @abstractmethod
-    def close(self) -> Dict:
+    def close(self) -> ProfilerResult:
         """Signal the end of the data stream. Returns the profiling result. The
         type of the result is a dictionary. The elements and structure in the
         dictionary are implementation dependent.
 
         Returns
         -------
-        dict
+        dict or list
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -87,7 +93,7 @@ class ProfilingFunction(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def process(self, values: Counter) -> Dict:
+    def process(self, values: Counter) -> ProfilerResult:
         """Compute one or more features over a set of distinct values. This is
         the main profiling function that computes statistics or informative
         summaries over the given data values. It operates on a compact form of
@@ -105,12 +111,18 @@ class ProfilingFunction(metaclass=ABCMeta):
 
         Returns
         -------
-        dict
+        dict or list
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def run(self, df: pd.DataFrame, columns: Optional[DistinctColumns] = None):
-        """
+    def run(
+        self, df: pd.DataFrame, columns: Union[InputColumn, List[InputColumn]]
+    ) -> ProfilerResult:
+        """Run the profiler using values that are generated from one or more
+        columns (producers) for a given data frame. Evaluates the producers
+        and creates a value count that is passed on to the process method for
+        profiling.
+
         Parameters
         ----------
         df: pd.DataFrame
@@ -120,15 +132,20 @@ class ProfilingFunction(metaclass=ABCMeta):
             Evaluation function to extract values from data frame rows. This
             can also be a a single column reference or a list of column
             references.
+
+        Returns
+        -------
+        dict or list
         """
-        return self.process(distinct(df=df, columns=columns))
+        producers = to_eval(producers=columns)
+        return self.process(Counter(evaluate(df=df, producers=producers)))
 
 
-class DataStreamProfiler(ProfilingFunction):
+class DataStreamProfiler(DataProfiler):
     """Data stream profiler that implements the process method of the profiler
     function using the stream methods consume and close.
     """
-    def process(self, values: Counter) -> Dict:
+    def process(self, values: Counter) -> ProfilerResult:
         """Compute one or more features over a set of distinct values. Streams
         the elements in the given counter to the consume method.
 
@@ -140,7 +157,7 @@ class DataStreamProfiler(ProfilingFunction):
 
         Returns
         -------
-        dict
+        dict or list
         """
         self.open()
         for value, count in values.items():
@@ -148,7 +165,7 @@ class DataStreamProfiler(ProfilingFunction):
         return self.close()
 
 
-class DistinctSetProfiler(ProfilingFunction):
+class DistinctSetProfiler(DataProfiler):
     """Profiling function that collects all elements in the stream and then
     uses the process method to compute the profiling result.
     """
@@ -158,14 +175,14 @@ class DistinctSetProfiler(ProfilingFunction):
         """
         self.values = None
 
-    def close(self) -> Dict:
+    def close(self) -> ProfilerResult:
         """Signal the end of the data stream. Returns the profiling result. The
         type of the result is a dictionary. The elements and structure in the
         dictionary are implementation dependent.
 
         Returns
         -------
-        dict
+        dict or list
         """
         return self.process(self.values)
 
@@ -188,81 +205,3 @@ class DistinctSetProfiler(ProfilingFunction):
     def open(self):
         """Initialize the counter at the beginning of the stream."""
         self.values = Counter()
-
-
-# -- Profiling operators ------------------------------------------------------
-
-
-"""Type alias for profiler specification. Allows for nested specification of
-profiler results.
-"""
-ProfilerSpec = Union[Dict[str, ProfilingFunction], ProfilingFunction]
-
-
-def profile(
-    df: pd.DataFrame, columns: DistinctColumns, profilers: ProfilerSpec,
-) -> Dict:
-    """Generic profiler that executes a profiling specification on a column (or
-    list of columns) for a given data frame.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Input data frame.
-    columns: int, string, list, or openclean.function.eval.base.EvalFunction
-        Evaluation function to extract values from data frame rows. This
-        can also be a a single column reference or a list of column references.
-    profilers: single or dict of openclean.profiling.base.ProfilingFunction
-        Single profiling function or a dictinary mapping profiler names to
-        profiling functions.
-    """
-    return Profiler(profilers=profilers).run(df=df, columns=columns)
-
-
-class Profiler(DistinctSetProfiler):
-    """Generic profiler that executes a specification of profiling functions
-    on a given list of values. The results of individual profiling functions in
-    the specification are combined in the returned result dictionary.
-    """
-    def __init__(self, profilers: ProfilerSpec):
-        """Initialize the list of profiler functions and the optional profiler
-        name.
-
-        Raises a ValueError if not all profilers are instances of the
-        ProfilerFunction class or if the functon names are not unique.
-
-        Parameters
-        ----------
-        profilers: single or dict of openclean.profiling.base.ProfilingFunction
-            Single profiling function or a dictinary mapping profiler names to
-            profiling functions.
-
-        Raises
-        ------
-        ValueError
-        """
-        self.profilers = profilers
-
-    def process(self, values: Counter) -> Dict:
-        """Combine the results from the different profiler functions in a
-        single dictionary. Raises a ValueError if the names of the profilers
-        are not unique.
-
-        Parameters
-        ----------
-        values: collections.Counter
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
-
-        Returns
-        -------
-        dict
-        """
-        if isinstance(self.profilers, ProfilingFunction):
-            return self.profilers.process(values)
-        else:
-            # Assumes that we were given a dictionary with profiling functions.
-            results = dict()
-            for key in self.profilers:
-                results[key] = self.profilers[key].process(values)
-            return results

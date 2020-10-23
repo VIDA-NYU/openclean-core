@@ -11,7 +11,7 @@ from abc import ABCMeta, abstractmethod
 
 from openclean.function.value.base import ProfilingFunction
 
-import openclean.util as util
+import openclean.util.core as util
 
 
 class Pattern(metaclass=ABCMeta):

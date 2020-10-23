@@ -10,8 +10,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import Callable, Iterable, List, Optional, Tuple
 
-from openclean.function.base import scalar_pass_through
 from openclean.function.string import to_lower
+from openclean.util.core import scalar_pass_through
 
 
 # -- String similarity --------------------------------------------------------

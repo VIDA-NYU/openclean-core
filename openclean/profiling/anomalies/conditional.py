@@ -11,7 +11,7 @@ satisfy a given outlier predicate.
 
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Any, Dict
+from typing import Any, List
 
 from openclean.data.types import Value
 from openclean.profiling.anomalies.base import AnomalyDetector
@@ -21,28 +21,30 @@ class ConditionalOutliers(AnomalyDetector, metaclass=ABCMeta):
     """Detect outliers in a given value sequence by testing for each value
     whether they satisfy an implementation-specific outlier condition.
     """
-    def process(self, values: Counter) -> Dict:
+    def process(self, values: Counter) -> List:
         """Identify values in a given set of values that satisfy the
         outlier condition. This method is called if the outlier detector is
-        part of a data profiler configuration. The result is a dictionary where
-        outlier values are mapped to optional metadata (provenance) generated
-        by the outlier detector for the value.
+        part of a data profiler configuration. The result is a list containing
+        either the oulier values or dictionaries containing the outlier value
+        (associated with the key 'value') and additional information that the
+        outlier detector provided as supporting evidence (associated with the
+        key 'metadata').
 
         Parameters
         ----------
-        values: dict
+        values: collections.Counter
             Set of distinct scalar values or tuples of scalar values that are
             mapped to their respective frequency count.
 
         Returns
         -------
-        dict
+        list
         """
-        result = dict()
+        result = list()
         for value in values:
-            outlier_info = self.outlier(value)
-            if outlier_info is not None:
-                result[value] = outlier_info
+            outlier = self.outlier(value)
+            if outlier is not None:
+                result.append(outlier)
         return result
 
     @abstractmethod

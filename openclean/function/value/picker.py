@@ -13,8 +13,8 @@ from collections import Counter
 from typing import Callable, List, Optional, Union
 
 from openclean.data.types import Value
-from openclean.function.base import scalar_pass_through
 from openclean.function.value.base import CallableWrapper, ConstantValue, ValueFunction
+from openclean.util.core import scalar_pass_through
 
 
 # -- Most frequent value picker interface -------------------------------------

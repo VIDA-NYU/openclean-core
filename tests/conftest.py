@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from openclean.data.types import Column
-from openclean.data.load import dataset
+#from openclean.data.load import dataset
 
 
 DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
@@ -22,7 +22,7 @@ SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
 @pytest.fixture
 def agencies():
     """List of agency names with NYC borough and US State."""
-    return dataset(AGENCY_FILE)
+    return pd.read_csv(AGENCY_FILE)
 
 
 @pytest.fixture
@@ -62,10 +62,10 @@ def employees():
 @pytest.fixture
 def nyc311():
     """Load the 311 descriptor dataset."""
-    return dataset(NYC311_FILE)
+    return pd.read_csv(NYC311_FILE)
 
 
 @pytest.fixture
 def schools():
     """Load the school level detail dataset."""
-    return dataset(SCHOOLS_FILE)
+    return pd.read_csv(SCHOOLS_FILE)
