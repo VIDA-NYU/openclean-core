@@ -60,3 +60,28 @@ def test_read_file_without_header(compressed, tmpdir):
             assert len(row) == len(header)
             read_count += 1
     assert read_count == write_count
+
+
+def test_none_converter(tmpdir):
+    """Test converting encodings of None to None when reading and writing a
+    CSV file.
+    """
+    # Create a CSV file with three rows where None is encoded as n.
+    tmpfile = os.path.join(tmpdir, 'myfile.txt')
+    with open(tmpfile, 'w') as f:
+        f.write('A,B\n')
+        f.write('1,n\n')
+        f.write('n,1\n')
+        f.write('n,n\n')
+    # Read the file to ensure that 'n' is replaced by None
+    file = CSVFile(tmpfile, none_is='n')
+    with file.open() as f:
+        rows = [r for _, r in f]
+    assert rows == [['1', None], [None, '1'], [None, None]]
+    # Write the file and replace None with '-'
+    with file.write(header=['A', 'B'], none_as='-') as f:
+        for row in rows:
+            f.write(row)
+    with open(tmpfile, 'r') as f:
+        lines = [line.strip() for line in f]
+    assert lines == ['A,B', '1,-', '-,1', '-,-']

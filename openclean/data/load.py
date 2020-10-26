@@ -9,7 +9,7 @@
 
 import pandas as pd
 
-from typing import List, Optional
+from typing import Optional
 
 from openclean.data.stream.csv import CSVFile
 from openclean.data.types import Schema
@@ -19,7 +19,7 @@ from openclean.profiling.datatype.convert import DatatypeConverter
 def dataset(
     filename: str, header: Optional[Schema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
-    typecast: Optional[DatatypeConverter] = None
+    typecast: Optional[DatatypeConverter] = None, none_is: Optional[str] = None
 ) -> pd.DataFrame:
     """Read a pandas data frame from a CSV file. This function infers the
     CSV file delimiter and compression from the file name (if not specified).
@@ -45,6 +45,10 @@ def dataset(
     typecast: openclean.profiling.datatype.convert.DatatypeConverter,
             default=None
         Optional type cnverter that is applied to all data rows.
+    none_is: string, default=None
+        String that was used to encode None values in the input file. If
+        given, all cell values that match the given string are substituted
+        by None.
 
     Returns
     -------
@@ -54,7 +58,8 @@ def dataset(
         filename=filename,
         header=header,
         delim=delim,
-        compressed=compressed
+        compressed=compressed,
+        none_is=none_is
     )
     with file.open() as reader:
         data, index = list(), list()

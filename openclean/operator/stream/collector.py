@@ -242,7 +242,8 @@ class Write(StreamConsumer, StreamProcessor):
     a CSV writer (if instantiated as a consumer).
     """
     def __init__(
-        self, file: Optional[CSVFile] = None, writer: Optional[CSVWriter] = None
+        self, file: Optional[CSVFile] = None, none_as: Optional[str] = None,
+        writer: Optional[CSVWriter] = None
     ):
         """Initialize the CSV file and the CSV writer.
 
@@ -250,10 +251,14 @@ class Write(StreamConsumer, StreamProcessor):
         ----------
         file: openclean.data.stream.csv.CSVFile
             Reference to the output CSV file.
+        none_as: string, default=None
+            String that is used to encode None values in the output file. If
+            given, all cell values that are None are substituted by the string.
         writer: openclean.data.stream.csv.CSVWriter
             Writer for the output CSV file.
         """
         self.file = file
+        self.none_as = none_as
         self.writer = writer
 
     def close(self):
@@ -287,4 +292,4 @@ class Write(StreamConsumer, StreamProcessor):
         -------
         openclean.operator.stream.consumer.StreamConsumer
         """
-        return Write(writer=self.file.write(header=schema))
+        return Write(writer=self.file.write(header=schema, none_as=self.none_as))
