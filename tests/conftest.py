@@ -16,7 +16,7 @@ DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
 AGENCY_FILE = os.path.join(DIR, 'agencies.csv')
 NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
 SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
-
+PARKING = os.path.join(DIR, 'parking-violations.tsv')
 
 @pytest.fixture
 def agencies():
@@ -68,3 +68,8 @@ def nyc311():
 def schools():
     """Load the school level detail dataset."""
     return pd.read_csv(SCHOOLS_FILE)
+
+  
+@pytest.fixture
+def parking():
+    return pd.read_csv(PARKING, sep='\t', index_col=0)
