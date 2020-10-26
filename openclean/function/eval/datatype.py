@@ -234,3 +234,18 @@ class Int(Eval):
             )
 
         super(Int, self).__init__(func=cast, columns=columns, is_unary=True)
+
+
+class Str(Eval):
+    """Convert a given value to string."""
+    def __init__(self, columns):
+        """Create an instance of an string type cast function.
+
+        Parameters
+        ----------
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
+        """
+        super(Str, self).__init__(func=str, columns=columns, is_unary=True)

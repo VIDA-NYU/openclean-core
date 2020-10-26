@@ -5,11 +5,8 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the delete operator in data processing pipeline."""
+"""Unit tests for the delete operator in data processing pipelines."""
 
-import pytest
-
-from openclean.function.eval.aggregate import Max
 from openclean.function.eval.base import Col
 
 

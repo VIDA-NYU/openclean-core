@@ -8,11 +8,11 @@
 import pytest
 
 from openclean.profiling.datatype.convert import DefaultConverter
-from openclean.profiling.datatype.operator import TypecastOperator
+from openclean.profiling.datatype.operator import Typecast
 
 
 @pytest.mark.parametrize('converter', [None, DefaultConverter()])
 def test_row_typecast(converter):
     """Test type casting values in a data stream row using a type converter."""
-    op = TypecastOperator(converter=converter).open(None, [])
-    assert op.handle(0, [1, '2', '3.5', 'A']) == [1, 2, 3.5, 'A']
+    op = Typecast(converter=converter).open(['A', 'B', 'C', 'D'])
+    assert op.handle([1, '2', '3.5', 'A']) == [1, 2, 3.5, 'A']

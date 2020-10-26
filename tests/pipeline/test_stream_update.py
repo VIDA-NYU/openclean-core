@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the filter operator in data processing pipeline."""
+"""Unit tests for the update operator in data processing pipelines."""
 
 from openclean.function.eval.base import Col
 

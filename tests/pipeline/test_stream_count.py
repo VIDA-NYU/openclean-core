@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the count operator in data processing pipeline."""
+"""Unit tests for the count operator in data processing pipelines."""
 
 
 def test_count_rows_in_stream(ds):

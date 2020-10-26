@@ -27,6 +27,8 @@ from openclean.operator.transform.insert import InsCol
 from openclean.operator.transform.rename import Rename
 from openclean.operator.transform.select import Select
 from openclean.operator.transform.update import Update
+from openclean.profiling.datatype.convert import DatatypeConverter
+from openclean.profiling.datatype.operator import Typecast
 
 
 class DataPipeline(object):
@@ -355,6 +357,25 @@ class DataPipeline(object):
         pd.DataFrame
         """
         return self.stream(DataFrame())
+
+    def typecast(
+        self, converter: Optional[DatatypeConverter] = None
+    ) -> DataPipeline:
+        """Typecast operator that converts cell values in data stream rows to
+        different raw types that are represented by the given type converter.
+
+        Parameters
+        ----------
+        converter: openclean.profiling.datatype.convert.DatatypeConverter,
+                default=None
+            Datatype converter for values data stream. Uses the default
+            converter if no converter is given.
+
+        Returns
+        -------
+        openclean.pipeline.processor.DataPipeline
+        """
+        return self.append(Typecast(converter=converter))
 
     def update(self, *args) -> DataPipeline:
         """Update rows in a data frame. Expects a list of columns that are

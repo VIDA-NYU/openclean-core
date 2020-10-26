@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for the data frame generator in data processing pipeline."""
+"""Unit tests for the data frame generator in data processing pipelines."""
 
 import pandas as pd
 

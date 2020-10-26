@@ -7,24 +7,22 @@
 
 """Datatype conversion consumer and processor for data pipelines."""
 
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from openclean.data.types import Schema
-from openclean.data.stream.base import DatasetStream
-from openclean.data.stream.base import StreamConsumer
-from openclean.pipeline.consumer.producer import ProducingConsumer
-from openclean.pipeline.processor.producer import ProducingOperator
-from openclean.profiling.datatype.convert import (
-    DatatypeConverter, DefaultConverter
-)
+from openclean.data.stream.base import DataRow
+from openclean.operator.stream.consumer import ProducingConsumer, StreamConsumer
+from openclean.operator.stream.processor import StreamProcessor
+from openclean.profiling.datatype.convert import DatatypeConverter, DefaultConverter
 
 
-class Typecast(ProducingConsumer):
+class Typecast(ProducingConsumer, StreamProcessor):
     """Consumer for rows that casts all values in a row using a given type
     converter.
     """
     def __init__(
         self, converter: Optional[DatatypeConverter] = None,
+        columns: Optional[Schema] = None,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the datatype converter.
@@ -35,15 +33,17 @@ class Typecast(ProducingConsumer):
                 default=None
             Datatype converter for values data stream. Uses the default
             converter if no converter is given.
+        columns: list of string
+            Names of columns for the rows that the consumer will receive.
         consumer: openclean.data.stream.base.StreamConsumer, default=None
             Downstream consumer for converted rows.
         """
-        super(Typecast, self).__init__(consumer)
+        super(Typecast, self).__init__(columns=columns, consumer=consumer)
         if converter is None:
             converter = DefaultConverter()
         self.converter = converter
 
-    def handle(self, rowid: int, row: List) -> List:
+    def handle(self, row: DataRow) -> DataRow:
         """Convert all values in the given row to a datatype that is defined by
         the associated converter.
 
@@ -60,39 +60,17 @@ class Typecast(ProducingConsumer):
         """
         return [self.converter.cast(value) for value in row]
 
-
-class TypecastOperator(ProducingOperator):
-    """Definition of a typecast operator for definitions of a stream processing
-    pipeline. This operator yields a producing consumer that converts the raw
-    type of all cell values for rows in a data stream.
-    """
-    def __init__(self, converter: Optional[DatatypeConverter] = None):
-        """Initialize the data value converter.
+    def open(self, schema: Schema) -> StreamConsumer:
+        """Factory pattern for stream consumer. Returns an instance of the
+        stream consumer that does the type casting for all data frame rows.
 
         Parameters
         ----------
-        converter: openclean.profiling.datatype..convert.DatatypeConverter,
-                default=None
-            Datatype converter for values data stream. Uses the default
-            converter if no converter is given.
-        """
-        self.converter = converter
-
-    def create_consumer(
-        self, ds: DatasetStream
-    ) -> Tuple[Typecast, Schema]:
-        """Create a typecast consumer that will convert the cell values for all
-        rows in a data stream.
-
-        Parameters
-        ----------
-        ds: openclean.data.stream.base.DatasetStream
-            Data stream that the consumer will receive as an input. The data
-            stream can be used to prepare any associated evaluation functions
-            that are used by the returned consumer.
+        schema: list of string
+            List of column names in the data stream schema.
 
         Returns
         -------
-        openclean.profiling.datatype.Typecast
+        openclean.operator.stream.consumer.StreamConsumer
         """
-        return Typecast(converter=self.converter), ds.columns
+        return Typecast(converter=self.converter, columns=schema)

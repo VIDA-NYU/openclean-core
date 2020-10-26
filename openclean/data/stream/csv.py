@@ -7,12 +7,12 @@
 
 """Collection of helper classes to read data frames from CSV files."""
 
-from typing import List, Optional
+from typing import Optional
 
 import csv
 import gzip
 
-from openclean.data.types import Column, ColumnName
+from openclean.data.types import Column, Schema
 from openclean.data.stream.base import DatasetIterator, DatasetStream
 
 
