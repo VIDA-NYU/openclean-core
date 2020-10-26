@@ -9,7 +9,7 @@
 consumer. These consumers collect results until the close method of the data
 stream is called. At that point, the collector returns a final results.
 
-This module contains imlementations for various basic collectors.
+This module contains implementations for various basic collectors.
 """
 
 from collections import Counter
@@ -17,7 +17,7 @@ from typing import List
 
 import pandas as pd
 
-from openclean.data.types import ColumnName
+from openclean.data.types import Schema
 from openclean.data.stream.csv import CSVWriter
 from openclean.operator.stream.consumer import StreamConsumer
 
@@ -58,7 +58,7 @@ class DataFrame(StreamConsumer):
     data stream. This consumer will not accept a downstream consumer as it
     would never send any rows to such a consumer.
     """
-    def __init__(self, columns: List[ColumnName]):
+    def __init__(self, columns: Schema):
         """Initialize empty lists for data frame columns, rows and the row
         identifier. These lists will be initialized when the consumer receives
         the open signal.

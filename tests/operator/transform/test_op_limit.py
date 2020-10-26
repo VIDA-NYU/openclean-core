@@ -10,6 +10,7 @@
 import pandas as pd
 import pytest
 
+from openclean.operator.stream.collector import Collector
 from openclean.operator.transform.limit import limit, Limit
 
 
@@ -32,12 +33,14 @@ def test_limit_transformer(dataset):
 @pytest.mark.parametrize('limit,result', [(5, 5), (10, 10), (15, 10)])
 def test_limit_consumer(limit, result, dataset):
     """Test the limit consumer."""
-    consumer = Limit(limit).open(dataset.columns)
-    count = 0
+    collector = Collector()
+    consumer = Limit(limit).open(dataset.columns).set_consumer(collector)
+    assert list(consumer.columns) == list(dataset.columns)
     for rowid, row in dataset.iterrows():
         try:
             consumer.consume(rowid=rowid, row=row)
-            count += 1
         except StopIteration:
             break
-    assert count == result
+    rows = collector.close()
+    assert len(rows) == result
+    assert [r[0] for r in rows] == list(range(result))

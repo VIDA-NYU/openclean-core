@@ -143,7 +143,7 @@ class Update(StreamProcessor, DataFrameTransformer):
         # Get the index positions for the updated column(s).
         _, colidxs = select_clause(schema=schema, columns=self.columns)
         # Get the stream function that updates the values in data stream rows.
-        func = self.predicate.prepare(columns=schema)
+        func = self.func.prepare(columns=schema)
 
         def updfunc(row: DataRow) -> DataRow:
             """Update columns in a data stream row using func."""

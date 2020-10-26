@@ -107,16 +107,18 @@ class Filter(StreamProcessor, DataFrameTransformer):
         """
         # Get the stream function for the associated predicate.
         func = self.predicate.prepare(columns=schema)
-        # If the filter is negated we need to wrap the function into a function
-        # that only returns rows for which the predicate evaluates to False.
-        if not self.negated:
-            return StreamFunctionHandler(columns=schema, func=func)
+        # The predicate function is expected to return a Boolean value. For the
+        # stream consumer we need to wrap it into a function that only returns
+        # rows or None if the predicate is not satisfied.
 
-        def negfunc(row: DataRow) -> DataRow:
-            """Negate the result of the stream function."""
-            return None if func(row) else row
+        def streamfunc(row: DataRow) -> DataRow:
+            """Return None for rows that do not satisfy the predicate."""
+            sat = func(row)
+            if (sat and not self.negated) or (not sat and self.negated):
+                return row
+            return None
 
-        return StreamFunctionHandler(columns=schema, func=negfunc)
+        return StreamFunctionHandler(columns=schema, func=streamfunc)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Return a data frame that contains only those rows from the given

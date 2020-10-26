@@ -16,6 +16,7 @@ end of the stream) is the result that is returned by the connected downstream
 consumer.
 """
 
+from __future__ import annotations
 from typing import Any, List, Optional
 from abc import ABCMeta, abstractmethod
 
@@ -154,6 +155,21 @@ class ProducingConsumer(StreamConsumer):
         """
         raise NotImplementedError()  # pragma: no cover
 
+    def set_consumer(self, consumer: StreamConsumer) -> ProducingConsumer:
+        """Set the downstream consumer.
+
+        Parameters
+        ----------
+        consumer: openclean.data.stream.base.StreamConsumer
+            Downstream consumer for processed rows.
+
+        Returns
+        -------
+        openclean.data.stream.consumer.ProducingConsumer
+        """
+        self.consumer = consumer
+        return self
+
 
 class StreamFunctionHandler(ProducingConsumer):
     """The stream function handler is a producing consumer that uses an
@@ -163,7 +179,7 @@ class StreamFunctionHandler(ProducingConsumer):
     """
     def __init__(
         self, columns: Schema, func: StreamFunction,
-        consumer: Optional[StreamConsumer]
+        consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the consumer schema and the stream function that is used
         be the handle method to process rows.

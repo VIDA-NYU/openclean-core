@@ -7,7 +7,7 @@
 
 """Unit tests for the Count consumer for data streams."""
 
-from openclean.pipeline.consumer.collector import RowCount
+from openclean.operator.stream.collector import RowCount
 
 
 def test_row_counts():

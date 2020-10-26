@@ -10,7 +10,7 @@
 import os
 
 from openclean.data.stream.csv import CSVFile
-from openclean.pipeline.consumer.collector import Write
+from openclean.operator.stream.collector import Write
 
 
 def test_write_rows(tmpdir):
