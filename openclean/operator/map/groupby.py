@@ -46,17 +46,13 @@ def groupby(df, columns, func=None, having=None):
     openclean.data.groupby.DataFrameGrouping
     """
     gpby = GroupBy(columns=columns, func=func)
-
-    # unpack user indices to default pandas representations
-    df_reindexed = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
-
-    all_groups = gpby.map(df=df_reindexed)
+    all_groups = gpby.map(df=df)
 
     if having is not None:
-        selected_groups = DataFrameGrouping(df=df_reindexed)
+        selected_groups = DataFrameGrouping(df=df)
         for key, group in all_groups.groups():
             if GroupBy.select(group, having):
-                selected_groups.add(key=key, rows=list(group.index))
+                selected_groups.add(key=key, rows=all_groups.rows(key=key))
     else:
         selected_groups = all_groups
 
@@ -115,10 +111,8 @@ class GroupBy(DataFrameMapper):
         _______
         openclean.data.groupby.DataFrameGrouping
         """
-        # unpack any user set indices to default pandas representations
-        df_reindexed = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
-        groupedby = self._transform(df=df_reindexed)
-        grouping = DataFrameGrouping(df=df_reindexed)
+        groupedby = self._transform(df=df)
+        grouping = DataFrameGrouping(df=df)
         for gby in groupedby:
             grouping.add(key=gby, rows=groupedby[gby])
         return grouping
