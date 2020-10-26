@@ -39,6 +39,6 @@ class StreamProcessor(metaclass=ABCMeta):
 
         Returns
         -------
-        openclean.data.stream.base.StreamConsumer
+        openclean.operator.stream.consumer.StreamConsumer
         """
         raise NotImplementedError()  # pragma: no cover

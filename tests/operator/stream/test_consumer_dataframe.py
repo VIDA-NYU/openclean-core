@@ -13,7 +13,7 @@ from openclean.operator.stream.collector import DataFrame
 def test_data_frame_consumer():
     """Test creating a data frame from a sequence of rows."""
     columns = ['A', 'B', 'C']
-    consumer = DataFrame(columns=columns)
+    consumer = DataFrame(columns=columns).open(columns)
     consumer.consume(3, [1, 2, 3])
     consumer.consume(2, [4, 5, 6])
     consumer.consume(1, [7, 8, 9])

@@ -17,7 +17,6 @@ import pandas as pd
 
 from openclean.data.stream.base import DataRow
 from openclean.data.types import Schema
-from openclean.function.eval.base import EvalFunction
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamConsumer, ProducingConsumer
 from openclean.operator.stream.processor import StreamProcessor

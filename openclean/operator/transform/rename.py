@@ -9,7 +9,7 @@
 openclean.
 """
 
-from openclean.data.types import Column, Schema
+from openclean.data.types import Column, Columns, Schema
 from openclean.data.select import as_list
 from openclean.operator.base import DataFrameTransformer
 from openclean.util.core import scalar_pass_through
@@ -54,7 +54,7 @@ class Rename(StreamProcessor, DataFrameTransformer):
     column list being renamed with the respective value in the given names
     list.
     """
-    def __init__(self, columns, names):
+    def __init__(self, columns: Columns, names: Schema):
         """Initialize the list of columns that are being renames and the list
         new column names. The length of both lists has to be equal. If scalar
         values are provided for either columns or names they are converted into

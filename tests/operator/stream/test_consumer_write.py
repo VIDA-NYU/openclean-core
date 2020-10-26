@@ -16,7 +16,8 @@ from openclean.operator.stream.collector import Write
 def test_write_rows(tmpdir):
     """Test writing rows to a CSV files."""
     filename = os.path.join(tmpdir, 'out.csv')
-    consumer = Write(writer=CSVFile(filename, header=['A', 'B', 'C']).write())
+    consumer = Write(file=CSVFile(filename, header=['A', 'B', 'C']))\
+        .open(['A', 'B', 'C'])
     consumer.consume(3, [1, 2, 3])
     consumer.consume(2, [4, 5, 6])
     consumer.consume(1, [7, 8, 9])

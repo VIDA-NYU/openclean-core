@@ -7,11 +7,13 @@
 
 """Data frame transformation operator for sorting by data frame columns."""
 
-from typing import List
+from typing import List, Union
+
+import pandas as pd
 
 from openclean.data.select import as_list, select_clause
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Schema
+from openclean.data.types import Columns, Schema
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamFunctionHandler
 from openclean.operator.stream.processor import StreamProcessor
@@ -19,7 +21,7 @@ from openclean.operator.stream.processor import StreamProcessor
 
 # -- Functions ----------------------------------------------------------------
 
-def movecols(df, columns, pos):
+def movecols(df: pd.DataFrame, columns: Columns, pos: int):
     """Move one or more columns in a data frame to a given position.
 
     Parameters
@@ -42,7 +44,7 @@ def movecols(df, columns, pos):
     return MoveColumns(columns=columns, pos=pos).transform(df)
 
 
-def move_rows(df, rowids, pos):
+def move_rows(df: pd.DataFrame, rowids: Union[int, List[int]], pos: int):
     """Move one or more rows in a data frame to a given position.
 
     Parameters
@@ -69,7 +71,7 @@ def move_rows(df, rowids, pos):
 
 class MoveColumns(StreamProcessor, DataFrameTransformer):
     """Operator to move one or more columns to a specified index position."""
-    def __init__(self, columns, pos):
+    def __init__(self, columns: Columns, pos: int):
         """Initialize the list of columns that are being moved and their new
         index position.
 

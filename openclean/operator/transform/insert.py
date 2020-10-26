@@ -9,7 +9,7 @@
 data frame.
 """
 
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -90,7 +90,10 @@ class InsCol(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that inserts columns into a data frame. Values
     for the new column(s) are generated using a given value generator function.
     """
-    def __init__(self, names, pos=None, values=None):
+    def __init__(
+        self, names: Union[str, List[str]], pos: Optional[int] = None,
+        values: Optional[Union[Callable, EvalFunction, List, Scalar, Tuple]] = None
+    ):
         """Initialize the list of column names, the insert position and the
         function that is used to generate values for the inserted column(s).
 
@@ -185,7 +188,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
                 """Reorder columns in a given data stream row."""
                 vals = [f(row) for f in funcs]
                 values = list(row)
-                if len(vals) != len(col_count):
+                if len(vals) != col_count:
                     msg = 'expected {} values instead of {}'
                     raise ValueError(msg.format(col_count, vals))
                 if isinstance(vals, tuple):

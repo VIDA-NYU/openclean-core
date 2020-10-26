@@ -12,14 +12,12 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 
 
-from openclean.data.stream.df import DataFrameStream
-from openclean.pipeline.processor.collector import DataFrameOperator
+from openclean.pipeline import stream
 
 
 def test_generate_df_from_stream():
     """Test creating a data frame from the rows in a stream."""
     data = [[1, 2, 3], [3, 4, 5], [5, 6, 7]]
     df = pd.DataFrame(data=data, columns=['A', 'B', 'C'])
-    ds = DataFrameStream(df)
-    consumer = DataFrameOperator().open(ds, ds.columns)
-    assert_frame_equal(df, consumer.process(ds))
+    ds = stream(df).to_df()
+    assert_frame_equal(df, ds)

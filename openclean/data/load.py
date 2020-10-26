@@ -9,12 +9,10 @@
 
 import pandas as pd
 
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from openclean.data.stream.csv import CSVFile
-from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import ColumnName
-from openclean.pipeline.processor.producer import DataPipeline
 from openclean.profiling.datatype.convert import DatatypeConverter
 
 
@@ -66,40 +64,3 @@ def dataset(
             data.append(row)
             index.append(rowid)
         return pd.DataFrame(data=data, columns=file.columns, index=index)
-
-
-def stream(
-    filename: Union[str, pd.DataFrame],
-    header: Optional[List[ColumnName]] = None,
-    delim: Optional[str] = None, compressed: Optional[bool] = None
-) -> DataPipeline:
-    """Read a CSV file as a data stream. This is a helper method that is
-    intended to read and filter large CSV files.
-
-    Parameters
-    ----------
-    filename: string
-        Path to CSV file on the local file system.
-    header: list of string, default=None
-        Optional header. If no header is given it is assumed that the first
-        row in the CSV file contains the header information.
-    delim: string, default=None
-        The column delimiter used in the CSV file.
-    compressed: bool, default=None
-        Flag indicating if the file contents have been compressed using
-        gzip.
-
-    Returns
-    -------
-    openclean.pipeline.processor.DataPipeline
-    """
-    if isinstance(filename, pd.DataFrame):
-        file = DataFrameStream(df=filename)
-    else:
-        file = CSVFile(
-            filename=filename,
-            header=header,
-            delim=delim,
-            compressed=compressed
-        )
-    return DataPipeline(reader=file)

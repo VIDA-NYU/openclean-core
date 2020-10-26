@@ -10,7 +10,6 @@ import pandas as pd
 import pytest
 
 from openclean.data.types import Column
-#from openclean.data.load import dataset
 
 
 DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
