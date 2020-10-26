@@ -11,7 +11,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import Callable, Iterator, List, Tuple
 
-from openclean.data.types import ColumnName, Scalar, Value
+from openclean.data.types import Scalar, Schema, Value
 
 
 """Type alias for stream functions. Stream functions are callables that
@@ -38,7 +38,7 @@ class DatasetStream(metaclass=ABCMeta):
     for reading. Dataset reader should be able to read the same dataset
     multiple times.
     """
-    def __init__(self, columns: List[ColumnName]):
+    def __init__(self, columns: Schema):
         """Initialize the schema for the rows in this data stream iterator.
 
         Parameters

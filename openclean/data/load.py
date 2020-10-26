@@ -12,12 +12,12 @@ import pandas as pd
 from typing import List, Optional
 
 from openclean.data.stream.csv import CSVFile
-from openclean.data.types import ColumnName
+from openclean.data.types import Schema
 from openclean.profiling.datatype.convert import DatatypeConverter
 
 
 def dataset(
-    filename: str, header: Optional[List[ColumnName]] = None,
+    filename: str, header: Optional[Schema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
     typecast: Optional[DatatypeConverter] = None
 ) -> pd.DataFrame:

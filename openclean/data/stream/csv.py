@@ -104,7 +104,7 @@ class CSVWriter(object):
 class CSVFile(DatasetStream):
     """Helper class to open a CSV reader for a given data file."""
     def __init__(
-        self, filename: str, header: Optional[List[ColumnName]] = None,
+        self, filename: str, header: Optional[Schema] = None,
         delim: Optional[str] = None, compressed: Optional[bool] = None,
         write: Optional[bool] = False
     ):
@@ -190,7 +190,7 @@ class CSVFile(DatasetStream):
             csvfile = open(self.filename, 'r')
         return csv.reader(csvfile, delimiter=self.delim), csvfile
 
-    def write(self, header: Optional[List[ColumnName]] = None) -> CSVWriter:
+    def write(self, header: Optional[Schema] = None) -> CSVWriter:
         """Get a CSV writer for the associated CSV file. Writes the dataset
         header information to the opened output file.
 

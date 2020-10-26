@@ -9,7 +9,7 @@
 
 from typing import List, Optional, Tuple
 
-from openclean.data.types import ColumnName
+from openclean.data.types import Schema
 from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.base import StreamConsumer
 from openclean.pipeline.consumer.producer import ProducingConsumer
@@ -80,7 +80,7 @@ class TypecastOperator(ProducingOperator):
 
     def create_consumer(
         self, ds: DatasetStream
-    ) -> Tuple[Typecast, List[ColumnName]]:
+    ) -> Tuple[Typecast, Schema]:
         """Create a typecast consumer that will convert the cell values for all
         rows in a data stream.
 
