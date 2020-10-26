@@ -299,8 +299,8 @@ class BinaryStreamFunction(object):
             Callable that accepts two arguments, the left-hand side and
             right-hand side values.
         """
-        self.lhs = to_const_eval(lhs)
-        self.rhs = to_const_eval(rhs)
+        self.lhs = lhs
+        self.rhs = rhs
         self.op = op
 
     def __call__(self, row: DataRow) -> Scalar:
@@ -852,8 +852,9 @@ class BinaryOperator(EvalFunction):
 
         Parameters
         ----------
-        df: pandas.DataFrame
-            Input data frame.
+        columns: list of string
+            Schema for data stream rows.
+
         Returns
         -------
         openclean.data.stream.base.StreamFunction
