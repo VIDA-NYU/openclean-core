@@ -62,8 +62,8 @@ class Aggregate(DataGroupReducer):
         self._is_input_dict = isinstance(func, dict) # to retain memory of user input
         self.funcs = get_agg_funcs(func=func)
         self.schema = schema
-
-    def reduce1(self, groups):
+        
+    def reduce(self, groups):
         """Reduces the groups using the agg functions and returns a dataframe
 
         Parameters
@@ -82,24 +82,6 @@ class Aggregate(DataGroupReducer):
         Type Error:
             if the provided schema is invalid
         """
-        values = defaultdict()
-        for gkey, gvalue in groups.items():
-            values[gkey] = defaultdict()
-            for column, func in self.funcs.items():
-                if callable(func):
-                    if column not in gvalue.columns and self._is_input_dict:
-                        raise KeyError('Aggregation column \'{}\' not found'.format(column))
-                    df = gvalue[column] if column in gvalue.columns else gvalue
-                    values[gkey][column] = func(df)
-        df = pd.DataFrame(values).T
-
-        if self.schema is not None:
-            if len(df.columns) != len(self.schema):
-                raise TypeError('Invalid schema for dataframe of size {}'.format(df.shape[1]))
-            df.columns = self.schema
-        return df
-
-    def reduce(self, groups):
         single_input = not self._is_input_dict
         function = self.funcs
 
