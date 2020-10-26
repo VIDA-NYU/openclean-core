@@ -477,7 +477,7 @@ class DataPipeline(object):
 
     def write(
         self, filename: str, delim: Optional[str] = None,
-        compressed: Optional[bool] = None
+        compressed: Optional[bool] = None, none_as: Optional[str] = None
     ):
         """Write the rows in the data stream to a given CSV file.
 
@@ -490,6 +490,9 @@ class DataPipeline(object):
         compressed: bool, default=None
             Flag indicating if the file contents of the created file are to be
             compressed using gzip.
+        none_as: string, default=None
+            String that is used to encode None values in the output file. If
+            given, all cell values that are None are substituted by the string.
         """
         file = CSVFile(
             filename=filename,
@@ -497,7 +500,7 @@ class DataPipeline(object):
             compressed=compressed,
             write=True
         )
-        return self.stream(Write(file=file))
+        return self.stream(Write(file=file, none_as=none_as))
 
 
 # -- Open file or data frame as pipeline --------------------------------------
