@@ -85,15 +85,15 @@ class Violations(DataFrameMapper):
         ----------
         lhs: list or string
             column name(s) of the determinant set
-        rhs: string
+        rhs: string or list
             column name of the dependent set
         func: callable (Optional)
             the new key generator function
         having: int or callable (optional)
             the violation selection function (if callable, should take in a meta counter and return a boolean)
         """
-        self.lhs = lhs
-        self.rhs = lhs if rhs is None else rhs
+        self.lhs = [lhs] if not isinstance(lhs, list) else lhs
+        self.rhs = self.lhs if rhs is None else [rhs] if not isinstance(rhs, list) else rhs
         self.func = get_eval_func(columns=lhs, func=func)
         self.having = having
 
@@ -120,7 +120,7 @@ class Violations(DataFrameMapper):
                 meta[value] = Counter()
             groups[value].append(index)
 
-            meta_value = df.loc[index, self.rhs]
+            meta_value = df.loc[index, self.rhs] if len(self.rhs) == 1 else tuple(df.loc[index, self.rhs].values)
             meta[value] += Counter([tuple(meta_value.tolist())]) if isinstance(meta_value, pd.Series) else Counter([meta_value])
 
         return groups, meta
