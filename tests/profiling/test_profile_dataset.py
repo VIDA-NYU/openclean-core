@@ -10,7 +10,7 @@
 import pandas as pd
 
 from openclean.profiling.column import DefaultStreamProfiler
-from openclean.profiling.dataset import Profile, dataset_profile
+from openclean.profiling.dataset import ProfileConsumer, dataset_profile
 from openclean.profiling.tests import ValueCounter
 
 
@@ -18,7 +18,7 @@ from openclean.profiling.tests import ValueCounter
 
 def test_profile_consumer():
     """Test profiling two columns over a short data stream."""
-    consumer = Profile(
+    consumer = ProfileConsumer(
         profilers=[(0, 'A', ValueCounter()), (2, 'B', ValueCounter())]
     )
     consumer.consume(0, [1, 2, 3])

@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from collections import Counter
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
@@ -27,6 +27,7 @@ from openclean.operator.transform.insert import InsCol
 from openclean.operator.transform.rename import Rename
 from openclean.operator.transform.select import Select
 from openclean.operator.transform.update import Update
+from openclean.profiling.dataset import ColumnProfiler, ProfileOperator
 from openclean.profiling.datatype.convert import DatatypeConverter
 from openclean.profiling.datatype.operator import Typecast
 
@@ -262,6 +263,44 @@ class DataPipeline(object):
             producer.set_consumer(consumer)
             producer = consumer
         return pipeline
+
+    def profile(
+        self, profilers: Optional[ColumnProfiler] = None,
+        default_profiler: Optional[Type] = None
+    ) -> List[Dict]:
+        """Profile one or more columns in the data stream. Returns a list of
+        profiler results for each profiled column.
+
+        By default each column in the data stream is profiled independently
+        using the default stream profiler. The optional list of profilers
+        allows to override the default behavior by providing a list of column
+        references (with optional profiler function). If only a column
+        reference is given the default stream profiler is used for the
+        referenced column.
+
+        Parameters
+        ----------
+        profilers: int, string, tuple, or list of tuples of column reference
+                and openclean.profiling.base.DataProfiler, default=None
+            Specify he list of columns that are profiled and the profiling
+            function. If only a column reference is given (not a tuple) the
+            default stream profiler is used for profiling the column.
+        default_profiler: class, default=None
+            Class object that is instanciated as the profiler for columns
+            that do not have a profiler instance speicified for them.
+
+        Returns
+        -------
+        list
+        """
+        # Ensure that profilers is a list.
+        if profilers is not None and not isinstance(profilers, list):
+            profilers = [profilers]
+        op = ProfileOperator(
+            profilers=profilers,
+            default_profiler=default_profiler
+        )
+        return self.stream(op)
 
     def run(self):
         """Stream all rows from the associated data file to the data pipeline
