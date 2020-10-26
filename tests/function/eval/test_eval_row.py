@@ -10,7 +10,7 @@
 import pandas as pd
 import pytest
 
-from openclean.function.eval.base import Col, Cols
+from openclean.function.eval.base import Col, Cols, Const
 from openclean.function.eval.row import Greatest, Least
 
 
@@ -28,15 +28,15 @@ def dataset():
 
 @pytest.mark.parametrize(
     'op,results',
-    [(Least, [1, 3, 1]), (Greatest, [3, 5, 4])]
+    [(Least, [1, 2, 1]), (Greatest, [2, 5, 4])]
 )
 def test_aggregate_over_scalar_values(dataset, op, results):
     """Test computing min and max over scalar values from multiple columns in a
     data frame row.
     """
-    f = op(Col('A'), Col('B'), 3).prepare(dataset)
-    for i in range(3):
-        assert f.eval(dataset.iloc[i]) == results[i]
+    assert op(Col('A'), Col('B'), Const(2)).eval(dataset) == results
+    f = op(Col('A'), Col('B'), Const(2)).prepare(dataset.columns)
+    assert [f(row) for row in dataset.itertuples(index=False, name=None)] == results
 
 
 @pytest.mark.parametrize(
@@ -47,6 +47,6 @@ def test_aggregate_over_tuple_values(dataset, op, results):
     """Test computing min and max over tuples of values from multiple columns
     in a data frame row.
     """
-    f = op(Cols('A', 'B'), Cols('B', 'C'), (3, 3)).prepare(dataset)
-    for i in range(3):
-        assert f.eval(dataset.iloc[i]) == results[i]
+    assert op(Cols(['A', 'B']), Cols(['B', 'C']), Const((3, 3))).eval(dataset)
+    f = op(Cols(['A', 'B']), Cols(['B', 'C']), Const((3, 3))).prepare(dataset.columns)
+    assert [f(row) for row in dataset.itertuples(index=False, name=None)] == results

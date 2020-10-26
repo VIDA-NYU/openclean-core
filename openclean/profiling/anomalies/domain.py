@@ -12,13 +12,13 @@ from typing import Dict, List, Optional, Set, Union
 import pandas as pd
 
 from openclean.data.types import Value
+from openclean.function.eval.base import InputColumn
 from openclean.function.value.domain import IsNotInDomain
-from openclean.operator.collector.count import DistinctColumns
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
 
 
 def domain_outliers(
-    df: pd.DataFrame, columns: DistinctColumns,
+    df: pd.DataFrame, columns: Union[InputColumn, List[InputColumn]],
     domain: Union[pd.DataFrame, Dict, List, Set],
     ignore_case: Optional[bool] = False
 ) -> List:
@@ -44,7 +44,7 @@ def domain_outliers(
     list
     """
     op = DomainOutliers(domain=domain, ignore_case=ignore_case)
-    return list(op.run(df=df, columns=columns).keys())
+    return op.run(df=df, columns=columns)
 
 
 class DomainOutliers(ConditionalOutliers):
@@ -65,6 +65,7 @@ class DomainOutliers(ConditionalOutliers):
         ignore_case: bool, optional
             Ignore case for domain inclusion checking
         """
+        super(DomainOutliers, self).__init__()
         self.predicate = IsNotInDomain(domain=domain, ignore_case=ignore_case)
 
     def outlier(self, value: Value) -> bool:
@@ -84,4 +85,4 @@ class DomainOutliers(ConditionalOutliers):
         bool
         """
         if self.predicate.eval(value):
-            return True
+            return value

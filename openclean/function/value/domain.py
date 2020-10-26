@@ -13,7 +13,7 @@ from openclean.data.util import to_set
 from openclean.function.matching.base import VocabularyMatcher
 from openclean.function.value.base import PreparedFunction
 
-import openclean.util as util
+import openclean.util.core as util
 
 
 class BestMatch(PreparedFunction):

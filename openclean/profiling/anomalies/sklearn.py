@@ -11,7 +11,7 @@ clustering algorithms.
 
 from collections import Counter
 from sklearn.base import BaseEstimator
-from typing import Dict, Optional
+from typing import List, Optional
 
 from openclean.embedding.base import Embedding, ValueEmbedder
 from openclean.embedding.feature.default import StandardEmbedding
@@ -43,7 +43,7 @@ class SklearnOutliers(AnomalyDetector):
         self.algorithm = algorithm
         self.features = StandardEmbedding() if features is None else features
 
-    def process(self, values: Counter) -> Dict:
+    def process(self, values: Counter) -> List:
         """Return set of values that are identified as outliers. This anomaly
         detector does not provide any additional provenance for the detected
         outlier values (other than the name of the used algorithm).
@@ -68,7 +68,7 @@ class SklearnOutliers(AnomalyDetector):
         for i in range(len(keys)):
             if labels[i] == -1:
                 result.append(keys[i])
-        return {'outliers': result}
+        return result
 
 
 # -- Functions for specific scikit-learn outlier detectors --------------------
@@ -150,7 +150,7 @@ def dbscan(
     # Run the scikit-learn outlier detection algoritm with DBSCAN as the
     # estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.run(df=df, columns=columns)['outliers']
+    return op.run(df=df, columns=columns)
 
 
 def isolation_forest(
@@ -237,7 +237,7 @@ def isolation_forest(
     # Run the scikit-learn outlier detection algoritm with IsolationForest as
     # the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.run(df=df, columns=columns)['outliers']
+    return op.run(df=df, columns=columns)
 
 
 def local_outlier_factor(
@@ -346,7 +346,7 @@ def local_outlier_factor(
     # Run the scikit-learn outlier detection algoritm with LocalOutlierFactor
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.run(df=df, columns=columns)['outliers']
+    return op.run(df=df, columns=columns)
 
 
 def one_class_svm(
@@ -428,7 +428,7 @@ def one_class_svm(
     # Run the scikit-learn outlier detection algoritm with OneClassSVM
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.run(df=df, columns=columns)['outliers']
+    return op.run(df=df, columns=columns)
 
 
 def robust_covariance(
@@ -490,4 +490,4 @@ def robust_covariance(
     # Run the scikit-learn outlier detection algoritm with EllipticEnvelope
     # as the estimator.
     op = SklearnOutliers(algorithm=algo, features=features)
-    return op.run(df=df, columns=columns)['outliers']
+    return op.run(df=df, columns=columns)

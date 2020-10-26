@@ -15,12 +15,11 @@ from typing import Dict, List, Optional, Tuple, Type, Union
 import pandas as pd
 
 from openclean.data.select import select_clause
-from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import ColumnRef
-from openclean.pipeline.consumer.base import StreamConsumer
-from openclean.pipeline.processor.base import StreamProcessor
-from openclean.profiling.base import ProfilingFunction
+from openclean.data.types import ColumnRef, Schema
+from openclean.operator.stream.consumer import StreamConsumer
+from openclean.operator.stream.processor import StreamProcessor
+from openclean.profiling.base import DataProfiler
 from openclean.profiling.column import (
     DefaultColumnProfiler, DefaultStreamProfiler
 )
@@ -226,12 +225,12 @@ class DatasetProfile(list):
 # -- Data stream profiling operators ------------------------------------------
 
 """Type alias for column profiler specifications."""
-ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, ProfilingFunction]]
+ColumnProfiler = Union[ColumnRef, Tuple[ColumnRef, DataProfiler]]
 ProfilerSpecs = Union[ColumnProfiler, List[ColumnProfiler]]
 
 
-class Profile(StreamConsumer):
-    def __init__(self, profilers: List[Tuple[int, str, ProfilingFunction]]):
+class ProfileConsumer(StreamConsumer):
+    def __init__(self, profilers: List[Tuple[int, str, DataProfiler]]):
         """Initialize the list of column profilers.
 
         Parameters
@@ -272,7 +271,7 @@ class Profile(StreamConsumer):
             profiler.consume(value=row[colidx], count=1)
 
 
-class ProfilingOperator(StreamProcessor):
+class ProfileOperator(StreamProcessor):
     def __init__(
         self, profilers: Optional[ColumnProfiler] = None,
         default_profiler: Optional[Type] = None
@@ -299,12 +298,7 @@ class ProfilingOperator(StreamProcessor):
             default_profiler = DefaultStreamProfiler
         self.default_profiler = default_profiler
 
-    def open(
-        self, ds: DatasetStream,
-        schema: List[str],
-        upstream: Optional[List[StreamProcessor]] = None,
-        downstream: Optional[List[StreamProcessor]] = None
-    ) -> StreamConsumer:
+    def open(self, schema: Schema) -> StreamConsumer:
         """Factory pattern for stream profiling consumers. Creates an instance
         of a stream profiler for each column that was selected for profiling.
         If no profilers were specified at object instantiation all columns will
@@ -312,23 +306,12 @@ class ProfilingOperator(StreamProcessor):
 
         Parameters
         ----------
-        ds: openclean.data.stream.base.DatasetStream
-            Data stream that the consumer will receive as an input. Use this
-            stream in combination with any upstream operators to prepare any
-            associated evaluation functions that are used by the returned
-            consumer.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
-                default=None
-            List of upstream operators for the received data stream.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
-                default=None
-            List of downstream operators for the generated consumer.
 
         Returns
         -------
-        openclean.profiling.dataset.Profile
+        openclean.profiling.dataset.ProfileConsumer
         """
         # Create a list of (column index, profiling function)-pairs that is
         # passed to the profiling cnsumer. That consumer will (i) open the
@@ -354,7 +337,7 @@ class ProfilingOperator(StreamProcessor):
                     profiler = self.default_profiler()
                 name, colidx = select_clause(schema, col)
                 consumers.append((colidx[0], name[0], profiler))
-        return Profile(profilers=consumers)
+        return ProfileConsumer(profilers=consumers)
 
 
 def dataset_profile(
@@ -382,7 +365,7 @@ def dataset_profile(
     ds = DataFrameStream(df)
     if default_profiler is None:
         default_profiler = DefaultColumnProfiler
-    return ProfilingOperator(
+    return ProfileOperator(
         profilers=profilers,
         default_profiler=default_profiler
-    ).open(ds=ds, schema=ds.columns).process(ds)
+    ).open(schema=ds.columns).process(ds)

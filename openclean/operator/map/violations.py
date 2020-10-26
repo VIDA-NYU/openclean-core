@@ -85,15 +85,15 @@ class Violations(DataFrameMapper):
         ----------
         lhs: list or string
             column name(s) of the determinant set
-        rhs: string
+        rhs: string or list
             column name of the dependent set
         func: callable (Optional)
             the new key generator function
         having: int or callable (optional)
             the violation selection function (if callable, should take in a meta counter and return a boolean)
         """
-        self.lhs = lhs
-        self.rhs = lhs if rhs is None else rhs
+        self.lhs = [lhs] if not isinstance(lhs, list) else lhs
+        self.rhs = self.lhs if rhs is None else [rhs] if not isinstance(rhs, list) else rhs
         self.func = get_eval_func(columns=lhs, func=func)
         self.having = having
 
@@ -109,11 +109,10 @@ class Violations(DataFrameMapper):
         -------
         dict, dict
         """
-        prepared = self.func.prepare(df=df)
+        evaluated = self.func.eval(df=df)
         groups = dict()
         meta = dict()
-        for index, rows in df.iterrows():
-            value = prepared.eval(rows)
+        for index, value in enumerate(evaluated):
             if isinstance(value, list):
                 value = tuple(value)
             if value not in groups:
@@ -121,7 +120,7 @@ class Violations(DataFrameMapper):
                 meta[value] = Counter()
             groups[value].append(index)
 
-            meta_value = rows[self.rhs]
+            meta_value = df.loc[index, self.rhs] if len(self.rhs) == 1 else tuple(df.loc[index, self.rhs].values)
             meta[value] += Counter([tuple(meta_value.tolist())]) if isinstance(meta_value, pd.Series) else Counter([meta_value])
 
         return groups, meta
@@ -138,8 +137,9 @@ class Violations(DataFrameMapper):
         -------
         DataFrameViolation
         """
-        groups, meta = self._transform(df=df)
-        grouping = DataFrameViolation(df=df, lhs=self.lhs, rhs=self.rhs)
+        df_reindexed = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
+        groups, meta = self._transform(df=df_reindexed)
+        grouping = DataFrameViolation(df=df_reindexed, lhs=self.lhs, rhs=self.rhs)
         for key, rows in groups.items():
             if Violations.select(condition=self.having, meta=meta[key]):
                 grouping.add(key=key, rows=rows, meta=meta[key])

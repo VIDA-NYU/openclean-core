@@ -7,27 +7,28 @@
 
 """Unit tests for is empty predicates for data frame rows."""
 
+import pandas as pd
+import pytest
+
 from openclean.function.eval.base import Col
 from openclean.function.eval.null import IsEmpty, IsNotEmpty
 
 
-def test_predicate_isempty(employees):
+@pytest.fixture
+def dataset():
+    """Simple dataset with two columns and some None values."""
+    return pd.DataFrame(
+        data=[['A', None], [None, 'B'], ['C', 'D']],
+        columns=['A', 'B']
+    )
+
+
+@pytest.mark.parametrize(
+    'op,result',
+    [(IsEmpty, [False, True, False]), (IsNotEmpty, [True, False, True])]
+)
+def test_null_predicates(op, result, dataset):
     """Test is empty predicate."""
-    f = IsEmpty(columns='Salary').prepare(employees)
-    assert not f.eval(employees.iloc[0])
-    assert f.eval(employees.iloc[1])
-    assert not f.eval(employees.iloc[2])
-    # NaN is not empty
-    f = IsEmpty(columns=Col('Age')).prepare(employees)
-    assert not f.eval(employees.iloc[3])
-
-
-def test_predicate_isnotempty(employees):
-    """Test the IsNotEmpty predicate."""
-    f = IsNotEmpty(columns='Salary').prepare(employees)
-    assert f.eval(employees.iloc[0])
-    assert not f.eval(employees.iloc[1])
-    assert f.eval(employees.iloc[2])
-    # NaN is not empty
-    f = IsNotEmpty(columns='Age').prepare(employees)
-    assert f.eval(employees.iloc[3])
+    assert op('A').eval(dataset) == result
+    f = op('A').prepare(dataset.columns)
+    assert [f(row) for row in dataset.itertuples(index=False, name=None)] == result

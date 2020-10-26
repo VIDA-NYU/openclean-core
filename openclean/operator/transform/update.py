@@ -9,19 +9,28 @@
 frame.
 """
 
+from typing import Callable, Dict, Union
+
 import pandas as pd
 
-from openclean.data.select import select_clause, select_by_id
-from openclean.function.base import scalar_pass_through
+from openclean.data.stream.base import DataRow
+from openclean.data.select import select_clause
+from openclean.data.types import ColumnRef, Columns, Scalar, Schema
 from openclean.function.eval.base import Const, EvalFunction, Eval
+from openclean.function.eval.domain import Lookup
 from openclean.function.value.base import ValueFunction
-from openclean.function.value.mapping import Lookup
 from openclean.operator.base import DataFrameTransformer
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
+
+
+"""Type alias for update function specifications."""
+UpdateFunction = Union[Callable, Dict, EvalFunction, Scalar, ValueFunction]
 
 
 # -- Functions ----------------------------------------------------------------
 
-def update(df, columns, func):
+def update(df: pd.DataFrame, columns: Columns, func: UpdateFunction) -> pd.DataFrame:
     """Update function for data frames. Returns a modified data frame where
     values in the specified columns have been modified using the given update
     function.
@@ -31,72 +40,29 @@ def update(df, columns, func):
     being modified. Returned values are used to update column values in the
     same order as columns are specified in the columns list.
 
+    The function that is used to generate the update values will be a evaluation
+    function. The user has the option to also provide a constant value, a lookup
+    dictionary, or a callable (or value function) that accepts a single value.
+
     Parameters
     ----------
-    df: pandas.DataFrame
+    df: pd.DataFrame
         Input data frame.
     columns: int, string, or list(int or string), optional
         Single column or list of column index positions or column names.
-    func: callable or openclean.function.eval.base.EvalFunction
-        Callable that accepts a data frame row as the only argument and outputs
-        a (modified) list of value(s).
+    func: scalar, dict, callable, openclean.function.value.base.ValueFunction,
+            or openclean.function.eval.base.EvalFunction
+        Specification of the (resulting) evaluation function that is used to
+        generate the updated values for each row in the data frame.
 
     Returns
     -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
+    pd.DataFrame
     """
     return Update(columns=columns, func=func).transform(df)
 
 
-def update_cell(df, colid, rowid, value):
-    """Update the value for a single cell in a data frame. Cells are referenced
-    by the unique column and row identifier. Raises a ValueError if an unknown
-    cell is specified.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colid: int
-        Unique column identifier.
-    rowid: int
-        Unique row identifier
-    value: scalar
-        New cell value.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    # Get the index position of the specified column.
-    colidx = select_by_id(df=df, colids=[colid])[0]
-    # Create a modified data frame where rows are modified by the update
-    # function.
-    data = list()
-    # Have different implementations for single column or multi-column
-    # updates.
-    found = False
-    for rid, values in df.iterrows():
-        values = list(values)
-        if rid == rowid:
-            values[colidx] = value
-            found = True
-        data.append(values)
-    # Raise an error if the specified row was not found.
-    if not found:
-        raise ValueError("unknown row {}".format(rowid))
-    return pd.DataFrame(data=data, index=df.index, columns=df.columns)
-
-
-def swap(df, col1, col2):
+def swap(df: pd.DataFrame, col1: ColumnRef, col2: ColumnRef) -> pd.DataFrame:
     """Swap values in two columns of a data frame. Replaces values in column
     one with values in column two and vice versa for each row in a data frame.
 
@@ -104,7 +70,7 @@ def swap(df, col1, col2):
 
     Parameters
     ----------
-    df: pandas.DataFrame
+    df: pd.DataFrame
         Input data frame.
     col1: int or string
         Single column index or name.
@@ -113,7 +79,7 @@ def swap(df, col1, col2):
 
     Returns
     -------
-    pandas.DataFrame
+    pd.DataFrame
 
     Raises
     ------
@@ -135,22 +101,23 @@ def swap(df, col1, col2):
 
 # -- Operators ----------------------------------------------------------------
 
-class Update(DataFrameTransformer):
+class Update(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that updates values in data frame column(s) using
     a given update function. The function is executed for each row and the
     resulting values replace the original cell values in the row for all listed
     columns (in their order of appearance in the columns list).
     """
-    def __init__(self, columns, func):
+    def __init__(self, columns: Columns, func: UpdateFunction):
         """Initialize the list of updated columns and the update function.
 
         Parameters
         ----------
         columns: int, string, or list(int or string), optional
             Single column or list of column index positions or column names.
-        func: callable or openclean.function.eval.base.EvalFunction
-            Callable that accepts a data frame row as the only argument and
-            outputs a (modified) (list of) value(s).
+        func: scalar, dict, callable, openclean.function.value.base.ValueFunction,
+            or openclean.function.eval.base.EvalFunction
+        Specification of the (resulting) evaluation function that is used to
+        generate the updated values for each row in the data frame.
 
         Raises
         ------
@@ -160,7 +127,41 @@ class Update(DataFrameTransformer):
         self.columns = columns
         self.func = get_update_function(func=func, columns=self.columns)
 
-    def transform(self, df):
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that updates values in a data stream row.
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.operator.stream.consumer.StreamFunctionHandler
+        """
+        # Get the index positions for the updated column(s).
+        _, colidxs = select_clause(schema=schema, columns=self.columns)
+        # Get the stream function that updates the values in data stream rows.
+        func = self.func.prepare(columns=schema)
+
+        def updfunc(row: DataRow) -> DataRow:
+            """Update columns in a data stream row using func."""
+            val = func(row)
+            values = list(row)
+            if len(colidxs) == 1:
+                values[colidxs[0]] = val
+            else:
+                if len(val) != len(colidxs):
+                    msg = 'expected {} values instead of {}'
+                    raise ValueError(msg.format(len(colidxs), len(val)))
+                for i, col in enumerate(colidxs):
+                    values[col] = val[i]
+            return values
+
+        return StreamFunctionHandler(columns=schema, func=updfunc)
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Modify rows in the given data frame. Returns a modified data frame
         where values have been updated by the results of evaluating the
         associated row update function.
@@ -175,25 +176,28 @@ class Update(DataFrameTransformer):
         pandas.DataFrame
         """
         # Get list of indices for updated columns.
-        _, colidxs = select_clause(df=df, columns=self.columns)
-        # Call the prepare method of the update function.
-        f = self.func.prepare(df)
+        _, colidxs = select_clause(schema=df.columns, columns=self.columns)
+        # Evaluate the update function to get the modified values for the
+        # updated columns.
+        updates = self.func.eval(df)
         # Create a modified data frame where rows are modified by the update
         # function.
         data = list()
         # Have different implementations for single column or multi-column
         # updates.
+        rowidx = 0
         if len(colidxs) == 1:
             colidx = colidxs[0]
             for rowid, values in df.iterrows():
-                val = f.eval(values)
+                val = updates[rowidx]
                 values = list(values)
                 values[colidx] = val
                 data.append(values)
+                rowidx += 1
         else:
             col_count = len(colidxs)
             for rowid, values in df.iterrows():
-                vals = f.eval(values)
+                vals = updates[rowidx]
                 if len(vals) != col_count:
                     msg = 'expected {} values instead of {}'
                     raise ValueError(msg.format(col_count, vals))
@@ -201,24 +205,29 @@ class Update(DataFrameTransformer):
                 for i in range(col_count):
                     values[colidxs[i]] = vals[i]
                 data.append(values)
+                rowidx += 1
         return pd.DataFrame(data=data, index=df.index, columns=df.columns)
 
 
 # -- Helper functions ---------------------------------------------------------
 
-def get_update_function(func, columns):
+def get_update_function(
+    func: UpdateFunction, columns: Columns
+) -> EvalFunction:
     """Helper method to ensure that the function that is passed to an update
     operator is an evaluation function that was properly initialized.
 
-    If the function is not a callable it is converted into a constant value
-    function. Special attention is given to conditional replacement functions
+    If the function argument is a dictionary it is converted into a lookup
+    table. if the argument is a scalar value it is converted into a constant
+    evaluation function. Special attention is given to conditional replacement functions
     that do not have their pass-through function set.
 
     Parameters
     ----------
-    func: callable or openclean.function.eval.base.EvalFunction
-        Callable that accepts a data frame row as the only argument and
-        outputs a (modified) (list of) value(s).
+    func: scalar, dict, callable, openclean.function.value.base.ValueFunction,
+            or openclean.function.eval.base.EvalFunction
+        Specification of the (resulting) evaluation function that is used to
+        generate the updated values for each row in the data frame.
     columns: list(int or string)
         List of column index positions or column names.
 
@@ -228,16 +237,9 @@ def get_update_function(func, columns):
     """
     if not isinstance(func, EvalFunction):
         if isinstance(func, dict):
-            func = Eval(
-                columns=columns,
-                func=Lookup(
-                    mapping=func,
-                    raise_error=False,
-                    default_value=scalar_pass_through
-                )
-            )
+            return Lookup(columns=columns, mapping=func)
         elif isinstance(func, ValueFunction) or callable(func):
-            func = Eval(columns=columns, func=func)
+            return Eval(columns=columns, func=func)
         else:
-            func = Const(func)
+            return Const(func)
     return func

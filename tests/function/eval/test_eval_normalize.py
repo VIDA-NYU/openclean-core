@@ -38,8 +38,8 @@ def dataset():
     ]
 )
 def test_normalization_function_with_int(dataset, op, results):
-    f = op(Int('Age', default_value=1)).prepare(dataset)
-    assert [f.eval(row) for _, row in dataset.iterrows()] == results
+    values = op(Int('Age', default_value=1)).eval(dataset)
+    assert values == results
 
 
 @pytest.mark.parametrize(
@@ -51,5 +51,5 @@ def test_normalization_function_with_int(dataset, op, results):
     ]
 )
 def test_normalization_woth_ignore(dataset, op, results):
-    f = op(Int('Age'), raise_error=False, default_value=0).prepare(dataset)
-    assert [f.eval(row) for _, row in dataset.iterrows()] == results
+    values = op(Int('Age'), raise_error=False, default_value=0).eval(dataset)
+    assert values == results

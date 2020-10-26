@@ -5,16 +5,23 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Base classes for data stream processing pipelines."""
+"""Base classes for streaming dataset files."""
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import Iterator, List, Tuple
+from typing import Callable, Iterator, List, Tuple
 
-from openclean.data.types import ColumnName
+from openclean.data.types import Scalar, Schema, Value
 
 
-# _- Data frame readers and writers -------------------------------------------
+"""Type alias for stream functions. Stream functions are callables that
+accept a data frame row as the only argument. They return a Value.
+"""
+DataRow = List[Scalar]
+StreamFunction = Callable[[DataRow], Value]
+
+
+# -- Data frame readers and writers -------------------------------------------
 
 class DatasetIterator(metaclass=ABCMeta):
     """Abstract class for iterators over rows in a data frame. Data frame
@@ -31,7 +38,7 @@ class DatasetStream(metaclass=ABCMeta):
     for reading. Dataset reader should be able to read the same dataset
     multiple times.
     """
-    def __init__(self, columns: List[ColumnName]):
+    def __init__(self, columns: Schema):
         """Initialize the schema for the rows in this data stream iterator.
 
         Parameters

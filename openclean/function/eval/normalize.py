@@ -8,7 +8,7 @@
 """Normalize values in a data frame column."""
 
 from openclean.function.eval.base import Eval
-from openclean.function.base import scalar_pass_through
+from openclean.util.core import scalar_pass_through
 
 import openclean.function.value.normalize as norm
 

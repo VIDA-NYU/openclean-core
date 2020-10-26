@@ -49,7 +49,7 @@ class Sequence(object):
         # Ensure that columns is a list.
         columns = columns if isinstance(columns, list) else [columns]
         # Get list of index positions for referenced columns.
-        _, colindex = select_clause(df, columns)
+        _, colindex = select_clause(df.columns, columns)
         # Use a different generator depending on the number of columns that
         # are referenced.
         if len(colindex) == 1:

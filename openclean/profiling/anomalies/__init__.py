@@ -4,7 +4,3 @@
 #
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
-
-"""Collection of anomaly detection methods."""
-
-from openclean.profiling.anomalies.domain import domain_outliers  # noqa: F401

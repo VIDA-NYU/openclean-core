@@ -10,7 +10,24 @@
 from openclean.data.sequence import Sequence
 from openclean.function.eval.base import Col
 from openclean.function.eval.domain import IsIn
-from openclean.operator.transform.filter import delete, filter
+from openclean.operator.stream.collector import Collector
+from openclean.operator.transform.filter import delete, filter, Filter
+
+
+def test_delete_consumer():
+    """Test filtering rows from a data stream."""
+    collector = Collector()
+    pred = Col(column='A', colidx=0) > 3
+    consumer = Filter(predicate=pred, negated=True)\
+        .open(['A', 'B', 'C'])\
+        .set_consumer(collector)
+    assert consumer.columns == ['A', 'B', 'C']
+    consumer.consume(3, [1, 2, 3])
+    consumer.consume(2, [4, 5, 6])
+    consumer.consume(1, [7, 8, 9])
+    rows = consumer.close()
+    assert len(rows) == 1
+    assert rows[0] == (3, [1, 2, 3])
 
 
 def test_delete_operator(dupcols):
@@ -35,3 +52,20 @@ def test_filter_operator(agencies):
     assert d1.shape == (7, 3)
     d1 = filter(agencies, Col('agency') > Col('state'))
     assert d1.shape == (2, 3)
+
+
+def test_filter_consumer():
+    """Test filtering rows from a data stream."""
+    collector = Collector()
+    pred = Col(column='A', colidx=0) > 3
+    consumer = Filter(predicate=pred)\
+        .open(['A', 'B', 'C'])\
+        .set_consumer(collector)
+    assert consumer.columns == ['A', 'B', 'C']
+    consumer.consume(3, [1, 2, 3])
+    consumer.consume(2, [4, 5, 6])
+    consumer.consume(1, [7, 8, 9])
+    rows = consumer.close()
+    assert len(rows) == 2
+    assert rows[0] == (2, [4, 5, 6])
+    assert rows[1] == (1, [7, 8, 9])
