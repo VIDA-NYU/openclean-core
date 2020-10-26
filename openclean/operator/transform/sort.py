@@ -7,38 +7,11 @@
 
 """Data frame transformation operator for sorting by data frame columns."""
 
-from openclean.data.select import as_list, select_clause, select_by_id
+from openclean.data.select import as_list, select_clause
 from openclean.operator.base import DataFrameTransformer
 
 
 # -- Functions ----------------------------------------------------------------
-
-def sort_dataset(df, colids, reversed=None):
-    """Sort operator for data frames. Sort columns are referenced by their
-    unique column identifier.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colids: int or list(int)
-        Single column identifier or list of column indentifier.
-    reversed: list(bool), default=None
-        Allows to specify for each sort column if sort order is reversed.
-        If given, the length of this list has to match the length of the
-        columns list.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    columns = select_by_id(df=df, colids=colids)
-    return Sort(columns=columns, reversed=reversed).transform(df)
-
 
 def order_by(df, columns, reversed=None):
     """Sort operator for data frames. Sort columns are referenced by their
@@ -114,7 +87,7 @@ class Sort(DataFrameTransformer):
         pandas.DataFrame
         """
         # Get sort column names and their index positions for the sort columns.
-        colnames, colidx = select_clause(df, columns=self.columns)
+        colnames, colidx = select_clause(df.columns, columns=self.columns)
         # If the list of column names contains duplicates we cannot sort the
         # data frame without temporarily renaming columns.
         if len(df.columns) != len(set(df.columns)):

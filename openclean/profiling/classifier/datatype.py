@@ -13,16 +13,16 @@ from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 
+from openclean.function.eval.base import InputColumn
 from openclean.function.value.base import ValueFunction
 from openclean.function.value.classifier import ValueClassifier
 from openclean.function.value.datatype import DefaultDatatypeClassifier
-from openclean.operator.collector.count import DistinctColumns
 from openclean.profiling.classifier.base import Classifier, ResultFeatures
 
 
 def datatypes(
     df: pd.DataFrame,
-    columns: Optional[DistinctColumns] = None,
+    columns: Union[InputColumn, List[InputColumn]] = None,
     classifier: Optional[ValueClassifier] = None,
     normalizer: Optional[Union[Callable, ValueFunction]] = None,
     features: Optional[ResultFeatures] = None,

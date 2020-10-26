@@ -9,47 +9,19 @@
 openclean.
 """
 
-from typing import List, Optional, Union
+from typing import Optional
 
 import pandas as pd
 
-from openclean.data.types import Column
-from openclean.data.select import as_list, select_clause, select_by_id
+from openclean.data.stream.base import DataRow
+from openclean.data.types import Column, Schema
+from openclean.data.select import as_list, select_clause
 from openclean.operator.base import Columns, DataFrameTransformer, Names
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
 
 # -- Functions ----------------------------------------------------------------
-
-def filter_columns(
-    df: pd.DataFrame, colids: Union[int, List[int]],
-    names: Optional[Names] = None
-) -> pd.DataFrame:
-    """Filter columns by their identifier. Returns a data frame that contains
-    the columns whose identifier are included in the given list. Raises a
-    ValueError if the column identifier list contains values that do not
-    reference columns in the data frame schema.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colids: int or list(int)
-        Single column identifier or list of column indentifier.
-    names: string or list(string)
-        Single name or list of names for the resulting columns.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    # Get index positions for referenced columns.
-    columns = select_by_id(df=df, colids=colids)
-    return Select(columns=columns, names=names).transform(df)
-
 
 def select(
     df: pd.DataFrame, columns: Columns, names: Optional[Names] = None
@@ -82,7 +54,7 @@ def select(
 
 # -- Operators ----------------------------------------------------------------
 
-class Select(DataFrameTransformer):
+class Select(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that selects a list of columns from a data frame.
     The output is a data frame that contains all rows from an input data frame
     but only those columns that are included in a given select clause.
@@ -114,6 +86,29 @@ class Select(DataFrameTransformer):
         else:
             self.names = None
 
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that filters columns from data frame rows using the
+        associated list of columns (i.e., the select clause).
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.operator.stream.consumer.StreamFunctionHandler
+        """
+        # Get the names and index positions for the selected columns.
+        colnames, colidxs = select_clause(schema=schema, columns=self.columns)
+
+        def streamfunc(row: DataRow) -> DataRow:
+            """Include only columns in the select clause."""
+            return [row[i] for i in colidxs]
+
+        return StreamFunctionHandler(columns=colnames, func=streamfunc)
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Return a data frame that contains all rows but only those columns
         from the given input data frame that are included in the select clause.
@@ -135,7 +130,7 @@ class Select(DataFrameTransformer):
         ValueError
         """
         # Ensure that all elements in the selected column list are names.
-        colnames, colidx = select_clause(df, columns=self.columns)
+        colnames, colidx = select_clause(df.columns, columns=self.columns)
         result = df.iloc[:, colidx]
         # Rename columns if a list of new nmaes was given. Ensure to keep the
         # unique column identifier for all columns in the result.

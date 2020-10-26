@@ -7,10 +7,10 @@
 
 import pytest
 
-from openclean.data.types import Column
-from openclean.function.eval.base import Col, Cols
+from openclean.function.eval.base import Col, Cols, Const
 from openclean.function.value.mapping import Lookup
-from openclean.operator.transform.update import swap, update
+from openclean.operator.stream.collector import Collector
+from openclean.operator.transform.update import swap, update, Update
 
 
 BOROUGHS = [
@@ -25,17 +25,11 @@ BOROUGHS = [
 def test_swap_columns(nyc311):
     """Test swapping values in two columns of a data frame."""
     df = swap(nyc311, 'borough', 'descriptor')
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['descriptor'].unique()
     assert len(values) == 5
     assert sorted(values) == BOROUGHS
     # Result is independent of the order of col1 and col2
     df = swap(nyc311, 'descriptor', 'borough')
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['descriptor'].unique()
     assert len(values) == 5
     assert sorted(values) == BOROUGHS
@@ -54,16 +48,10 @@ def test_update_single_column(nyc311):
         'STATEN ISLAND': 'SI'
     }
     df = update(nyc311, 'borough', mapping)
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['borough'].unique()
     assert len(values) == 5
     assert sorted(values) == sorted(mapping.values())
     df = update(nyc311, 'borough', Lookup(mapping))
-    # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['borough'].unique()
     assert len(values) == 5
     assert sorted(values) == sorted(mapping.values())
@@ -74,14 +62,48 @@ def test_update_multiple_columns(nyc311):
     df = update(
         df=nyc311,
         columns=['borough', 'descriptor'],
-        func=Cols('descriptor', 'borough')
+        func=Cols(['descriptor', 'borough'])
     )
     # Ensure that the columns are instances of the Column class
-    for col in df.columns:
-        assert isinstance(col, Column)
     values = df['descriptor'].unique()
     assert len(values) == 5
     assert sorted(values) == BOROUGHS
     # Error for non-matching (column, value) counts
     with pytest.raises(ValueError):
         update(nyc311, ['borough', 'descriptor'], Col('borough'))
+
+
+def test_ternary_update_consumer():
+    """Test updating a multiple columns in a data stream."""
+    collector = Collector()
+    func = Const([0, 1])
+    consumer = Update(columns=[2, 1], func=func)\
+        .open(['A', 'B', 'C'])\
+        .set_consumer(collector)
+    assert consumer.columns == ['A', 'B', 'C']
+    consumer.consume(3, [1, 2, 3])
+    consumer.consume(2, [4, 5, 6])
+    consumer.consume(1, [7, 8, 9])
+    rows = consumer.close()
+    assert len(rows) == 3
+    assert rows[0] == (3, [1, 1, 0])
+    assert rows[1] == (2, [4, 1, 0])
+    assert rows[2] == (1, [7, 1, 0])
+
+
+def test_unary_update_consumer():
+    """Test updating a single column in a data stream."""
+    collector = Collector()
+    func = Col(column='A', colidx=0)
+    consumer = Update(columns=[1], func=func)\
+        .open(['A', 'B', 'C'])\
+        .set_consumer(collector)
+    assert consumer.columns == ['A', 'B', 'C']
+    consumer.consume(3, [1, 2, 3])
+    consumer.consume(2, [4, 5, 6])
+    consumer.consume(1, [7, 8, 9])
+    rows = consumer.close()
+    assert len(rows) == 3
+    assert rows[0] == (3, [1, 1, 3])
+    assert rows[1] == (2, [4, 4, 6])
+    assert rows[2] == (1, [7, 7, 9])

@@ -23,7 +23,7 @@ def test_datatype_outliers_in_list():
     )
     op = DatatypeOutliers(classifier=classifier, domain=['grade'])
     outliers = op.find(['A', 1, 'B', 'G'])
-    assert set(outliers) == set({1, 'G'})
+    assert set(outliers.values()) == set({1, 'G'})
 
 
 def test_datatype_outliers_in_data_frame(schools):
@@ -41,4 +41,5 @@ def test_datatype_outliers_in_data_frame(schools):
         classifier=classifier,
         domain=['number']
     )
-    assert set(outliers) == set({'', '09-12', 'MS Core', '0K-09', '0K'})
+    assert set(outliers.values()) == set({'09-12', 'MS Core', '0K-09', '0K'})
+    assert set(outliers.types()['str']) == set({'09-12', 'MS Core', '0K-09', '0K'})

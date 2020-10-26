@@ -84,7 +84,7 @@ class Apply(DataFrameTransformer):
         pandas.DataFrame
         """
         # Get list of indices for updated columns.
-        _, colidxs = select_clause(df=df, columns=self.columns)
+        _, colidxs = select_clause(schema=df.columns, columns=self.columns)
         # Apply the value function to each column separately.
         functions = list()
         for colidx in colidxs:

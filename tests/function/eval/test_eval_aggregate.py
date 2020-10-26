@@ -11,8 +11,7 @@ import pandas as pd
 import pytest
 
 from openclean.function.eval.aggregate import Avg, Count, Max, Min, Sum
-from openclean.function.eval.base import Gt
-from openclean.function.eval.datatype import Float
+from openclean.function.eval.base import Col
 
 
 @pytest.fixture
@@ -24,15 +23,18 @@ def dataset():
     'op,result',
     [(Avg, 3), (Max, 4), (Min, 2), (Sum, 9)]
 )
-def test_statistics_functions(dataset, op, result):
+def test_aggregate_function(dataset, op, result):
     """Compute min, max, and mean over values in a column."""
-    f = op('B').prepare(dataset)
-    for _, values in dataset.iterrows():
-        assert f.eval(values) == result
+    assert op('B').eval(dataset) == [result] * dataset.shape[0]
 
 
-def test_aggregate_nested_function(employees):
+def test_error_aggregate_prepare():
+    """Test for RuntimeError when attempting to prepare a aggreagte function."""
+    with pytest.raises(RuntimeError):
+        Avg('A').prepare(['A'])
+
+
+def test_nested_aggregate(dataset):
     """Test aggregate values from a nested evaluation function."""
-    f = Count(Gt(Float('Salary', default_value=0), 10000)).prepare(employees)
-    for _, row in employees.iterrows():
-        assert f.eval(row) == 4
+    assert Count(Col('A') > Col('B')).eval(dataset) == [0]  * dataset.shape[0]
+    assert Count(Col('A') < Col('B')).eval(dataset) == [3]  * dataset.shape[0]

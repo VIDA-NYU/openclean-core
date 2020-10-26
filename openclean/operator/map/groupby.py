@@ -11,8 +11,9 @@ operations on a pandas dataframe.
 
 from openclean.data.groupby import DataFrameGrouping
 from openclean.operator.base import DataFrameMapper
-from openclean.function.eval.base import Cols, EvalFunction, Eval
+from openclean.function.eval.base import Cols, Col, EvalFunction, Eval
 
+import pandas as pd
 
 def groupby(df, columns, func=None, having=None):
     """Groupby function for data frames. Evaluates a new index based on the
@@ -45,10 +46,14 @@ def groupby(df, columns, func=None, having=None):
     openclean.data.groupby.DataFrameGrouping
     """
     gpby = GroupBy(columns=columns, func=func)
-    all_groups = gpby.map(df=df)
+
+    # unpack user indices to default pandas representations
+    df_reindexed = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
+
+    all_groups = gpby.map(df=df_reindexed)
 
     if having is not None:
-        selected_groups = DataFrameGrouping(df=df)
+        selected_groups = DataFrameGrouping(df=df_reindexed)
         for key, group in all_groups.groups():
             if GroupBy.select(group, having):
                 selected_groups.add(key=key, rows=list(group.index))
@@ -87,10 +92,9 @@ class GroupBy(DataFrameMapper):
         _______
         dict
         """
-        prepared = self.func.prepare(df=df)
+        evaluated = self.func.eval(df=df)
         groups = dict()
-        for index, rows in df.iterrows():
-            value = prepared.eval(rows)
+        for index, value in enumerate(evaluated):
             if isinstance(value, list):
                 value = tuple(value)
             if value not in groups:
@@ -112,7 +116,7 @@ class GroupBy(DataFrameMapper):
         openclean.data.groupby.DataFrameGrouping
         """
         # unpack any user set indices to default pandas representations
-        df_reindexed = df.reset_index() if df.index.duplicated().any() or df.index.dtype != int else df  # noqa: E501
+        df_reindexed = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
         groupedby = self._transform(df=df_reindexed)
         grouping = DataFrameGrouping(df=df_reindexed)
         for gby in groupedby:
@@ -185,7 +189,7 @@ def get_eval_func(columns=None, func=None):
             columns = None
         else:
             columns = [columns] if not isinstance(columns, list) else columns
-            func = Cols(*columns)
+            func = Cols(columns) if len(columns) > 1 else Col(*columns)
 
     # If one or more columns and func both are specified
     elif columns is not None:

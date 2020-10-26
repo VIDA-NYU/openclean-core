@@ -7,13 +7,21 @@
 
 """Data frame transformation operator for sorting by data frame columns."""
 
-from openclean.data.select import as_list, select_clause, select_by_id
+from typing import List, Union
+
+import pandas as pd
+
+from openclean.data.select import as_list, select_clause
+from openclean.data.stream.base import DataRow
+from openclean.data.types import Columns, Schema
 from openclean.operator.base import DataFrameTransformer
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
 
 # -- Functions ----------------------------------------------------------------
 
-def movecols(df, columns, pos):
+def movecols(df: pd.DataFrame, columns: Columns, pos: int):
     """Move one or more columns in a data frame to a given position.
 
     Parameters
@@ -36,32 +44,7 @@ def movecols(df, columns, pos):
     return MoveColumns(columns=columns, pos=pos).transform(df)
 
 
-def move_columns(df, colids, pos):
-    """Move one or more columns in a data frame to a given position. Columns
-    are referenced by their unique column identifier.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Input data frame.
-    colids: int or list(int)
-        Single column identifier or list of column indentifier.
-    pos: int
-        Insert position for the moved columns.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Raises
-    ------
-    ValueError
-    """
-    columns = select_by_id(df=df, colids=colids)
-    return MoveColumns(columns=columns, pos=pos).transform(df)
-
-
-def move_rows(df, rowids, pos):
+def move_rows(df: pd.DataFrame, rowids: Union[int, List[int]], pos: int):
     """Move one or more rows in a data frame to a given position.
 
     Parameters
@@ -86,9 +69,9 @@ def move_rows(df, rowids, pos):
 
 # -- Operators ----------------------------------------------------------------
 
-class MoveColumns(DataFrameTransformer):
+class MoveColumns(StreamProcessor, DataFrameTransformer):
     """Operator to move one or more columns to a specified index position."""
-    def __init__(self, columns, pos):
+    def __init__(self, columns: Columns, pos: int):
         """Initialize the list of columns that are being moved and their new
         index position.
 
@@ -101,6 +84,59 @@ class MoveColumns(DataFrameTransformer):
         """
         self.columns = as_list(columns)
         self.pos = pos
+
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that re-orders values in a data stream row.
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.operator.stream.consumer.StreamFunctionHandler
+        """
+        # Get the new column order.
+        colorder = self.reorder(schema)
+        colnames = [schema[i] for i in colorder]
+
+        def streamfunc(row: DataRow) -> DataRow:
+            """Reorder columns in a given data stream row."""
+            return [row[i] for i in colorder]
+
+        return StreamFunctionHandler(columns=colnames, func=streamfunc)
+
+    def reorder(self, schema: Schema) -> List[int]:
+        """Get a the order of columns in the modified data schema. The new
+        column order is represented as a list where over the original column
+        index positions.
+
+        Parameters
+        ----------
+        schema: list of string
+            Dataset input schema.
+
+        Returns
+        -------
+        list of int
+        """
+        # Ensure that column target position is valid.
+        if self.pos is not None:
+            if self.pos < 0 or self.pos > len(schema):
+                raise ValueError('invalid target position {}'.format(self.pos))
+            inspos = self.pos
+        else:
+            inspos = len(schema)
+        # Get sort column names and their index positions for the sort columns.
+        _, colidx = select_clause(schema, columns=self.columns)
+        colorder = [i for i in range(len(schema)) if i not in colidx]
+        if inspos < len(colorder):
+            colorder = colorder[:inspos] + colidx + colorder[inspos:]
+        else:
+            colorder = colorder + colidx
+        return colorder
 
     def transform(self, df):
         """Return a data frame that contains all rows but only those columns
@@ -118,20 +154,7 @@ class MoveColumns(DataFrameTransformer):
         -------
         pandas.DataFrame
         """
-        # Ensure that column target position is valid.
-        if self.pos is not None:
-            if self.pos < 0 or self.pos > len(df.columns):
-                raise ValueError('invalid target position {}'.format(self.pos))
-            inspos = self.pos
-        else:
-            inspos = len(df.columns)
-        # Get sort column names and their index positions for the sort columns.
-        _, colidx = select_clause(df, columns=self.columns)
-        colorder = [i for i in range(len(df.columns)) if i not in colidx]
-        if inspos < len(colorder):
-            colorder = colorder[:inspos] + colidx + colorder[inspos:]
-        else:
-            colorder = colorder + colidx
+        colorder = self.reorder(df.columns)
         # If the list of column names contains duplicates we cannot reorder the
         # data frame columns without temporarily renaming columns.
         if len(df.columns) != len(set(df.columns)):

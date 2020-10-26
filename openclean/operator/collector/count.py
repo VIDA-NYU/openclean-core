@@ -14,32 +14,25 @@ import pandas as pd
 from collections import Counter
 from typing import Callable, List, Optional, Tuple, Union
 
-from openclean.data.types import Columns
-from openclean.data.select import as_list
 from openclean.data.types import Scalar
-from openclean.function.eval.base import EvalFunction, Cols, Col
+from openclean.function.eval.base import InputColumn, EvalFunction
+from openclean.function.eval.base import evaluate, to_eval
 from openclean.function.value.base import ValueFunction, normalize
-
-
-"""Type alias for specifying distinct columns or column combinations. Allows to
-have an evaluation functions as the data source.
-"""
-DistinctColumns = Union[Columns, EvalFunction]
 
 
 def count(
     df: pd.DataFrame, predicate: Optional[EvalFunction] = None,
     truth_value: Optional[Scalar] = True
 ) -> int:
-    """Count the number of rows in a data frame. If the predicate is given then
-    we only count the number of rows that satisy the predicate.
+    """Count the number of rows in a data frame. If the optional predicate is
+    given, the rows that satisy the predicate is counted.
 
     Parameters
     ----------
     df: pandas.DataFrame
         Input data frame.
     predicate: openclean.function.eval.base.EvalFunction, default=None
-        Predicate that is evaluated over a list of values.
+        Predicate that is evaluated over te rows in the data frame.
     truth_value: scalar, defaut=True
         Count the occurrence of the truth value when evaluating the predicate
         on a the data frame rows.
@@ -55,15 +48,15 @@ def count(
     # Stream the data frame and filter rows using the given predicate. Returns
     # the count for rows that satisfy the predicate.
     count = 0
-    f = predicate.prepare(df)
-    for rowid, values in df.iterrows():
-        if f.eval(values) == truth_value:
+    for val in predicate.eval(df):
+        if val == truth_value:
             count += 1
     return count
 
 
 def distinct(
-    df: pd.DataFrame, columns: Optional[DistinctColumns] = None,
+    df: pd.DataFrame,
+    columns: Optional[Union[InputColumn, List[InputColumn]]] = None,
     normalizer: Optional[Union[Callable, ValueFunction]] = None,
     keep_original: Optional[bool] = False,
     labels: Optional[Union[List[str], Tuple[str, str]]] = None
@@ -82,9 +75,11 @@ def distinct(
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, list, or openclean.function.eval.base.EvalFunction
+    columns: int, string, list, or openclean.function.eval.base.EvalFunction,
+            default=None
         Evaluation function to extract values from data frame rows. This
         can also be a a single column reference or a list of column references.
+        If not given the distinct number of rows is counted.
     normalizer: callable or openclean.function.value.base.ValueFunction,
             default=None
         Optional normalization function that will be used to normalize the
@@ -104,23 +99,14 @@ def distinct(
     -------
     dict
     """
-    # Create an evaluation function to extract values if the columns argument
-    # is not an evaluation function.
-    if columns is None or not isinstance(columns, EvalFunction):
-        if columns is None:
-            columns = Cols(*list(range(len(df.columns))))
-        else:
-            columns = as_list(columns)
-            if len(columns) == 1:
-                columns = Col(columns[0])
-            else:
-                columns = Cols(*columns)
+    # Evaluate the columns statement to get the values from which the set of
+    # distinct values is generated.
+    if columns is None:
+        columns = list(df.columns)
+    values = evaluate(df, to_eval(columns))
     # Evaluate the columns function on all rows in the data frame and count the
     # frequencies for the returned values.
-    counts = Counter()
-    f = columns.prepare(df)
-    for _, row in df.iterrows():
-        counts[f.eval(list(row))] += 1
+    counts = Counter(values)
     # Normalize the result if a normalizer is given.
     if normalizer is not None:
         counts = normalize(

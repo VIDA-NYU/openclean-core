@@ -7,13 +7,19 @@
 
 """Functions and classes that implement the split operator in openclean."""
 
+from typing import Tuple
+
+import pandas as pd
+
+from openclean.function.eval.base import EvalFunction
 from openclean.operator.base import DataFrameSplitter
-from openclean.operator.transform.filter import get_predicate
 
 
 # -- Functions ----------------------------------------------------------------
 
-def split(df, columns=None, predicate=None):
+def split(
+    df: pd.DataFrame, predicate: EvalFunction
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Split function for data frames. Evaluates a Boolean predicate on the
     rows of a given data frame. The output comprises two data frames. The
     first data frame contains the rows for which the predicate was satisfied
@@ -23,26 +29,15 @@ def split(df, columns=None, predicate=None):
     ----------
     df: pandas.DataFrame
         Input data frame.
-    columns: int, string, or list(int or string), optional
-        Single column or list of column index positions or column names.
-    predicate: (
-            openclean.function.eval.base.EvalFunction,
-            openclean.function.eval.base.value.ValueFunction,
-            callable,
-            dictionary,
-            or scalar
-        )
-        Evaluation function or callable that accepts a data frame row as the
-        only argument (if columns is None). ValueFunction or callable if one
-        or more columns are specified. If columns are given the function also
-        accepts a dictionary or scalar value as argument. These will be wrapped
-        accordingly.
+    predicate: openclean.function.eval.base.EvalFunction
+        Evaluation function that is evaluated on each data frame row. The
+        resulting value determines for each row in which of the two output data
+        frames it will be placed.
 
     Returns
     -------
     pandas.DataFrame, pandas.DataFrame
     """
-    predicate = get_predicate(columns=columns, predicate=predicate)
     return Split(predicate=predicate).split(df)
 
 
@@ -54,17 +49,19 @@ class Split(DataFrameSplitter):
     which the predicate was satisfied and one containing the rows for which the
     predicate was not satisfied.
     """
-    def __init__(self, predicate):
+    def __init__(self, predicate: EvalFunction):
         """Initialize the predicate that is evaluated.
 
         Parameters
         ----------
-        predicate: openclean.function.eval.base.EvalFunction
-            Callable that accepts a data frame row as the only argument.
+    predicate: openclean.function.eval.base.EvalFunction
+        Evaluation function that is evaluated on each data frame row. The
+        resulting value determines for each row in which of the two output data
+        frames it will be placed.
         """
         self.predicate = predicate
 
-    def split(self, df):
+    def split(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Split the data frame into two data frames. The output is a tuple.
         The first element is the data frame that contains all rows for which
         the predicate evaluated to True. The second element is a data frame
@@ -79,20 +76,18 @@ class Split(DataFrameSplitter):
         -------
         pandas.DataFrame, pandas.DataFrame
         """
-        # Prepare the predicate if it is an evaluation function.
-        f = self.predicate.prepare(df)
+        # Evaluate the predicate on all data frame rows.
+        smap = self.predicate.eval(df)
         # Create a Boolean array to maintain information about those rows that
         # satisfy the predicate (true map) and those that do not satisfy the
         # predicate (false map).
         tmap = [False] * len(df.index)
         fmap = [False] * len(df.index)
-        index = 0
-        for rowid, values in df.iterrows():
-            if f.eval(values):
-                tmap[index] = True
+        for i in range(len(smap)):
+            if smap[i]:
+                tmap[i] = True
             else:
-                fmap[index] = True
-            index += 1
+                fmap[i] = True
         # Return one data frame containing only those rows for which the
         # predicate was satisfied and one data frame containing those rows
         # for which the predicate was not satisfied.

@@ -11,10 +11,10 @@ column).
 
 from abc import abstractmethod
 
-from openclean.function.base import scalar_pass_through
 from openclean.function.value.base import ValueFunction
 from openclean.function.value.datatype import is_numeric_type
 from openclean.function.value.filter import filter
+from openclean.util.core import scalar_pass_through
 
 
 # -- Generic base class for normalization functions ---------------------------

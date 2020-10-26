@@ -38,7 +38,7 @@ def test_majority_type_picker(schools):
         columns='grade',
         use_total_counts=True
     )
-    assert types == {'text': 70/100}
+    assert types == {'text': 64/100}
     # Use fake classifier to simulate scenario where more than one type
     # has maximum frequency.
     classifier = ValueClassifier(RoundRobinClassLabel())
@@ -74,9 +74,9 @@ def test_threshold_type_picker(schools):
     types = threshold_typepicker(schools, columns='grade', threshold=0.6)
     assert types == {'int': 8/13}
     types = threshold_typepicker(schools, columns='grade', threshold=0.1)
-    assert types == {'int': 8/13, 'text': 5/13}
+    assert types == {'int': 8/13, 'text': 4/13}
     types = threshold_typepicker(schools, columns='grade')
-    assert types == {'int': 8/13, 'text': 5/13}
+    assert types == {'float': 1/13, 'int': 8/13, 'text': 4/13}
     # Use total value counts as type frequencies.
     types = threshold_typepicker(
         schools, columns='grade', threshold=0.8, use_total_counts=True)
@@ -87,17 +87,17 @@ def test_threshold_type_picker(schools):
         threshold=0.6,
         use_total_counts=True
     )
-    assert types == {'text': 70/100}
+    assert types == {'text': 64/100}
     types = threshold_typepicker(
         schools,
         columns='grade',
         threshold=0.1,
         use_total_counts=True
     )
-    assert types == {'int': 30/100, 'text': 70/100}
+    assert types == {'int': 30/100, 'text': 64/100}
     types = threshold_typepicker(
         schools,
         columns='grade',
         use_total_counts=True
     )
-    assert types == {'int': 30/100, 'text': 70/100}
+    assert types == {'float': 6/100, 'int': 30/100, 'text': 64/100}
