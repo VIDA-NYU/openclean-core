@@ -35,6 +35,7 @@ def test_fdviolations_parking(parking):
         values = distinct(groups.get(key), 'Street')
         assert len(values) > 1
 
+
 def test_keyviolations_parking(parking):
     """Ensure that there exist 3 duplicates in the 'Plate ID' column
     and 2 of them are at the same meter
@@ -48,6 +49,7 @@ def test_keyviolations_parking(parking):
 
     groups = key_violations(parking, columns=['Plate ID', 'Meter Number'])
     assert len(groups) == 2
+
 
 def test_nviolations_parking(parking):
     """Ensure we can select groups with exactly n=2 violations"""
