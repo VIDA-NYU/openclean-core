@@ -13,6 +13,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
+from openclean.data.select import as_list, select_clause
 from openclean.data.stream.base import DatasetStream
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
@@ -50,12 +51,15 @@ class DataPipeline(object):
         ----------
         reader: openclean.data.stream.base.DatasetReader
             Reader for the data stream.
+        columns: list of string, default=None
+            List of column names in the schema of the pipeline result.
         pipeline: list of openclean.data.stream.processor.StreamProcessor,
                 default=None
             List of operators in the pipeline fpr this stream processor.
 
         """
         self.reader = reader
+        self.columns = columns if columns is not None else reader.columns
         self.pipeline = pipeline if pipeline is not None else list()
 
     def __enter__(self):
@@ -85,7 +89,11 @@ class DataPipeline(object):
         -------
         openclean.pipeline.DataPipeline
         """
-        return DataPipeline(reader=self.reader, pipeline=self.pipeline + [op])
+        return DataPipeline(
+            reader=self.reader,
+            columns=columns if columns is not None else self.columns,
+            pipeline=self.pipeline + [op]
+        )
 
     def count(self) -> int:
         """Count the number of rows in a data stream.
@@ -217,7 +225,11 @@ class DataPipeline(object):
             matching the number of columns inserted or an evaluation function
             that returns a matchin number of values.
         """
-        return self.append(InsCol(names=names, pos=pos, values=values))
+        op = InsCol(names=names, pos=pos, values=values)
+        inspos = op.inspos(self.columns)
+        columns = self.columns[:inspos] + as_list(names) + self.columns[inspos:]
+
+        return self.append(op=op, columns=columns)
 
     def limit(self, count: int) -> DataPipeline:
         """Return a data stream for the data frame that will yield at most
@@ -358,13 +370,15 @@ class DataPipeline(object):
         if columns is None:
             columns = list(range(len(self.columns)))
         # Select the columns first.
-        ds = self.append(Select(columns=columns))
+        op = Select(columns=columns)
+        colnames, _ = select_clause(schema=self.columns, columns=columns)
+        ds = self.append(op=Select(columns=columns), columns=colnames)
         # Append an optional column rename operator if new column names are
         # given. New column names are expected to be in the same order as the
         # selected columns.
         if names is not None:
             op = Rename(columns=list(range(len(columns))), names=names)
-            ds = ds.append(op)
+            ds = ds.append(op=op, columns=names)
         return ds
 
     def stream(self, op: StreamProcessor):

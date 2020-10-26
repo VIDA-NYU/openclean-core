@@ -12,6 +12,7 @@ import pytest
 
 def test_select_columns_from_stream(ds):
     """Test selecting columns from a data stream."""
+    assert ds.select(['A', 'C']).columns == ['A', 'C']
     df = ds.select(['A', 'C']).to_df()
     assert df.shape == (10, 2)
     assert list(df.columns) == ['A', 'C']
