@@ -10,9 +10,7 @@
 import os
 import pandas as pd
 
-from openclean.data.stream.csv import CSVFile
-from openclean.data.stream.df import DataFrameStream
-from openclean.pipeline.processor.collector import WriteOperator
+from openclean.pipeline import stream
 
 
 def test_write_stream(tmpdir):
@@ -20,11 +18,9 @@ def test_write_stream(tmpdir):
     # Create a data stream with three rows.
     data = [[1, 2, 3], [3, 4, 5], [5, 6, 7]]
     df = pd.DataFrame(data=data, columns=['A', 'B', 'C'])
-    ds = DataFrameStream(df)
     # Write data stream to file.
     filename = os.path.join(tmpdir, 'myfile.csv')
-    file = CSVFile(filename=filename, write=True)
-    WriteOperator(file=file).open(ds, ds.columns).process(ds)
+    stream(df).write(filename)
     # Read the created file.
     data = list()
     with open(filename, 'r') as f:

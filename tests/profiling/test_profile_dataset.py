@@ -10,7 +10,7 @@
 import pandas as pd
 
 from openclean.profiling.column import DefaultStreamProfiler
-from openclean.profiling.dataset import Profile, dataset_profile
+from openclean.profiling.dataset import ProfileConsumer, dataset_profile
 from openclean.profiling.tests import ValueCounter
 
 
@@ -18,7 +18,7 @@ from openclean.profiling.tests import ValueCounter
 
 def test_profile_consumer():
     """Test profiling two columns over a short data stream."""
-    consumer = Profile(
+    consumer = ProfileConsumer(
         profilers=[(0, 'A', ValueCounter()), (2, 'B', ValueCounter())]
     )
     consumer.consume(0, [1, 2, 3])
@@ -71,7 +71,7 @@ def test_dataset_profile_minmax(schools):
     """
     # -- Test the default stream profiler -------------------------------------
     grades_1 = dataset_profile(schools).minmax('grade')
-    assert len(grades_1) == 2
+    assert len(grades_1) == 3
     assert list(grades_1.loc['int']) == [1, 8]
     assert list(grades_1.loc['str']) == ['09-12', 'MS Core']
 
@@ -121,7 +121,7 @@ def test_dataset_profile_types(schools):
             assert df_dist.at[i, c] <= df.at[i, c]
     # -- There should be one multi-type column with two types -----------------
     df = dataset_profile(schools).multitype_columns().types()
-    assert df.shape == (1, 2)
+    assert df.shape == (1, 3)
 
 
 def test_dataset_profile_uniqueness():

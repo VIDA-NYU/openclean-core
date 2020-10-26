@@ -13,10 +13,9 @@ pipeline is executed.
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import List, Optional
 
-from openclean.data.stream.base import DatasetStream
-from openclean.data.stream.base import StreamConsumer
+from openclean.data.types import Schema
+from openclean.operator.stream.consumer import StreamConsumer
 
 
 # -- Stream operators ---------------------------------------------------------
@@ -28,34 +27,18 @@ class StreamProcessor(metaclass=ABCMeta):
     processing pipeline to filter, manipulate or profile data stream rows.
     """
     @abstractmethod
-    def open(
-        self, ds: DatasetStream,
-        schema: List[str],
-        upstream: Optional[List[StreamProcessor]] = None,
-        downstream: Optional[List[StreamProcessor]] = None
-    ) -> StreamConsumer:
+    def open(self, schema: Schema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer that corresponds to the action that is defined by the
         stream processor.
 
         Parameters
         ----------
-        ds: openclean.data.stream.base.DatasetStream
-            Data stream that the consumer will receive as an input. Use this
-            stream in combination with any upstream operators to prepare any
-            associated evaluation functions that are used by the returned
-            consumer.
         schema: list of string
             List of column names in the data stream schema.
-        upstream: list of openclean.pipeline.processor.base.StreamProcessor,
-                default=None
-            List of upstream operators for the received data stream.
-        downstream: list of openclean.pipeline.processor.base.StreamProcessor,
-                default=None
-            List of downstream operators for the generated consumer.
 
         Returns
         -------
-        openclean.data.stream.base.StreamConsumer
+        openclean.operator.stream.consumer.StreamConsumer
         """
         raise NotImplementedError()  # pragma: no cover

@@ -11,8 +11,12 @@ from typing import Optional
 
 import pandas as pd
 
+from openclean.data.stream.base import DataRow
+from openclean.data.types import Schema
 from openclean.function.eval.base import EvalFunction
 from openclean.operator.base import DataFrameTransformer
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
 
 # -- Functions ----------------------------------------------------------------
@@ -69,7 +73,7 @@ def filter(
 
 # -- Operators ----------------------------------------------------------------
 
-class Filter(DataFrameTransformer):
+class Filter(StreamProcessor, DataFrameTransformer):
     """Data frame transformer that evaluates a Boolean predicate on the rows of
     a data frame. The transformed output contains only those rows for which the
     predicate evaluated to True (or Flase if the negated flag is True).
@@ -86,6 +90,35 @@ class Filter(DataFrameTransformer):
         """
         self.predicate = predicate
         self.negated = negated
+
+    def open(self, schema: Schema) -> StreamFunctionHandler:
+        """Factory pattern for stream consumer. Returns an instance of a
+        stream consumer that filters rows in a data stream using an stream
+        function representing the filter predicate.
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.operator.stream.consumer.StreamFunctionHandler
+        """
+        # Get the stream function for the associated predicate.
+        func = self.predicate.prepare(columns=schema)
+        # The predicate function is expected to return a Boolean value. For the
+        # stream consumer we need to wrap it into a function that only returns
+        # rows or None if the predicate is not satisfied.
+
+        def streamfunc(row: DataRow) -> DataRow:
+            """Return None for rows that do not satisfy the predicate."""
+            sat = func(row)
+            if (sat and not self.negated) or (not sat and self.negated):
+                return row
+            return None
+
+        return StreamFunctionHandler(columns=schema, func=streamfunc)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Return a data frame that contains only those rows from the given

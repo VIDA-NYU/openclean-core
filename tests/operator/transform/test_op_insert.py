@@ -13,8 +13,23 @@ import pytest
 from openclean.data.types import Column
 from openclean.function.eval.base import Col, Cols
 from openclean.function.eval.string import Upper
+from openclean.operator.stream.collector import Collector
+from openclean.operator.transform.insert import inscol, insrow, InsCol
 
-from openclean.operator.transform.insert import inscol, insrow
+
+def test_insert_multiple_columns_consumer():
+    """Test the stream consumer for the insert column operator with multiple
+    columns.
+    """
+    collector = Collector()
+    consumer = InsCol(['D', 'E'], pos=1, values=[1, Col('A') + Col('B')])\
+        .open(['A', 'B', 'C'])\
+        .set_consumer(collector)
+    assert consumer.columns == ['A', 'D', 'E', 'B', 'C']
+    consumer.consume(3, [1, 2, 3])
+    rows = consumer.close()
+    assert len(rows) == 1
+    assert rows[0] == (3, [1, 1, 3, 2, 3])
 
 
 def test_insert_multiple_columns(employees):
@@ -47,6 +62,19 @@ def test_insert_multiple_columns(employees):
     # the number of inserted columns.
     with pytest.raises(ValueError):
         inscol(employees, ['Height', 'Weight'], pos=1, values=Col('Name'))
+
+
+def test_insert_single_column_consumer():
+    """Test the stream consumer for the insert column operator."""
+    collector = Collector()
+    consumer = InsCol('D', pos=1, values=1)\
+        .open(['A', 'B', 'C'])\
+        .set_consumer(collector)
+    assert consumer.columns == ['A', 'D', 'B', 'C']
+    consumer.consume(3, [1, 2, 3])
+    rows = consumer.close()
+    assert len(rows) == 1
+    assert rows[0] == (3, [1, 1, 2, 3])
 
 
 def test_insert_single_column(employees):

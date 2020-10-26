@@ -7,12 +7,12 @@
 
 """Unit tests for the Collector consumer for data streams."""
 
-from openclean.pipeline.consumer.collector import Collector
+from openclean.operator.stream.collector import Collector
 
 
 def test_row_collector():
     """Test the stream consumer that collects row identifier and rows."""
-    consumer = Collector()
+    consumer = Collector().open([])
     consumer.consume(3, [1, 2, 3])
     consumer.consume(2, [4, 5, 6])
     consumer.consume(1, [7, 8, 9])
