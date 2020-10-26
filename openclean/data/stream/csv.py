@@ -20,7 +20,10 @@ class CSVReader(DatasetIterator):
     """Iterable reader for rows in a CSV file. Instances of this class act as a
     context manager for an open CSV file reader.
     """
-    def __init__(self, reader: csv.reader, file: int, skip_header: bool):
+    def __init__(
+        self, reader: csv.reader, file: int, skip_header: bool,
+        none_is: Optional[str] = None
+    ):
         """Initialize the reader and the file handle.
 
         Parameters
@@ -31,9 +34,14 @@ class CSVReader(DatasetIterator):
             Handle for the open CSV file.
         skip_header: bool
             Skip first row if True.
+        none_is: string, default=None
+            String that was used to encode None values in the input file. If
+            given, all cell values that match the given string are substituted
+            by None.
         """
         self.reader = reader
         self.file = file
+        self.none_is = none_is
         # Initialize the rowid counter and read the first line from the file
         # if no list of columns is passed to the object at instantiation.
         self.rowid = 0
@@ -59,6 +67,8 @@ class CSVReader(DatasetIterator):
         StopIteration error when the end of the file is reached.
         """
         row = next(self.reader)
+        if self.none_is is not None:
+            row = [v if v != self.none_is else None for v in row]
         rowid = self.rowid
         self.rowid += 1
         return rowid, row
@@ -66,7 +76,7 @@ class CSVReader(DatasetIterator):
 
 class CSVWriter(object):
     """Context manager for an open CSV file writer."""
-    def __init__(self, writer, file):
+    def __init__(self, writer, file, none_as: Optional[str] = None):
         """Initialize the writer and the file handle.
 
         Parameters
@@ -75,9 +85,13 @@ class CSVWriter(object):
             Writer for a streamed CSV file.
         file: File object
             Handle for the open CSV file.
+        none_as: string, default=None
+            String that is used to encode None values in the output file. If
+            given, all cell values that are None are substituted by the string.
         """
         self.writer = writer
         self.file = file
+        self.none_as = none_as
 
     def __enter__(self):
         """Enter method for the context manager."""
@@ -98,6 +112,8 @@ class CSVWriter(object):
 
     def write(self, row):
         """Write a row to the CSV file."""
+        if self.none_as is not None:
+            row = [v if v is not None else self.none_as for v in row]
         return self.writer.writerow(row)
 
 
@@ -106,6 +122,7 @@ class CSVFile(DatasetStream):
     def __init__(
         self, filename: str, header: Optional[Schema] = None,
         delim: Optional[str] = None, compressed: Optional[bool] = None,
+        none_is: Optional[str] = None,
         write: Optional[bool] = False
     ):
         """Set the file name, delimiter and the flag that indicates if the file
@@ -126,10 +143,15 @@ class CSVFile(DatasetStream):
         compressed: bool, default=None
             Flag indicating if the file contents have been compressed using
             gzip.
+        none_is: string, default=None
+            String that was used to encode None values in the input file. If
+            given, all cell values that match the given string are substituted
+            by None.
         write: bool, default=False
             Indicate if the file is opened for writing.
         """
         self.filename = filename
+        self.none_is = none_is
         # Keep track if the header information was None intially, i.e., if the
         # header is in the file or not.
         self._has_header = header is None
@@ -172,7 +194,8 @@ class CSVFile(DatasetStream):
         return CSVReader(
             reader=reader,
             file=csvfile,
-            skip_header=self._has_header
+            skip_header=self._has_header,
+            none_is=self.none_is
         )
 
     def _openreader(self):
@@ -190,7 +213,9 @@ class CSVFile(DatasetStream):
             csvfile = open(self.filename, 'r')
         return csv.reader(csvfile, delimiter=self.delim), csvfile
 
-    def write(self, header: Optional[Schema] = None) -> CSVWriter:
+    def write(
+        self, header: Optional[Schema] = None, none_as: Optional[str] = None
+    ) -> CSVWriter:
         """Get a CSV writer for the associated CSV file. Writes the dataset
         header information to the opened output file.
 
@@ -199,6 +224,9 @@ class CSVFile(DatasetStream):
         header: list of string, default=None
             Optional header information that overwrites the header information
             in the file.
+        none_as: string, default=None
+            String that is used to encode None values in the output file. If
+            given, all cell values that are None are substituted by the string.
 
         Returns
         -------
@@ -215,4 +243,4 @@ class CSVFile(DatasetStream):
             writer.writerow(header)
         elif self.columns is not None:
             writer.writerow(self.columns)
-        return CSVWriter(writer=writer, file=csvfile)
+        return CSVWriter(writer=writer, file=csvfile, none_as=none_as)

@@ -504,7 +504,8 @@ class DataPipeline(object):
 
 def stream(
     filename: Union[str, pd.DataFrame], header: Optional[Schema] = None,
-    delim: Optional[str] = None, compressed: Optional[bool] = None
+    delim: Optional[str] = None, compressed: Optional[bool] = None,
+    none_is: Optional[str] = None
 ) -> DataPipeline:
     """Read a CSV file as a data stream. This is a helper method that is
     intended to read and filter large CSV files.
@@ -521,6 +522,10 @@ def stream(
     compressed: bool, default=None
         Flag indicating if the file contents have been compressed using
         gzip.
+    none_is: string, default=None
+        String that was used to encode None values in the input file. If
+        given, all cell values that match the given string are substituted
+        by None.
 
     Returns
     -------
@@ -533,6 +538,7 @@ def stream(
             filename=filename,
             header=header,
             delim=delim,
-            compressed=compressed
+            compressed=compressed,
+            none_is=none_is
         )
     return DataPipeline(reader=file)
