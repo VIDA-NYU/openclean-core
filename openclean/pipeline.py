@@ -22,6 +22,7 @@ from openclean.function.eval.base import EvalFunction
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
+from openclean.operator.stream.sample import Sample
 from openclean.operator.transform.filter import Filter
 from openclean.operator.transform.limit import Limit
 from openclean.operator.transform.insert import InsCol
@@ -344,6 +345,18 @@ class DataPipeline(object):
                 except StopIteration:
                     break
         return consumer.close()
+
+    def sample(self, size: int, seed: Optional[int] = None) -> DataPipeline:
+        """Add operator for a random sample generator to the data stream.
+
+        ----------
+        size: int
+            Size of the collected random sample.
+        seed: int, default=None
+            Seed value for the random number generator (for reproducibility
+            purposes).
+        """
+        return self.append(Sample(size=size, seed=seed))
 
     def select(
         self, columns: Optional[Columns] = None, names: Optional[Schema] = None

@@ -132,20 +132,22 @@ class ProducingConsumer(StreamConsumer):
         row: list
             List of values in the row.
         """
-        values = self.handle(row)
+        values = self.handle(rowid=rowid, row=row)
         if values is not None:
             if self.consumer is not None:
                 return self.consumer.consume(rowid, values)
         return values
 
     @abstractmethod
-    def handle(self, row: DataRow) -> DataRow:
+    def handle(self, rowid: int, row: DataRow) -> DataRow:
         """Process a given row. Return a modified row or None. In the latter
         case it is assumed that the row should not be passed on to any consumer
         downstream.
 
         Parameters
         -----------
+        rowid: int
+            Unique row identifier
         row: list
             List of values in the row.
 
@@ -199,11 +201,13 @@ class StreamFunctionHandler(ProducingConsumer):
         )
         self.func = func
 
-    def handle(self, row: DataRow) -> DataRow:
+    def handle(self, rowid: int, row: DataRow) -> DataRow:
         """Process a given row using the associated stream function.
 
         Parameters
         -----------
+        rowid: int
+            Unique row identifier
         row: list
             List of values in the row.
 

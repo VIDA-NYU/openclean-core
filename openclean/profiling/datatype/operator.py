@@ -43,7 +43,7 @@ class Typecast(ProducingConsumer, StreamProcessor):
             converter = DefaultConverter()
         self.converter = converter
 
-    def handle(self, row: DataRow) -> DataRow:
+    def handle(self, rowid: int, row: DataRow) -> DataRow:
         """Convert all values in the given row to a datatype that is defined by
         the associated converter.
 
