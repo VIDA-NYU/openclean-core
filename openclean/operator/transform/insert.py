@@ -20,6 +20,7 @@ from openclean.function.eval.base import evaluate, to_const_eval, to_eval
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamFunctionHandler
 from openclean.operator.stream.processor import StreamProcessor
+import numpy as np
 
 
 # -- Functions ----------------------------------------------------------------
@@ -222,30 +223,20 @@ class InsCol(StreamProcessor, DataFrameTransformer):
         # Evaluate the values function(s) to get the default values for the
         # inserted columns.
         defaults = evaluate(df, self.values)
-        # Create a modified data frame where rows are modified by the update
-        # function.
-        data = list()
-        # Have different implementations for single column or multi-column
-        # updates.
-        rowidx = 0
-        if len(self.names) == 1:
-            for rowid, values in df.iterrows():
-                val = defaults[rowidx]
-                values = list(values)
-                data.append(values[:inspos] + [val] + values[inspos:])
-                rowidx += 1
-        else:
-            col_count = len(self.names)
-            for rowid, values in df.iterrows():
-                vals = defaults[rowidx]
-                if len(vals) != col_count:
+        # if default is a list of tuples, transpose it
+        if all(isinstance(item, tuple) for item in defaults):
+            for item in defaults:
+                if len(self.names) != len(item):
                     msg = 'expected {} values instead of {}'
-                    raise ValueError(msg.format(col_count, vals))
-                if isinstance(vals, tuple):
-                    vals = list(vals)
-                values = list(values)
-                data.append(values[:inspos] + vals + values[inspos:])
-                rowidx += 1
+                    raise ValueError(msg.format(len(self.names), item))
+            defaults = list(map(list, zip(*defaults)))
+        # it should be a regular list or series only if len(self.names) == 1
+        elif not len(self.names) == 1:
+            raise ValueError('expected {} values instead of 1'.format(len(self.names)))
+
+        # Create a modified data frame where rows are modified as numpy arrays
+        # this is the an optimum way to do it
+        data = np.insert(df.to_numpy(copy=True), inspos, defaults, axis=1)
         # Insert the column names into the data frame schema.
         columns = list(df.columns)
         columns = columns[:inspos] + self.names + columns[inspos:]

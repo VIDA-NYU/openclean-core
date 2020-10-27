@@ -22,7 +22,7 @@ from openclean.function.value.base import ValueFunction
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamFunctionHandler
 from openclean.operator.stream.processor import StreamProcessor
-
+import numpy as np
 
 """Type alias for update function specifications."""
 UpdateFunction = Union[Callable, Dict, EvalFunction, Scalar, ValueFunction]
@@ -182,30 +182,21 @@ class Update(StreamProcessor, DataFrameTransformer):
         updates = self.func.eval(df)
         # Create a modified data frame where rows are modified by the update
         # function.
-        data = list()
-        # Have different implementations for single column or multi-column
-        # updates.
-        rowidx = 0
-        if len(colidxs) == 1:
-            colidx = colidxs[0]
-            for rowid, values in df.iterrows():
-                val = updates[rowidx]
-                values = list(values)
-                values[colidx] = val
-                data.append(values)
-                rowidx += 1
-        else:
-            col_count = len(colidxs)
-            for rowid, values in df.iterrows():
-                vals = updates[rowidx]
-                if len(vals) != col_count:
+        if all(isinstance(item, tuple) for item in updates):
+            for item in updates:
+                if len(colidxs) != len(item):
                     msg = 'expected {} values instead of {}'
-                    raise ValueError(msg.format(col_count, vals))
-                values = list(values)
-                for i in range(col_count):
-                    values[colidxs[i]] = vals[i]
-                data.append(values)
-                rowidx += 1
+                    raise ValueError(msg.format(len(colidxs), item))
+        # it should be a regular list or series only if len(self.names) == 1
+        elif not len(colidxs) == 1:
+            raise ValueError('expected {} values instead of 1'.format(len(colidxs)))
+        # if single column updates, convert the updates list to a list of lists (vector) for numpy
+        else:
+            updates = list(map(list, zip(updates)))
+
+        data = df.to_numpy(copy=True)
+        data[:, colidxs] = updates
+
         return pd.DataFrame(data=data, index=df.index, columns=df.columns)
 
 
