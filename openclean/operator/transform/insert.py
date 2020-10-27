@@ -236,7 +236,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
 
         # Create a modified data frame where rows are modified as numpy arrays
         # this is the an optimum way to do it
-        data = np.insert(df.to_numpy(), inspos, defaults, axis=1)
+        data = np.insert(df.to_numpy(copy=True), inspos, defaults, axis=1)
         # Insert the column names into the data frame schema.
         columns = list(df.columns)
         columns = columns[:inspos] + self.names + columns[inspos:]
