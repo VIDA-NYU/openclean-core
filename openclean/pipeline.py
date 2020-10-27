@@ -315,6 +315,23 @@ class DataPipeline(object):
         )
         return self.stream(op)
 
+    def rename(self, columns: Columns, names: Schema) -> DataPipeline:
+        """Rename selected columns in a the schema data of data stream rows.
+
+        Parameters
+        ----------
+        columns: int, str, or list of int or string
+            References to renamed columns.
+        names: int, str, or list of int or string, default=None
+            New names for the selected columns.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        op = Rename(columns=columns, names=names)
+        return self.append(op=op, columns=op.rename(self.columns))
+
     def run(self):
         """Stream all rows from the associated data file to the data pipeline
         that is associated with this processor. If an optional operator is
