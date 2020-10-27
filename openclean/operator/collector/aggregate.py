@@ -131,10 +131,6 @@ def get_agg_funcs(func):
         function = {name: func}
     elif isinstance(func, dict):
         function = func
-    # todo: convert dict of funcs to dict of evals after the new eval implementation is pushed
-    # elif isinstance(functions, dict):
-        # for column, fun in functions.items():
-        #     funcs[column] = Eval(columns=[column], func=fun)
     else:
         raise TypeError("aggregate function: {} not acceptable.".format(getattr(func, '__name__', repr(func))))
 

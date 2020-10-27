@@ -114,7 +114,7 @@ Performance tests, need only be run with additional function profiling stats bei
 #     # profile this test too
 #     from openclean.operator.map.violations import fd_violations
 #     import os
-#     from openclean.data.load import stream
+#     from openclean.pipeline import stream
 #     df = stream(os.path.join('../../../examples/notebooks/NYCRestaurantInspections/data/', '43nn-pn8j.tsv.gz')).to_df()
 #
 #     fd_violations(df, 'CAMIS', ['DBA', 'BORO'])
