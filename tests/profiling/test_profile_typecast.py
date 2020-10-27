@@ -15,4 +15,4 @@ from openclean.profiling.datatype.operator import Typecast
 def test_row_typecast(converter):
     """Test type casting values in a data stream row using a type converter."""
     op = Typecast(converter=converter).open(['A', 'B', 'C', 'D'])
-    assert op.handle([1, '2', '3.5', 'A']) == [1, 2, 3.5, 'A']
+    assert op.handle(0, [1, '2', '3.5', 'A']) == [1, 2, 3.5, 'A']

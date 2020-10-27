@@ -9,7 +9,7 @@ from collections import defaultdict, Counter
 from typing import Iterable, List, Optional, Dict
 import warnings
 
-from openclean.function.matching.base import StringMatchResult, VocabularyMatcher  # noqa: E501
+from openclean.function.matching.base import StringMatchResult, VocabularyMatcher
 
 
 class Mapping(defaultdict):
@@ -33,7 +33,7 @@ class Mapping(defaultdict):
                 self[val].append((val, 1.))
 
     def add(
-            self, key: str, matches: List[StringMatchResult]
+        self, key: str, matches: List[StringMatchResult]
     ) -> List[StringMatchResult]:
         """Add a list of matches to the mapped values for a given term (key).
         The term that is identified by the key does not have to exist in the

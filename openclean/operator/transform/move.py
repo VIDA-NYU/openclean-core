@@ -41,7 +41,7 @@ def movecols(df: pd.DataFrame, columns: Columns, pos: int):
     ------
     ValueError
     """
-    return MoveColumns(columns=columns, pos=pos).transform(df)
+    return MoveCols(columns=columns, pos=pos).transform(df)
 
 
 def move_rows(df: pd.DataFrame, rowids: Union[int, List[int]], pos: int):
@@ -69,7 +69,7 @@ def move_rows(df: pd.DataFrame, rowids: Union[int, List[int]], pos: int):
 
 # -- Operators ----------------------------------------------------------------
 
-class MoveColumns(StreamProcessor, DataFrameTransformer):
+class MoveCols(StreamProcessor, DataFrameTransformer):
     """Operator to move one or more columns to a specified index position."""
     def __init__(self, columns: Columns, pos: int):
         """Initialize the list of columns that are being moved and their new

@@ -10,7 +10,6 @@
 import pandas as pd
 import pytest
 
-from openclean.function.eval.base import Col
 from openclean.function.eval.null import IsEmpty, IsNotEmpty
 
 
