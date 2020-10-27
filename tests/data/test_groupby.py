@@ -33,7 +33,7 @@ def grouping():
 
 def test_add_and_get_groups(grouping):
     """Test adding and accessing data frame groups."""
-    grouping.add('A', [1, 2]).add('B', [-1, 3]).add('C', [1, 2, -1])
+    grouping.add('A', [2, 1]).add('B', [3, 0]).add('C', [2, 1, 3])
     assert len(grouping) == 3
     # Error when adding group for existing key.
     with pytest.raises(ValueError):
@@ -64,7 +64,7 @@ def test_group_keys(grouping):
 
 def test_iterate_over_groups(grouping):
     """Test adding and accessing data frame groups."""
-    grouping.add('A', [1, 2]).add('B', [0, 3]).add('C', [1, 2, 3])
+    grouping.add('A', [2, 1]).add('B', [4, 0]).add('C', [2, 1, 0])
     col_a = dict()
     for key, df in grouping.items():
         col_a[key] = list(df['A'])

@@ -94,7 +94,8 @@ class Violations(DataFrameMapper):
         """
         self.lhs = [lhs] if not isinstance(lhs, list) else lhs
         self.rhs = self.lhs if rhs is None else [rhs] if not isinstance(rhs, list) else rhs
-        self.func = get_eval_func(columns=lhs, func=func)
+        self.determinant = get_eval_func(columns=self.lhs, func=func)
+        self.dependent = get_eval_func(columns=self.rhs, func=None)
         self.having = having
 
     def _transform(self, df):
@@ -109,10 +110,12 @@ class Violations(DataFrameMapper):
         -------
         dict, dict
         """
-        evaluated = self.func.eval(df=df)
+        determinant = self.determinant.eval(df=df)
+        dependent = self.dependent.eval(df=df)
         groups = dict()
         meta = dict()
-        for index, value in enumerate(evaluated):
+        for index, values in enumerate(zip(determinant, dependent)):
+            value = values[0] # determinant value: keys
             if isinstance(value, list):
                 value = tuple(value)
             if value not in groups:
@@ -120,7 +123,7 @@ class Violations(DataFrameMapper):
                 meta[value] = Counter()
             groups[value].append(index)
 
-            meta_value = df.loc[index, self.rhs] if len(self.rhs) == 1 else tuple(df.loc[index, self.rhs].values)
+            meta_value = values[1] # dependent value: meta
             meta[value] += Counter([tuple(meta_value.tolist())]) if isinstance(meta_value, pd.Series) else Counter([meta_value])
 
         return groups, meta
@@ -137,9 +140,8 @@ class Violations(DataFrameMapper):
         -------
         DataFrameViolation
         """
-        df_reindexed = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
-        groups, meta = self._transform(df=df_reindexed)
-        grouping = DataFrameViolation(df=df_reindexed, lhs=self.lhs, rhs=self.rhs)
+        groups, meta = self._transform(df=df)
+        grouping = DataFrameViolation(df=df, lhs=self.lhs, rhs=self.rhs)
         for key, rows in groups.items():
             if Violations.select(condition=self.having, meta=meta[key]):
                 grouping.add(key=key, rows=rows, meta=meta[key])
