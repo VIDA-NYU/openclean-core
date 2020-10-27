@@ -24,8 +24,9 @@ from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 from openclean.operator.stream.sample import Sample
 from openclean.operator.transform.filter import Filter
-from openclean.operator.transform.limit import Limit
 from openclean.operator.transform.insert import InsCol
+from openclean.operator.transform.limit import Limit
+from openclean.operator.transform.move import MoveCols
 from openclean.operator.transform.rename import Rename
 from openclean.operator.transform.select import Select
 from openclean.operator.transform.update import Update
@@ -246,6 +247,25 @@ class DataPipeline(object):
         openclean.pipeline.DataPipeline
         """
         return self.append(Limit(rows=count))
+
+    def move(self, columns: Columns, pos: int) -> DataPipeline:
+        """MOve one or more columns in a data stream schema.
+
+        Parameters
+        ----------
+        columns: int, string, or list(int or string)
+            Single column or list of column index positions or column names.
+        pos: int
+            Insert position for the moved columns.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        op = MoveCols(columns=columns, pos=pos)
+        colorder = op.reorder(self.columns)
+        sortcols = [self.columns[i] for i in colorder]
+        return self.append(op=op, columns=sortcols)
 
     def open(self) -> DataPipeline:
         """Return reference to self when the pipeline is opened.
