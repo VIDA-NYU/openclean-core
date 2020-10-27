@@ -17,7 +17,7 @@ consumer.
 """
 
 from __future__ import annotations
-from typing import Any, List, Optional
+from typing import Any, Optional
 from abc import ABCMeta, abstractmethod
 
 from openclean.data.stream.base import DataRow, DatasetStream, StreamFunction
@@ -57,7 +57,7 @@ class StreamConsumer(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def consume(self, rowid: int, row: List) -> List:
+    def consume(self, rowid: int, row: DataRow) -> DataRow:
         """Consume the given row. Passes the processed row on to an associated
         downstream consumer. Returns the processed row. If the result is None
         this signals to a collector/iterator that the given row should not be
@@ -119,7 +119,7 @@ class ProducingConsumer(StreamConsumer):
         if self.consumer is not None:
             return self.consumer.close()
 
-    def consume(self, rowid: int, row: List) -> List:
+    def consume(self, rowid: int, row: DataRow) -> DataRow:
         """Consume the given row. Passes the processed row on to an associated
         downstream consumer. Returns the processed row. If the result is None
         this signals to a collector/iterator that the given row should not be

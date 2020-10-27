@@ -19,8 +19,11 @@ from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, Schema
 from openclean.function.eval.base import EvalFunction
+from openclean.function.matching.base import VocabularyMatcher
+from openclean.function.matching.mapping import Mapping
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
+from openclean.operator.stream.matching import BestMatches
 from openclean.operator.stream.processor import StreamProcessor
 from openclean.operator.stream.sample import Sample
 from openclean.operator.transform.filter import Filter
@@ -247,6 +250,36 @@ class DataPipeline(object):
         openclean.pipeline.DataPipeline
         """
         return self.append(Limit(rows=count))
+
+    def match(
+        self, matcher: VocabularyMatcher, include_vocab: Optional[bool] = False
+    ) -> Mapping:
+        """Generate a mapping of best matches between a given vocabulary and
+        the values in one (or more) column(s) of the data stream. For each row
+        (i.e., single value) the best matches with a given vocabulary is
+        computed and added to the returned mapping.
+
+        For rows that contain multiple columns an error will be raised.
+
+        If the include_vocab flag is False the resulting mapping will contain a
+        mapping only for those values that do not occur in the vocabulary,
+        i.e., the unknown values with respect to the vocabulary.
+
+        Parameters
+        ----------
+        matcher: openclean.function.matching.base.VocabularyMatcher
+            Matcher to compute matches for the terms in a controlled vocabulary.
+        include_vocab: bool, default=False
+            If this flag is False the resulting mapping will only contain matches
+            for terms that are not in the vocabulary that is associated with the
+            given matcher.
+
+        Returns
+        -------
+        openclean.function.matching.mapping.Mapping
+        """
+        collector = BestMatches(matcher=matcher, include_vocab=include_vocab)
+        return self.stream(collector)
 
     def move(self, columns: Columns, pos: int) -> DataPipeline:
         """MOve one or more columns in a data stream schema.
