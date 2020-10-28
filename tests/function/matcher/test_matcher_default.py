@@ -12,9 +12,9 @@ implementations.
 import pytest
 
 from openclean.function.matching.base import (
-    DefaultVocabularyMatcher, ExactMatch
+    DefaultStringMatcher, ExactSimilarity
 )
-from openclean.function.matching.tests import DummyStringMatcher
+from openclean.function.matching.tests import DummySimilarity
 
 
 VOCABULARY = [
@@ -35,9 +35,9 @@ def test_default_vocabulary_matcher_caching(use_cache):
     """Ensure that the default matcher show the same behavior independently
     of using result caching or not.
     """
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         cache_results=use_cache
     )
     matches = vocab.find_matches('Chicago')
@@ -56,27 +56,27 @@ def test_default_vocabulary_matcher_config(
     bast results, result threshold) for the default vocabulary matcher.
     """
     # All matches
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         best_matches_only=False,
         no_match_threshold=0.
     )
     matches = vocab.find_matches(query)
     assert len(matches) == len(VOCABULARY)
     # Best matches only
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         best_matches_only=True,
         no_match_threshold=0.
     )
     matches = vocab.find_matches(query)
     assert len(matches) == best_matches
     # Matches greater than 0.5
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         best_matches_only=False,
         no_match_threshold=0.5
     )
@@ -87,12 +87,12 @@ def test_default_vocabulary_matcher_config(
 def test_exact_string_matcher():
     """Test the exact string matcher implementation."""
     # The default setting is case-sensitive
-    f = ExactMatch()
-    assert f.score('ABC', 'abc') == 0
-    assert f.score('XYZ', 'XYZ') == 1
-    assert f.score('ABC', 0) == 0
+    f = ExactSimilarity()
+    assert f.score(['ABC'], 'abc') == [(0, 'ABC')]
+    assert f.score(['XYZ'], 'XYZ') == [(1., 'XYZ')]
+    assert f.score(['ABC'], 0) == [(0., 'ABC')]
     # Test case-insensitive matching
-    f = ExactMatch(ignore_case=True)
-    assert f.score('ABC', 'abc') == 1
-    assert f.score('XYZ', 'XYZ') == 1
-    assert f.score('ABC', 0) == 0
+    f = ExactSimilarity(ignore_case=True)
+    assert f.score(['ABC'], 'abc') == [(1., 'ABC')]
+    assert f.score(['XYZ'], 'XYZ') == [(1., 'XYZ')]
+    assert f.score(['ABC'], 0) == [(0., 'ABC')]

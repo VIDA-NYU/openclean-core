@@ -9,8 +9,8 @@
 
 import pytest
 
-from openclean.function.matching.base import DefaultVocabularyMatcher
-from openclean.function.matching.tests import DummyStringMatcher
+from openclean.function.matching.base import DefaultStringMatcher
+from openclean.function.matching.tests import DummySimilarity
 from openclean.function.value.domain import (
     BestMatch, IsInDomain, IsNotInDomain
 )
@@ -20,9 +20,9 @@ def test_func_best_match():
     """Test finding best matches in a controlled vocabulary."""
     domain = ['abc', 'ab', 'ac', 'b']
     f = BestMatch(
-        vocabulary=DefaultVocabularyMatcher(
+        matcher=DefaultStringMatcher(
             vocabulary=domain,
-            matcher=DummyStringMatcher(),
+            similarity=DummySimilarity(),
             no_match_threshold=0.5
         )
     )

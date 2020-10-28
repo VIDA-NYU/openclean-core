@@ -11,9 +11,9 @@ normalization.
 
 import pytest
 
-from openclean.function.matching.base import DefaultVocabularyMatcher
+from openclean.function.matching.base import DefaultStringMatcher
 from openclean.function.matching.mapping import Mapping, best_matches
-from openclean.function.matching.tests import DummyStringMatcher
+from openclean.function.matching.tests import DummySimilarity
 
 
 VOCABULARY = [
@@ -43,9 +43,9 @@ def test_add_to_mapping():
 
 def test_best_matches():
     """Test generating a mpping of best matches against a given vocabulary."""
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher()
+        similarity=DummySimilarity()
     )
     map = best_matches(
         values=['Chicago', 'London', 'Edinburgh'],
@@ -86,9 +86,9 @@ def test_init_mapping():
 
 def test_match_counts():
     """Test generating the count of matches against a given vocabulary."""
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         no_match_threshold=0.5
     )
     map = Mapping()
@@ -104,9 +104,9 @@ def test_match_counts():
 
 def test_matched_and_unmatched():
     """Test matched and unmatched methods."""
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         no_match_threshold=0.5
     )
     map = Mapping()
@@ -117,15 +117,15 @@ def test_matched_and_unmatched():
     matched = map.matched()
     assert len(matched) == 3
     for m in map['Chicago']:
-        assert m[0] in ['Shanghai', 'New York']
+        assert m[1] in ['Shanghai', 'New York']
 
     unmatched = map.unmatched()
     assert 'Universal Studios Florida (c)' in unmatched
 
     # test single match only
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         no_match_threshold=0
     )
     map = Mapping()
@@ -134,14 +134,14 @@ def test_matched_and_unmatched():
 
     matched = map.matched(single_match_only=True)
     assert len(matched) == 1
-    assert map['Universal Studios Florida (c)'][0][0] == 'Rio de Janeiro'
+    assert map['Universal Studios Florida (c)'][0][1] == 'Rio de Janeiro'
 
 
 def test_filter_mapping():
     """Test matched and unmatched methods."""
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         no_match_threshold=0.5
     )
     map = Mapping()
@@ -152,15 +152,15 @@ def test_filter_mapping():
     filtered = map.filter(['Chicago', 'Universal Studios Florida (c)'])
     assert len(filtered) == 2
     for m in filtered['Chicago']:
-        assert m[0] in ['Shanghai', 'New York']
+        assert m[1] in ['Shanghai', 'New York']
     assert filtered['Universal Studios Florida (c)'] == []
 
 
 def test_update_mapping():
     """Test update and error case"""
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         no_match_threshold=0
     )
     map = Mapping()
@@ -168,10 +168,10 @@ def test_update_mapping():
     for val in values:
         map.add(val, vocab.find_matches(val))
 
-    assert map['Universal Studios Florida (c)'][0][0] == 'Rio de Janeiro'
+    assert map['Universal Studios Florida (c)'][0][1] == 'Rio de Janeiro'
     replacements = {'Universal Studios Florida (c)': 'Florida'}
     map.update(updates=replacements)
-    assert map['Universal Studios Florida (c)'] == [('Florida', 1.)]
+    assert map['Universal Studios Florida (c)'] == [(1., 'Florida')]
 
     # Missing Key
     with pytest.raises(KeyError):
@@ -187,9 +187,9 @@ def test_tolookup_mapping(nyc311):
         'STATEN ISLAND',
         'BRONX'
     ]
-    vocabulary = DefaultVocabularyMatcher(
+    vocabulary = DefaultStringMatcher(
         vocabulary=domain_boroughs,
-        matcher=DummyStringMatcher(),
+        similarity=DummySimilarity(),
         no_match_threshold=0.
     )
     map = best_matches(

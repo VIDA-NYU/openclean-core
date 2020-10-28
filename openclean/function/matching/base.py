@@ -13,55 +13,59 @@ from typing import Callable, Iterable, List, Optional, Tuple
 from openclean.function.string import to_lower
 from openclean.util.core import scalar_pass_through
 
+"""Type alias for matching results during vocabulary lookups. Matches for a
+query string are represented as (matches-string, score)-pairs.
+"""
+StringMatchResult = Tuple[float, str]
 
 # -- String similarity --------------------------------------------------------
 
-class StringMatcher(metaclass=ABCMeta):
+class StringSimilarity(metaclass=ABCMeta):
     """Abstract base class for functions that compute similarity scores between
-    pairs of strings. String similarity scores should be values in the interval
-    [0-1] where 0 indicates no match and 1 indicates an exact match.
+    a list of terms and a query string and return a list of StringMatchResults.
+     String similarity scores should be values in the interval [0-1] where 0
+     indicates no match and 1 indicates an exact match.
     """
     @abstractmethod
-    def match(self, val1: str, val2: str) -> float:
-        """Compute a similarity score for two strings. A score of 1 indicates
-        an exact match. A score of 0 indicates a no match.
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
+        """Compute a similarity score for a string against items from a vocabulary iterable.
+        A score of 1 indicates an exact match. A score of 0 indicates a no match.
 
         Parameters
         ----------
-        val1: string
-            First argument for similarity score computation.
-        val2: string
-            Second argument for similarity score computation.
+        vocabulary: Iterable[str]
+            List of strings to compare with.
+        query: string
+            Second argument for similarity score computation - the query term.
 
         Returns
         -------
-        float
+        List[StringMatchResult]
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def score(self, val1: str, val2: str) -> float:
-        """Synonym for the match function. Compute a similarity score for two
-        strings. A score of 1 indicates an exact match. A score of 0 indicates
-        a no match.
+    def score(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
+        """Synonym for the match function. Compute a similarity score for a string against items
+        from a vocabulary iterable. A score of 1 indicates an exact match. A score of 0 indicates a no match.
 
         Parameters
         ----------
-        val1: string
-            First argument for similarity score computation.
-        val2: string
-            Second argument for similarity score computation.
+        vocabulary: Iterable[str]
+            List of strings to compare with.
+        query: string
+            Second argument for similarity score computation - the query term.
 
         Returns
         -------
-        float
+        List[StringMatchResult]
         """
-        return self.match(val1, val2)
+        return self.match(vocabulary, query)
 
 
-class ExactMatch(StringMatcher):
-    """Implementation of the string matcher class that performs exact matches
+class ExactSimilarity(StringSimilarity):
+    """Implementation of the string similarity class that performs exact matches
     for string arguments. Allows to transform values before comparing them
-    using a simple callable fiunction that expects a single argument.
+    using a simple callable function that expects a single argument.
 
     The returned score is one for identical string and 0 for non-identical
     strings. The ignore_case flag allows to compare two strings ignoring their
@@ -89,38 +93,34 @@ class ExactMatch(StringMatcher):
         self.transformer = transformer
         self.ignore_case = ignore_case
 
-    def match(self, val1: str, val2: str) -> float:
-        """Compare two strings for equality. Returns 1 if the given arguments
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
+        """Cross reference query with the vocabulary strings for equality. Returns 1 if the given arguments
         are the same and 0 otherwise.
 
         Parameters
         ----------
-        val1: string
-            First argument for similarity score computation.
-        val2: string
-            Second argument for similarity score computation.
+        vocabulary: Iterable[str]
+            List of strings to compare with.
+        query: string
+            Second argument for similarity score computation - the query term.
 
         Returns
         -------
-        float
+        List[StringMatchResult]
         """
-        if self.ignore_case:
-            val1 = to_lower(val1)
-            val2 = to_lower(val2)
-        return 1. if self.transformer(val1) == self.transformer(val2) else 0.
+        matches = list()
+        for term in vocabulary:
+            l_term = to_lower(term) if self.ignore_case else term
+            l_query = to_lower(query) if self.ignore_case else query
+            matches.append((1., term)) if self.transformer(l_term) == self.transformer(l_query) else matches.append((0., term))
+        return matches
 
 
 # -- Similarity-based vocabulary lookups --------------------------------------
 
-"""Type alias for matching results during vocabulary lookups. Matches for a
-query string are represented as (matches-string, score)-pairs.
-"""
-StringMatchResult = Tuple[str, float]
-
-
-class VocabularyMatcher(set, metaclass=ABCMeta):
+class StringMatcher(metaclass=ABCMeta):
     """Abstract base class for functions that find matches for a query string
-    in a given vocabulary (set of strings). Instances of this class are
+    in a given vocabulary (iterable of strings). Instances of this class are
     associated with a vocabulary. They return one or more matches from that
     vocabulary for a given query string.
     """
@@ -132,7 +132,7 @@ class VocabularyMatcher(set, metaclass=ABCMeta):
         terms: iterable of string
             List of terms in the vocabulary.
         """
-        super(VocabularyMatcher, self).__init__(terms)
+        self.vocabulary = terms
 
     @abstractmethod
     def find_matches(self, query: str) -> List[StringMatchResult]:
@@ -168,13 +168,14 @@ class VocabularyMatcher(set, metaclass=ABCMeta):
         -------
         list of string
         """
-        return [value for value, _ in self.find_matches(query)]
+        return [value for _, value in self.find_matches(query)]
 
 
-class DefaultVocabularyMatcher(VocabularyMatcher):
-    """Default implementation for the vocabulary matcher. This is a simple
+class DefaultStringMatcher(StringMatcher):
+    """Default implementation for the string matcher. This is a simple
     implementation that naively computes the similarity between a query string
-    and every string in the associated vocabulary.
+    and every string in the associated vocabulary by letting the string similarity
+    object deal with the vocabulary directly.
 
     The default matcher allows the user to control the list of returned matches
     via two configuration parameters:
@@ -193,7 +194,7 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
     def __init__(
         self,
         vocabulary: Iterable[str],
-        matcher: StringMatcher,
+        similarity: StringSimilarity,
         best_matches_only: Optional[bool] = True,
         no_match_threshold: Optional[float] = 0.,
         cache_results: Optional[bool] = True
@@ -206,7 +207,7 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
         vocabulary: iterable of string
             List of terms in the associated vocabulary agains which query
             strings are matched.
-        matcher: openclean.function.matching.base.StringMatcher
+        similarity: openclean.function.matching.base.StringSimilarity
             String similarity function that is used to compute scores between
             a query string and the values in the vocabulary.
         best_matches_only: bool, default=False
@@ -218,8 +219,8 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
             Keep an internal cache of match results to avoid computing matches
             for the same query value twice.
         """
-        super(DefaultVocabularyMatcher, self).__init__(terms=vocabulary)
-        self.matcher = matcher
+        super(DefaultStringMatcher, self).__init__(terms=vocabulary)
+        self.similarity = similarity
         self.best_matches_only = best_matches_only
         self.no_match_threshold = no_match_threshold
         # Maintain an internal cache for computed match results in  if the
@@ -242,7 +243,7 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
 
         Returns
         -------
-        list of tuples (string, float)
+        List[StringMatchResult]
         """
         # Lookup results in the cache first.
         if self._cache and query in self._cache:
@@ -250,28 +251,29 @@ class DefaultVocabularyMatcher(VocabularyMatcher):
         # Compute list of all matches that satisfy the no-match threshold
         # constraint if the query string was not found in the cache.
         matches = list()
-        for term in self:
-            score = self.matcher.score(term, query)
-            if score > self.no_match_threshold:
-                m = (term, score)
-                if self.best_matches_only and matches:
-                    # If the best_matches_only flag is True we only need to add
-                    # the match if the score is greater or equal than the
-                    # current best score.
-                    best_match = matches[0][1]
-                    if score > best_match:
-                        # Replace the list of matches with the current match
-                        # since it has a higher score that the previous best
-                        # match.
-                        matches = [m]
-                    elif score == best_match:
+        results = self.similarity.score(self.vocabulary, query)
+        if results is not None:
+            for score, term in results:
+                if score > self.no_match_threshold:
+                    m = (score, term)
+                    if self.best_matches_only and matches:
+                        # If the best_matches_only flag is True we only need to add
+                        # the match if the score is greater or equal than the
+                        # current best score.
+                        best_match = matches[0][0]
+                        if score > best_match:
+                            # Replace the list of matches with the current match
+                            # since it has a higher score that the previous best
+                            # match.
+                            matches = [m]
+                        elif score == best_match:
+                            matches.append(m)
+                    else:
                         matches.append(m)
-                else:
-                    matches.append(m)
-        # Sort matches by decreasing score (only if best_matches_only is False
-        # and we may have matches with different scores).
-        if not self.best_matches_only:
-            matches.sort(key=lambda m: m[1], reverse=True)
+            # Sort matches by decreasing score (only if best_matches_only is False
+            # and we may have matches with different scores).
+            if not self.best_matches_only:
+                matches.sort(key=lambda m: m[0], reverse=True)
         # Add the result to the cache (if using).
         if self._cache is not None:
             self._cache[query] = matches

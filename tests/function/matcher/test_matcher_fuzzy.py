@@ -11,8 +11,8 @@ implementations.
 
 import pytest
 
-from openclean.function.matching.fuzzy import FuzzyVocabularyMatcher
-
+from openclean.function.matching.fuzzy import FuzzySimilarity
+from openclean.function.matching.base import DefaultStringMatcher
 
 VOCABULARY = [
     'Tokyo',
@@ -32,8 +32,9 @@ def test_default_vocabulary_matcher_caching(use_cache):
     """Ensure that the default matcher show the same behavior independently
     of using result caching or not.
     """
-    vocab = FuzzyVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
+        similarity=FuzzySimilarity(),
         cache_results=use_cache
     )
     matches = vocab.find_matches('Rio de Janero')
@@ -56,24 +57,27 @@ def test_default_vocabulary_matcher_config(
     bast results, result threshold) for the default vocabulary matcher.
     """
     # All matches
-    vocab = FuzzyVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
+        similarity=FuzzySimilarity(),
         best_matches_only=False,
         no_match_threshold=0.
     )
     matches = vocab.find_matches(query)
     assert len(matches) == best_matches
     # Best matches only
-    vocab = FuzzyVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
+        similarity=FuzzySimilarity(),
         best_matches_only=True,
         no_match_threshold=0.
     )
     matches = vocab.find_matches(query)
     assert len(matches) == best_matches
     # Matches greater than 0.5
-    vocab = FuzzyVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,
+        similarity=FuzzySimilarity(),
         best_matches_only=False,
         no_match_threshold=0.5
     )

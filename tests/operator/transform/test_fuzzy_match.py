@@ -9,7 +9,8 @@
 frame column.
 """
 
-from openclean.function.matching.fuzzy import FuzzyVocabularyMatcher
+from openclean.function.matching.fuzzy import FuzzySimilarity
+from openclean.function.matching.base import DefaultStringMatcher
 from openclean.function.matching.mapping import best_matches
 from openclean.function.value.domain import BestMatch
 from openclean.operator.transform.update import update
@@ -27,13 +28,14 @@ def test_update_bestmatch_column(nyc311):
         'staten islen'
     ]
 
-    vocabulary = FuzzyVocabularyMatcher(
+    vocabulary = DefaultStringMatcher(
         vocabulary=domain_pronounciation,
+        similarity=FuzzySimilarity(),
         no_match_threshold=0.
     )
 
     # replace with the best match in the given vocabulary
-    df = update(nyc311, 'borough', BestMatch(vocabulary=vocabulary))
+    df = update(nyc311, 'borough', BestMatch(matcher=vocabulary))
     values = df['borough'].unique()
     assert len(values) == 5
     assert sorted(values) == sorted(domain_pronounciation)
