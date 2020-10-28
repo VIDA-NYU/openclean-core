@@ -19,12 +19,17 @@ from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, Schema
 from openclean.function.eval.base import EvalFunction
+from openclean.function.matching.base import VocabularyMatcher
+from openclean.function.matching.mapping import Mapping
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
+from openclean.operator.stream.matching import BestMatches
 from openclean.operator.stream.processor import StreamProcessor
+from openclean.operator.stream.sample import Sample
 from openclean.operator.transform.filter import Filter
-from openclean.operator.transform.limit import Limit
 from openclean.operator.transform.insert import InsCol
+from openclean.operator.transform.limit import Limit
+from openclean.operator.transform.move import MoveCols
 from openclean.operator.transform.rename import Rename
 from openclean.operator.transform.select import Select
 from openclean.operator.transform.update import Update
@@ -246,6 +251,55 @@ class DataPipeline(object):
         """
         return self.append(Limit(rows=count))
 
+    def match(
+        self, matcher: VocabularyMatcher, include_vocab: Optional[bool] = False
+    ) -> Mapping:
+        """Generate a mapping of best matches between a given vocabulary and
+        the values in one (or more) column(s) of the data stream. For each row
+        (i.e., single value) the best matches with a given vocabulary is
+        computed and added to the returned mapping.
+
+        For rows that contain multiple columns an error will be raised.
+
+        If the include_vocab flag is False the resulting mapping will contain a
+        mapping only for those values that do not occur in the vocabulary,
+        i.e., the unknown values with respect to the vocabulary.
+
+        Parameters
+        ----------
+        matcher: openclean.function.matching.base.VocabularyMatcher
+            Matcher to compute matches for the terms in a controlled vocabulary.
+        include_vocab: bool, default=False
+            If this flag is False the resulting mapping will only contain matches
+            for terms that are not in the vocabulary that is associated with the
+            given matcher.
+
+        Returns
+        -------
+        openclean.function.matching.mapping.Mapping
+        """
+        collector = BestMatches(matcher=matcher, include_vocab=include_vocab)
+        return self.stream(collector)
+
+    def move(self, columns: Columns, pos: int) -> DataPipeline:
+        """Move one or more columns in a data stream schema.
+
+        Parameters
+        ----------
+        columns: int, string, or list(int or string)
+            Single column or list of column index positions or column names.
+        pos: int
+            Insert position for the moved columns.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        op = MoveCols(columns=columns, pos=pos)
+        colorder = op.reorder(self.columns)
+        sortcols = [self.columns[i] for i in colorder]
+        return self.append(op=op, columns=sortcols)
+
     def open(self) -> DataPipeline:
         """Return reference to self when the pipeline is opened.
 
@@ -275,6 +329,34 @@ class DataPipeline(object):
             producer.set_consumer(consumer)
             producer = consumer
         return pipeline
+
+    def persist(self, filename: Optional[str] = None) -> DataPipeline:
+        """Persist the results of the current stream for future processing.
+        The data can either be written to disk or persitet in a in-memory
+        data frame (depending on whether a filename is specified).
+
+        The persist operator is currently not lazzily evaluated.
+
+        Parameters
+        ----------
+        filename: string, default=None
+            Path to file on disk for storing the pipeline result. If None, the
+            data is persistet in-memory as a pandas data frame.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        if filename is not None:
+            # Write current pipeline result to disk and return a stream to the
+            # data file.
+            self.write(filename)
+        else:
+            # Create an in-memory data frame and assignt it to the filename
+            # parameter. The stream function will return a data frame stream
+            # based on the argument type.
+            filename = self.to_df()
+        return stream(filename)
 
     def profile(
         self, profilers: Optional[ColumnProfiler] = None,
@@ -314,6 +396,23 @@ class DataPipeline(object):
         )
         return self.stream(op)
 
+    def rename(self, columns: Columns, names: Schema) -> DataPipeline:
+        """Rename selected columns in a the schema data of data stream rows.
+
+        Parameters
+        ----------
+        columns: int, str, or list of int or string
+            References to renamed columns.
+        names: int, str, or list of int or string, default=None
+            New names for the selected columns.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        op = Rename(columns=columns, names=names)
+        return self.append(op=op, columns=op.rename(self.columns))
+
     def run(self):
         """Stream all rows from the associated data file to the data pipeline
         that is associated with this processor. If an optional operator is
@@ -344,6 +443,18 @@ class DataPipeline(object):
                 except StopIteration:
                     break
         return consumer.close()
+
+    def sample(self, size: int, seed: Optional[int] = None) -> DataPipeline:
+        """Add operator for a random sample generator to the data stream.
+
+        ----------
+        size: int
+            Size of the collected random sample.
+        seed: int, default=None
+            Seed value for the random number generator (for reproducibility
+            purposes).
+        """
+        return self.append(Sample(size=size, seed=seed))
 
     def select(
         self, columns: Optional[Columns] = None, names: Optional[Schema] = None

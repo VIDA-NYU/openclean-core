@@ -33,7 +33,7 @@ class Mapping(defaultdict):
                 self[val].append((val, 1.))
 
     def add(
-            self, key: str, matches: List[StringMatchResult]
+        self, key: str, matches: List[StringMatchResult]
     ) -> List[StringMatchResult]:
         """Add a list of matches to the mapped values for a given term (key).
         The term that is identified by the key does not have to exist in the

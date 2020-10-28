@@ -120,12 +120,14 @@ class LimitConsumer(ProducingConsumer):
         self.limit = limit
         self.count = 0
 
-    def handle(self, row: DataRow) -> DataRow:
+    def handle(self, rowid: int, row: DataRow) -> DataRow:
         """Pass the row on to the downstream consumer if the row limit has not
         been reached yet. Otherwise, a StopIteration error is raised.
 
         Parameters
         -----------
+        rowid: int
+            Unique row identifier
         row: list
             List of values in the row.
 
