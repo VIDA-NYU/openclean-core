@@ -282,7 +282,7 @@ class DataPipeline(object):
         return self.stream(collector)
 
     def move(self, columns: Columns, pos: int) -> DataPipeline:
-        """MOve one or more columns in a data stream schema.
+        """Move one or more columns in a data stream schema.
 
         Parameters
         ----------
@@ -329,6 +329,34 @@ class DataPipeline(object):
             producer.set_consumer(consumer)
             producer = consumer
         return pipeline
+
+    def persist(self, filename: Optional[str] = None) -> DataPipeline:
+        """Persist the results of the current stream for future processing.
+        The data can either be written to disk or persitet in a in-memory
+        data frame (depending on whether a filename is specified).
+
+        The persist operator is currently not lazzily evaluated.
+
+        Parameters
+        ----------
+        filename: string, default=None
+            Path to file on disk for storing the pipeline result. If None, the
+            data is persistet in-memory as a pandas data frame.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        if filename is not None:
+            # Write current pipeline result to disk and return a stream to the
+            # data file.
+            self.write(filename)
+        else:
+            # Create an in-memory data frame and assignt it to the filename
+            # parameter. The stream function will return a data frame stream
+            # based on the argument type.
+            filename = self.to_df()
+        return stream(filename)
 
     def profile(
         self, profilers: Optional[ColumnProfiler] = None,
