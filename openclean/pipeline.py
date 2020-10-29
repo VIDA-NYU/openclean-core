@@ -19,7 +19,7 @@ from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, Schema
 from openclean.function.eval.base import EvalFunction
-from openclean.function.matching.base import VocabularyMatcher
+from openclean.function.matching.base import StringMatcher
 from openclean.function.matching.mapping import Mapping
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
@@ -252,7 +252,7 @@ class DataPipeline(object):
         return self.append(Limit(rows=count))
 
     def match(
-        self, matcher: VocabularyMatcher, include_vocab: Optional[bool] = False
+        self, matcher: StringMatcher, include_vocab: Optional[bool] = False
     ) -> Mapping:
         """Generate a mapping of best matches between a given vocabulary and
         the values in one (or more) column(s) of the data stream. For each row

@@ -13,12 +13,12 @@ equal using the exact matcher.
 from jellyfish import soundex, metaphone, nysiis
 from typing import Callable
 
-from openclean.function.matching.base import ExactMatch
+from openclean.function.matching.base import ExactSimilarity
 from openclean.function.value.base import PreparedFunction
 
 
-class PhoneticMatcher(ExactMatch, PreparedFunction):
-    """String matcher for phonetic algorithms. Extends an exact string matcher
+class PhoneticMatcher(ExactSimilarity, PreparedFunction):
+    """String matcher for phonetic algorithms. Extends exact string similarity
     using a callable that implements a phonetic encoding algorithm.
     """
     def __init__(self, encoder: Callable):

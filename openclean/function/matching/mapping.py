@@ -9,7 +9,7 @@ from collections import defaultdict, Counter
 from typing import Iterable, List, Optional, Dict
 import warnings
 
-from openclean.function.matching.base import StringMatchResult, VocabularyMatcher
+from openclean.function.matching.base import StringMatchResult, StringMatcher  # noqa: E501
 
 
 class Mapping(defaultdict):
@@ -72,7 +72,7 @@ class Mapping(defaultdict):
         [missing_keys.append(k) for k in updates if k not in self]
         if not len(missing_keys):
             for k, v in updates.items():
-                super(Mapping, self).update({k: [(v, 1.)]})
+                super(Mapping, self).update({k: [(1., v)]})
         else:
             raise KeyError("Key(s) not found: {}".format(str(missing_keys)))
 
@@ -163,7 +163,7 @@ class Mapping(defaultdict):
         for k, v in self.items():
             if isinstance(v, list) and isinstance(v[0], tuple):
                 if len(v) == 1:
-                    values[k] = v[0][0]
+                    values[k] = v[0][1]
                 else:
                     if not raise_exceptions:
                         warnings.warn('Ignoring key: {} ({} matches). To include ignored keys, '
@@ -177,7 +177,7 @@ class Mapping(defaultdict):
 
 def best_matches(
         values: Iterable[str],
-        matcher: VocabularyMatcher,
+        matcher: StringMatcher,
         include_vocab: Optional[bool] = False
 ) -> Mapping:
     """Generate a mapping of best matches for a list of values. For each value
@@ -194,12 +194,12 @@ def best_matches(
     values: iterable of strings
         List of terms (e.g., from a data frame column) for which matches are
         computed for the returned mapping.
-    matcher: openclean.function.matching.base.VocabularyMatcher
+    matcher: openclean.function.matching.base.StringMatcher
         Matcher to compute matches for the terms in a controlled vocabulary.
     include_vocab: bool, default=False
         If this flag is False the resulting mapping will only contain matches
         for terms that are not in the vocabulary that is associated with the
-        given matcher.
+        given similarity.
 
     Returns
     -------
@@ -207,6 +207,6 @@ def best_matches(
     """
     map = Mapping()
     for val in values:
-        if include_vocab or val not in matcher:
+        if include_vocab or val not in matcher.vocabulary:
             map.add(val, matcher.find_matches(val))
     return map

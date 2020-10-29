@@ -10,7 +10,7 @@
 import pandas as pd
 
 from openclean.data.util import to_set
-from openclean.function.matching.base import VocabularyMatcher
+from openclean.function.matching.base import StringMatcher
 from openclean.function.value.base import PreparedFunction
 
 import openclean.util.core as util
@@ -20,16 +20,16 @@ class BestMatch(PreparedFunction):
     """Value function that returns for a given value the best matching similar
     value in a controlled vocabulary.
     """
-    def __init__(self, vocabulary: VocabularyMatcher):
+    def __init__(self, matcher: StringMatcher):
         """Initialize the matcher for the associated controlled vocabulary.
 
         Parameters
         ----------
-        vocabulary: openclean.function.matching.base.VocabularyMatcher
+        matcher: openclean.function.matching.base.StringMatcher
             Matcher that computes bast matches for the terms in a controlled
             vocabulary.
         """
-        self.vocabulary = vocabulary
+        self.matcher = matcher
 
     def eval(self, value):
         """Return the base matching value for a given query in the associated
@@ -54,9 +54,9 @@ class BestMatch(PreparedFunction):
         ------
         ValueError
         """
-        if value in self.vocabulary:
+        if value in self.matcher.vocabulary:
             return value
-        matches = self.vocabulary.matched_values(value)
+        matches = self.matcher.matched_values(value)
         if len(matches) == 0:
             raise ValueError("no match for '{}'".format(value))
         elif len(matches) > 1:

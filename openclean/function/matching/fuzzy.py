@@ -8,15 +8,15 @@
 """Approximate String Matching using the fuzzyset library"""
 
 from fuzzyset import FuzzySet
-from typing import List, Iterable, Optional
+from typing import List, Iterable
 
-from openclean.function.matching.base import VocabularyMatcher, StringMatchResult
+from openclean.function.matching.base import StringSimilarity, StringMatchResult
 
 
-class FuzzyVocabularyMatcher(VocabularyMatcher):
-    """FuzzySet implementation for the vocabulary matcher. This is a simple
+class FuzzySimilarity(StringSimilarity):
+    """FuzzySet implementation for the String Similarity class. This is a simple
     implementation that uses (FuzzySet)[https://github.com/axiak/fuzzyset/]
-    to do approximate string matching operations using the provided vocabulary.
+    to do approximate string matching operations against the provided vocabulary.
 
     Note: it converts everything to lowercase and removes all punctuation except commas and spaces
 
@@ -34,10 +34,6 @@ class FuzzyVocabularyMatcher(VocabularyMatcher):
 
     def __init__(
             self,
-            vocabulary: Iterable[str],
-            best_matches_only: Optional[bool] = True,
-            no_match_threshold: Optional[float] = 0.,
-            cache_results: Optional[bool] = True,
             **kwargs
     ):
         """Initialize the associated vocabulary, the similarity function, and
@@ -45,80 +41,33 @@ class FuzzyVocabularyMatcher(VocabularyMatcher):
 
         Parameters
         ----------
-        vocabulary: iterable of string
-            List of terms in the associated vocabulary agains which query
+        vocabulary: iterable of string (optional)
+            List of terms in the associated vocabulary against which query
             strings are matched.
-        matcher: openclean.function.matching.base.StringMatcher
-            String similarity function that is used to compute scores between
-            a query string and the values in the vocabulary.
-        best_matches_only: bool, default=False
-            If True, only matches with the highest score are returned.
-        no_match_threshold: float, default=0.
-            If the similarity score for a match with a query string is below
-            this threshold the match is considered a non-match.
         **kwargs: Optional
             fuzzy set specific parameters
         """
-        super(FuzzyVocabularyMatcher, self).__init__(terms=vocabulary)
-        self.matcher = FuzzySet(iterable=vocabulary,
-                                gram_size_lower=kwargs.get('gram_size_lower', 2),
-                                gram_size_upper=kwargs.get('gram_size_upper', 3),
-                                use_levenshtein=kwargs.get('use_levenshtein', True),
-                                rel_sim_cutoff=kwargs.get('rel_sim_cutoff', 1))
-        self.best_matches_only = best_matches_only
-        self.no_match_threshold = no_match_threshold
-        # Maintain an internal cache for computed match results in  if the
-        # cache_results flag is True.
-        self._cache = dict() if cache_results else None
+        self.similarity = FuzzySet(iterable=kwargs.get('vocabulary', ()),
+                                   gram_size_lower=kwargs.get('gram_size_lower', 2),
+                                   gram_size_upper=kwargs.get('gram_size_upper', 3),
+                                   use_levenshtein=kwargs.get('use_levenshtein', True),
+                                   rel_sim_cutoff=kwargs.get('rel_sim_cutoff', 1))
 
-    def find_matches(self, query: str) -> List[StringMatchResult]:
-        """Find matches for a given query string in the associated vocabulary.
-        Depending on the implementation the result may contain more than one
-        matched string from the vocabulary. Each match is a pair of matched
-        values and match score.
-
-        If no matches are found for a given query string the result is an empty
-        list.
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
+        """Compute a fuzzy similarity score for a string against items from a vocabulary iterable.
+        A score of 1 indicates an exact match. A score of 0 indicates a no match.
 
         Parameters
         ----------
+        vocabulary: Iterable[str]
+            List of strings to compare with.
         query: string
-            Query string for which matches are returned.
+            Second argument for similarity score computation - the query term.
 
         Returns
         -------
-        list of tuples (string, float)
+        List[StringMatchResult]
         """
-        # Lookup results in the cache first.
-        if self._cache and query in self._cache:
-            return self._cache[query]
-        # Compute list of all matches that satisfy the no-match threshold
-        # constraint if the query string was not found in the cache.
-        matches = list()
-        results = self.matcher.get(query)
-        if results is not None:
-            for score, term in results:
-                if score > self.no_match_threshold:
-                    m = (term, score)
-                    if self.best_matches_only and matches:
-                        # If the best_matches_only flag is True we only need to add
-                        # the match if the score is greater or equal than the
-                        # current best score.
-                        best_match = matches[0][1]
-                        if score > best_match:
-                            # Replace the list of matches with the current match
-                            # since it has a higher score that the previous best
-                            # match.
-                            matches = [m]
-                        elif score == best_match:
-                            matches.append(m)
-                    else:
-                        matches.append(m)
-            # Sort matches by decreasing score (only if best_matches_only is False
-            # and we may have matches with different scores).
-            if not self.best_matches_only:
-                matches.sort(key=lambda m: m[1], reverse=True)
-        # Add the result to the cache (if using).
-        if self._cache is not None:
-            self._cache[query] = matches
-        return matches
+        for term in vocabulary:
+            self.similarity.add(term)
+        return self.similarity.get(query)
