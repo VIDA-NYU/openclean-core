@@ -76,6 +76,7 @@ setup(
     url='https://github.com/VIDA-NYU/openclean',
     author='Heiko Mueller',
     author_email='heiko.muller@gmail.com',
+    license='New BSD',
     license_file='LICENSE',
     packages=find_packages(exclude=('tests',)),
     include_package_data=True,
