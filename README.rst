@@ -41,7 +41,7 @@ We include several example notebooks in this repository that demonstrate possibl
 New York City Restaurant Inspection Results
 -------------------------------------------
 
-In this example our goal is to reproduce a previous `study from 2014 that looks at the distribution of restaurant inspection grades in New York City <https://iquantny.tumblr.com/post/76928412519/think-nyc-restaurant-grading-is-flawed-heres>`_`. For our study, we use data that was downloaded in Sept. 2019. The example is split into three different Jupyter notebooks:
+In this example our goal is to reproduce a previous `study from 2014 that looks at the distribution of restaurant inspection grades in New York City <https://iquantny.tumblr.com/post/76928412519/think-nyc-restaurant-grading-is-flawed-heres>`_. For our study, we use data that was downloaded in Sept. 2019. The example is split into three different Jupyter notebooks:
 
 - `Download the Dataset <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Download.ipynb>`_
 - `Data Profiling <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Profiling.ipynb>`_
