@@ -2,7 +2,7 @@ from typing import Optional
 
 from openclean.data.stream.base import DataRow
 from openclean.data.types import Schema
-from openclean.function.matching.base import VocabularyMatcher
+from openclean.function.matching.base import StringMatcher
 from openclean.function.matching.mapping import Mapping
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
@@ -10,7 +10,7 @@ from openclean.operator.stream.processor import StreamProcessor
 
 class BestMatches(StreamConsumer, StreamProcessor):
     def __init__(
-        self, matcher: VocabularyMatcher, include_vocab: Optional[bool] = False,
+        self, matcher: StringMatcher, include_vocab: Optional[bool] = False,
         mapping: Optional[Mapping] = None
     ):
         """Initialize the different components of the bast matches operator. If
@@ -61,7 +61,7 @@ class BestMatches(StreamConsumer, StreamProcessor):
         openclean.function.matching.mapping.Mapping
         """
         val = row[0]
-        if self.include_vocab or val not in self.matcher:
+        if self.include_vocab or val not in self.matcher.vocabulary:
             self.mapping.add(val, self.matcher.find_matches(val))
 
     def open(self, schema: Schema) -> StreamConsumer:

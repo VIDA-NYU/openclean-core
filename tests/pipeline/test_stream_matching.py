@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 
 
-from openclean.function.matching.base import DefaultVocabularyMatcher
+from openclean.function.matching.base import DefaultStringMatcher
 from openclean.function.value.phonetic import Soundex
 from openclean.pipeline import stream
 
@@ -27,13 +27,13 @@ def dataset():
 
 def test_match_vacabulary_in_stream(dataset):
     """Test matching values in a data stream against a given vocabulary."""
-    vocab = DefaultVocabularyMatcher(
+    vocab = DefaultStringMatcher(
         vocabulary=['Brooklyn', 'Queens'],
-        matcher=Soundex()
+        similarity=Soundex()
     )
     map = stream(dataset).select('city').match(matcher=vocab)
-    assert map['Brooklin'] == [('Brooklyn', 1.0)]
-    assert map['Quens'] == [('Queens', 1.0)]
+    assert map['Brooklin'] == [(1.0, 'Brooklyn')]
+    assert map['Quens'] == [(1.0, 'Queens')]
     # -- Error when trying to map values from more than one column ------------
     with pytest.raises(ValueError):
-        map = stream(dataset).match(matcher=vocab)
+        stream(dataset).match(matcher=vocab)
