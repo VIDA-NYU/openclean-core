@@ -26,9 +26,9 @@ Installation
 
 Install **openclean** from the  `Python Package Index (PyPI) <https://pypi.org/>`_ using ``pip`` with:
 
-```
-pip install opencean-core
-```
+.. code-block:: bash
+
+    pip install opencean-core
 
 
 
