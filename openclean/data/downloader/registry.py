@@ -5,6 +5,8 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
+from typing import List, Optional, Union
+
 import importlib
 import jsonschema
 import json
@@ -95,8 +97,28 @@ class RepositoryHandle(RepositoryDownloader):
         """
         return self.loader.download(datasets=datasets, properties=properties)
 
+    def identifier(self) -> str:
+        """Get the repository identifier.
 
-def repositories(identifier=None):
+        Returns
+        -------
+        str
+        """
+        return self.doc['id']
+
+    def name(self) -> str:
+        """Get the repository name.
+
+        Returns
+        -------
+        str
+        """
+        return self.doc['name']
+
+
+def repositories(
+    identifier: Optional[str] = None
+) -> Union[List[RepositoryHandle], RepositoryHandle]:
     """Get list of all registered repositories if the identifier is None. If an
     identifier is given, the handle for the identified repository is returned.
     Raises a ValueError if an unknown identifier is given.
