@@ -29,7 +29,7 @@ install_requires = [
 
 
 tests_require = [
-    'coverage>=4.0',
+    'coverage>=5.0',
     'pytest',
     'pytest-cov',
     'tox'

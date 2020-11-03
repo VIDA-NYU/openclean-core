@@ -7,7 +7,7 @@
 
 include LICENSE
 include *.rst
-recursive-include openclean *.py *.sql
+recursive-include openclean *.py *.json
 prune docs/_build
 recursive-include docs *.py
 recursive-include docs *.rst
