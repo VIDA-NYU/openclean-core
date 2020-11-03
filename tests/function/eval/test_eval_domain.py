@@ -10,14 +10,15 @@
 import pandas as pd
 import pytest
 
-from openclean.function.eval.base import Cols, Const
+from openclean.function.eval.base import Col, Const
 from openclean.function.eval.domain import IsIn, IsNotIn, Lookup
 
 
 """Get simple dataset with the name and age of three people."""
 dataset =  pd.DataFrame(
         data=[['Alice', 29], ['Bob', 32], ['Claire', 41]],
-        columns=['Name', 'Age']
+        columns=['Name', 'Age'],
+        index=[65, 23, 98]
     )
 
 
@@ -65,7 +66,8 @@ def test_multi_column_lookup(default, result):
     [
         (None, ['Alicia', 'Bob', 'Claire']),
         (Const('NoName'), ['Alicia', 'NoName', 'NoName']),
-        ('Age', ['Alicia', 32, 41])
+        ('Age', ['Alicia', 32, 41]),
+        (Col('Age'), ['Alicia', 32, 41])
     ]
 )
 def test_single_column_lookup(default, result):

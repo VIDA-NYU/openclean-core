@@ -25,7 +25,7 @@ def filter(values, predicate, truth_value=True):
         Return value of the predicate that signals that the predicate is
         satisfied by an input value.
     """
-    return Filter(predicate).apply(values)
+    return Filter(predicate, truth_value).apply(values)
 
 
 class Filter(object):

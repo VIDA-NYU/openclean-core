@@ -146,6 +146,11 @@ class Lookup(EvalFunction):
             defaults = evaluate(df=df, producers=self.default)
         else:
             defaults = values
+
+        # unpack user set indices to allow to iterate through an IndexRange
+        if isinstance(defaults, pd.Series):
+            defaults.reset_index(drop=True, inplace=True)
+
         # Generate a list with a lookup result per data frame row.
         data = list()
         for value in values:
