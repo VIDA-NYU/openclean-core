@@ -174,7 +174,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
             func = self.values[0].prepare(schema)
 
             def unaryfunc(row: DataRow) -> DataRow:
-                """Reorder columns in a given data stream row."""
+                """Insert column in a given data stream row."""
                 values = list(row)
                 return values[:inspos] + [func(row)] + values[inspos:]
 
@@ -186,15 +186,29 @@ class InsCol(StreamProcessor, DataFrameTransformer):
             col_count = len(self.names)
 
             def ternaryfunc(row: DataRow) -> DataRow:
-                """Reorder columns in a given data stream row."""
-                vals = [f(row) for f in funcs]
+                """Insert column values in a given data stream row."""
+                # Create list of values for inserted columns. The number of
+                # columns that we insert does not have to match the number of
+                # evaluation functions that generate the values (i.e., we may
+                # have less functions than values). We have to ensure to unpack
+                # tuples or lists of values that are genrated by the evaluation
+                # functions (fix for issue #64).
+                insvals = []
+                for f in funcs:
+                    val = f(row)
+                    if isinstance(val, list):
+                        insvals.extend(val)
+                    elif isinstance(val, tuple):
+                        insvals.extend(list(val))
+                    else:
+                        insvals.append(val)
+                # Ensure that the list of insert values matches the number of
+                # inserted columns.
                 values = list(row)
-                if len(vals) != col_count:
+                if len(insvals) != col_count:
                     msg = 'expected {} values instead of {}'
-                    raise ValueError(msg.format(col_count, vals))
-                if isinstance(vals, tuple):
-                    vals = list(vals)
-                return values[:inspos] + vals + values[inspos:]
+                    raise ValueError(msg.format(col_count, insvals))
+                return values[:inspos] + insvals + values[inspos:]
 
             streamfunc = ternaryfunc
 
