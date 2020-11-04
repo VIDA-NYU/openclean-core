@@ -19,7 +19,8 @@ from openclean.profiling.datatype.convert import DatatypeConverter
 def dataset(
     filename: str, header: Optional[Schema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
-    typecast: Optional[DatatypeConverter] = None, none_is: Optional[str] = None
+    typecast: Optional[DatatypeConverter] = None, none_is: Optional[str] = None,
+    encoding: Optional[str]=None
 ) -> pd.DataFrame:
     """Read a pandas data frame from a CSV file. This function infers the
     CSV file delimiter and compression from the file name (if not specified).
@@ -49,6 +50,8 @@ def dataset(
         String that was used to encode None values in the input file. If
         given, all cell values that match the given string are substituted
         by None.
+    encoding: string, default=None
+        The csv file encoding e.g. utf-8, utf16 etc
 
     Returns
     -------
@@ -59,7 +62,8 @@ def dataset(
         header=header,
         delim=delim,
         compressed=compressed,
-        none_is=none_is
+        none_is=none_is,
+        encoding=encoding
     )
     with file.open() as reader:
         data, index = list(), list()

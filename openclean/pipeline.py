@@ -588,7 +588,8 @@ class DataPipeline(object):
 
     def write(
         self, filename: str, delim: Optional[str] = None,
-        compressed: Optional[bool] = None, none_as: Optional[str] = None
+        compressed: Optional[bool] = None, none_as: Optional[str] = None,
+        encoding: Optional[str] = None
     ):
         """Write the rows in the data stream to a given CSV file.
 
@@ -609,7 +610,8 @@ class DataPipeline(object):
             filename=filename,
             delim=delim,
             compressed=compressed,
-            write=True
+            write=True,
+            encoding=encoding
         )
         return self.stream(Write(file=file, none_as=none_as))
 
@@ -619,7 +621,7 @@ class DataPipeline(object):
 def stream(
     filename: Union[str, pd.DataFrame], header: Optional[Schema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
-    none_is: Optional[str] = None
+    none_is: Optional[str] = None, encoding: Optional[str] = None
 ) -> DataPipeline:
     """Read a CSV file as a data stream. This is a helper method that is
     intended to read and filter large CSV files.
@@ -640,6 +642,8 @@ def stream(
         String that was used to encode None values in the input file. If
         given, all cell values that match the given string are substituted
         by None.
+    encoding: string, default=None
+        The csv file encoding e.g. utf-8, utf16 etc
 
     Returns
     -------
@@ -653,6 +657,7 @@ def stream(
             header=header,
             delim=delim,
             compressed=compressed,
-            none_is=none_is
+            none_is=none_is,
+            encoding=encoding
         )
     return DataPipeline(reader=file)
