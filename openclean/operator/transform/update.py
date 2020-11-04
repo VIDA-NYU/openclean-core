@@ -22,7 +22,6 @@ from openclean.function.value.base import ValueFunction
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamFunctionHandler
 from openclean.operator.stream.processor import StreamProcessor
-import numpy as np
 
 """Type alias for update function specifications."""
 UpdateFunction = Union[Callable, Dict, EvalFunction, Scalar, ValueFunction]

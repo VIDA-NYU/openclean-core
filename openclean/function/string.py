@@ -44,3 +44,22 @@ def to_upper(value):
         return value.upper()
     except AttributeError:
         return str(value).upper()
+
+
+def to_title(value):
+    """Convert value to title case stirng. Handles cases where value is not a
+    string.
+
+    Parameters
+    ----------
+    value: any
+        Value that is converted to title case strng.
+
+    Returns
+    -------
+    string
+    """
+    try:
+        return value.title()
+    except AttributeError:
+        return str(value).title()

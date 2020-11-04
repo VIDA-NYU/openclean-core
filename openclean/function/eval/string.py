@@ -36,7 +36,7 @@ class Capitalize(Eval):
 
 
 class Concat(Eval):
-    """String function that splits a string using a given delimiter."""
+    """String function that concats a string using a given delimiter."""
     def __init__(self, columns, delimiter, as_string=False):
         """Initialize the object properties.
 
