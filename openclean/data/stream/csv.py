@@ -123,7 +123,8 @@ class CSVFile(DatasetStream):
         self, filename: str, header: Optional[Schema] = None,
         delim: Optional[str] = None, compressed: Optional[bool] = None,
         none_is: Optional[str] = None,
-        write: Optional[bool] = False
+        write: Optional[bool] = False,
+        encoding: Optional[str] = None
     ):
         """Set the file name, delimiter and the flag that indicates if the file
         is compressed using gzip.
@@ -149,6 +150,8 @@ class CSVFile(DatasetStream):
             by None.
         write: bool, default=False
             Indicate if the file is opened for writing.
+        encoding: string, default=None
+             The csv file encoding e.g. utf-8, utf16 etc
         """
         self.filename = filename
         self.none_is = none_is
@@ -170,6 +173,7 @@ class CSVFile(DatasetStream):
         if compressed is None:
             compressed = filename.endswith('.gz')
         self.compressed = compressed
+        self.encoding = encoding
         # Read the header information from the first line of the input file if
         # no header is given.
         if header is None and not write:
@@ -210,7 +214,7 @@ class CSVFile(DatasetStream):
         if self.compressed:
             csvfile = gzip.open(self.filename, 'rt')
         else:
-            csvfile = open(self.filename, 'r')
+            csvfile = open(self.filename, 'r', encoding=self.encoding)
         return csv.reader(csvfile, delimiter=self.delim), csvfile
 
     def write(
@@ -236,7 +240,7 @@ class CSVFile(DatasetStream):
         if self.compressed:
             csvfile = gzip.open(self.filename, 'wt', newline='')
         else:
-            csvfile = open(self.filename, 'w', newline='')
+            csvfile = open(self.filename, 'w', newline='', encoding=self.encoding)
         # Open te CSV writer and output the dataset header.
         writer = csv.writer(csvfile, delimiter=self.delim)
         if header is not None:
