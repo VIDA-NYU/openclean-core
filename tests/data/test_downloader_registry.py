@@ -12,15 +12,24 @@ import pytest
 from openclean.data.downloader.registry import repositories
 
 import openclean.data.downloader.restcountries as restcountries
+import openclean.data.downloader.britannica.base as britannica
 
 
 def test_default_registry():
     """Test the default downloader repository registry."""
-    assert len(repositories()) == 1
+    assert len(repositories()) == 2
+    # -- restcountries --------------------------------------------------------
     repo = repositories(identifier='restcountries')
     datasets = repo.datasets()
     assert len(datasets) == 1
     ds = datasets[0]
     assert ds.identifier() == restcountries.COUNTRIES
+    # -- britannica -----------------------------------------------------------
+    repo = repositories(identifier='britannica')
+    datasets = repo.datasets()
+    assert len(datasets) == 1
+    ds = datasets[0]
+    assert ds.identifier() == britannica.US_CITIES
+
     with pytest.raises(ValueError):
         repositories(identifier='undefined')
