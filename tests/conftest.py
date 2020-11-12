@@ -18,6 +18,7 @@ NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
 SCHOOLS_FILE = os.path.join(DIR, 'school_level_detail.csv')
 PARKING = os.path.join(DIR, 'parking-violations.tsv')
 
+
 @pytest.fixture
 def agencies():
     """List of agency names with NYC borough and US State."""
@@ -69,7 +70,7 @@ def schools():
     """Load the school level detail dataset."""
     return pd.read_csv(SCHOOLS_FILE)
 
-  
+
 @pytest.fixture
 def parking():
     return pd.read_csv(PARKING, sep='\t', index_col=0)
