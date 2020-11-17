@@ -11,7 +11,7 @@ versa.
 
 import pandas as pd
 
-from openclean.data.select import select_clause
+from openclean.data.schema import select_clause
 
 
 def get_value(row, colidx):

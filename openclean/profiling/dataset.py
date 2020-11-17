@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
-from openclean.data.select import select_clause
+from openclean.data.schema import select_clause
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import ColumnRef, Schema
 from openclean.operator.stream.consumer import StreamConsumer

@@ -21,7 +21,7 @@ install_requires = [
     'scikit-learn',
     'jsonschema>=3.2.0',
     'Shapely>=1.7.0',
-    'histore>=0.1.4',
+    'histore==0.2.2',
     'fuzzyset==0.0.19',
     'jellyfish',
     'scipy'

@@ -5,6 +5,6 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Collection of helper classes to read data frames from CSV files."""
+"""Schema helper functions imported from HISTORE."""
 
-from histore.document.csv.base import CSVFile, CSVWriter  # noqa: F401
+from histore.document.schema import as_list, column_ref, select_clause  # noqa: F401

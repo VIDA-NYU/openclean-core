@@ -15,7 +15,7 @@ import pandas as pd
 
 from openclean.data.stream.base import DataRow
 from openclean.data.types import Column, Schema
-from openclean.data.select import as_list, select_clause
+from openclean.data.schema import as_list, select_clause
 from openclean.operator.base import Columns, DataFrameTransformer, Names
 from openclean.operator.stream.consumer import StreamFunctionHandler
 from openclean.operator.stream.processor import StreamProcessor

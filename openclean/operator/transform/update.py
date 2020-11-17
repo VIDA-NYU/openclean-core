@@ -14,7 +14,7 @@ from typing import Callable, Dict, Union
 import pandas as pd
 
 from openclean.data.stream.base import DataRow
-from openclean.data.select import select_clause
+from openclean.data.schema import select_clause
 from openclean.data.types import ColumnRef, Columns, Scalar, Schema
 from openclean.function.eval.base import Const, EvalFunction, Eval
 from openclean.function.eval.domain import Lookup

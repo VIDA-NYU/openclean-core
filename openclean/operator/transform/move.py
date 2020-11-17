@@ -11,7 +11,7 @@ from typing import List, Union
 
 import pandas as pd
 
-from openclean.data.select import as_list, select_clause
+from openclean.data.schema import as_list, select_clause
 from openclean.data.stream.base import DataRow
 from openclean.data.types import Columns, Schema
 from openclean.operator.base import DataFrameTransformer

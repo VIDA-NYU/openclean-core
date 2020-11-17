@@ -13,25 +13,13 @@ column value in a Pandas data frame.
 """
 
 from datetime import datetime
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 
 # Openclean makes use of the identifiable column name that is also defined in
 # HISTORE.
-from histore.document.schema import Column as Column  # noqa: F401
+from histore.document.schema import Column, Columns, ColumnRef, Schema  # noqa: F401
 
-
-# Column names are strings or column objects.
-ColumnName = Union[str, Column]
-# Reference to a column in a data frame schema. Columns can be referenced by
-# their name or index position in the dataset schema.
-ColumnRef = Union[int, str, Column]
-# List of columns that are identified either by their name or index position,
-# or represented as a Column object. A single index (int) or column name (str)
-# are also accepted as 'a list with a single element'.
-Columns = Union[ColumnRef, List[ColumnRef]]
-# The schema of a dataset is a list of column names.
-Schema = List[ColumnName]
 
 # Scalar values.
 Scalar = Union[int, float, str, datetime]

@@ -18,7 +18,7 @@ import operator
 import pandas as pd
 
 from openclean.data.stream.base import DataRow, StreamFunction
-from openclean.data.select import column_ref, select_clause
+from openclean.data.schema import column_ref, select_clause
 from openclean.data.types import Column, Columns, Scalar, Schema, Value
 from openclean.function.value.base import ValueFunction
 

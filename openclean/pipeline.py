@@ -13,8 +13,8 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
-from openclean.data.select import as_list, select_clause
-from openclean.data.stream.base import DatasetStream
+from openclean.data.schema import as_list, select_clause
+from openclean.data.stream.base import DataReader
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, Schema
@@ -45,7 +45,7 @@ class DataPipeline(object):
     The class implements the context manager interface.
     """
     def __init__(
-        self, reader: DatasetStream,
+        self, reader: DataReader,
         columns: Optional[Schema] = None,
         pipeline: Optional[StreamProcessor] = None
     ):
