@@ -120,6 +120,6 @@ class HISTOREDatastore(Datastore):
 
         Returns
         -------
-        list of histore.archive.snapshot.Snapshothistore.archive.snapshot.Snapshot
+        list of histore.archive.snapshot.Snapshot
         """
-        return self.archive.snapshots()
+        return list(self.archive.snapshots())

@@ -194,6 +194,6 @@ class MetadataStoreFactory(object):  # pragma: no cover
 
         Returns
         -------
-        openclean_jupyter.metadata.metastore.base.MetadataStore
+        openclean.data.metadata.base.MetadataStore
         """
         raise NotImplementedError()

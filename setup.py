@@ -16,12 +16,14 @@ from setuptools import setup, find_packages
 install_requires = [
     'future',
     'python-dateutil',
+    'dill',
     'requests',
     'pandas>=1.0.0',
     'scikit-learn',
     'jsonschema>=3.2.0',
     'Shapely>=1.7.0',
     'histore==0.2.2',
+    'flowserv-core=0.6.0',
     'fuzzyset==0.0.19',
     'jellyfish',
     'scipy'
