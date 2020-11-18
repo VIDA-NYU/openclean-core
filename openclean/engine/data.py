@@ -5,16 +5,24 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
+"""The data engine is used to manipulate a dataset with insert and update
+operations that use functions from the command registry.
+"""
+
+
 from __future__ import annotations
 from histore.archive.manager.base import ArchiveManager
 from histore.archive.snapshot import Snapshot
-from typing import Callable, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
 from openclean.data.archive.base import Datastore
-from openclean.data.types import Columns
+from openclean.data.types import Columns, Scalar
 from openclean.engine.library.command import CommandRegistry
+from openclean.engine.library.func import FunctionHandle
+from openclean.engine.log import InsertOp, OperationLog, UpdateOp
+from openclean.operator.transform.insert import inscol
 from openclean.operator.transform.update import update
 
 
@@ -44,6 +52,8 @@ class DataEngine(object):
         self.manager = manager
         self.pk = pk
         self.original = original
+        # Log for operations that have been applied to the dataset.
+        self.log = OperationLog()
 
     def checkout(self, version: Optional[int] = None) -> pd.DataFrame:
         """Get a specific version of a dataset. Raises a ValueError if the
@@ -79,6 +89,10 @@ class DataEngine(object):
         -------
         pd.DataFrame
         """
+        # Cannot commit new data frame version to sampled data set. A dataset
+        # represents a sample if it has an original dataset.
+        if self.original is not None:
+            raise RuntimeError('cannot commit to sampled dataset')
         return self.datastore.commit(df=df, action=action)
 
     def drop(self):
@@ -86,13 +100,56 @@ class DataEngine(object):
         if self.identifier is not None and self.manager is not None:
             self.manager.delete(self.identifier)
 
-    def insert(self, columns, pos):
+    def insert(
+        self, names: Union[str, List[str]], pos: Optional[int] = None,
+        values: Optional[Union[Scalar, FunctionHandle]] = None,
+        args: Optional[Dict] = None, sources: Optional[Columns] = None
+    ) -> pd.DataFrame:
+        """Insert one or more columns at a given position into the dataset. One
+        column is inserted for each given column name. If the insert position is
+        undefined, columns are appended. If the position does not reference
+        a valid position (i.e., not between 0 and len(df.columns)) a ValueError
+        is raised.
+
+        Values for the inserted columns are generated using a given constant
+        value or function. If a function is given, it is expected to return
+        exactly one value (e.g., a tuple of len(names)) for each of the inserted
+        columns.
+
+        Parameters
+        ----------
+        names: string, or list(string)
+            Names of the inserted columns.
+        pos: int, default=None
+            Insert position for the new columns. If None, the columns will be
+            appended.
+        values: scalar or openclean.engine.library.func.FunctionHandle, default=None
+            Single value, tuple of values, or library function that is used to
+            generate the values for the inserted column(s). If no default is
+            specified all columns will contain None.
+        func: callable or openclean.function.eval.base.EvalFunction
+            Callable that accepts a data frame row as the only argument and
+            outputs a (modified) list of value(s).
+        args: dict, default=None
+            Additional keyword arguments that are passed to the callable together
+            with the column values that are extracted from each row.
+        sources: int, string, or list(int or string), default=None
+            List of source columns from which the input values for the
+            callable are extracted.
+
+        Returns
+        -------
+        pd.DataFrame
         """
-        """
-        pass
+        action = InsertOp(names=names, pos=pos, values=values, args=args, sources=sources)
+        df = self.datastore.checkout()
+        df = inscol(df=df, names=names, pos=pos, values=action.to_eval())
+        df = self.datastore.commit(df=df, action=action.to_dict())
+        self.log.add(version=self.datastore.last_version(), action=action)
+        return df
 
     def update(
-        self, columns: Columns, func: Callable, args: Optional[Dict] = None,
+        self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
         sources: Optional[Columns] = None
     ) -> pd.DataFrame:
         """Update a given column (or list of columns) by applying the given
@@ -112,26 +169,25 @@ class DataEngine(object):
         ----------
         columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
-        func: callable or openclean.function.eval.base.EvalFunction
-            Callable that accepts a data frame row as the only argument and
-            outputs a (modified) list of value(s).
+        func: openclean.engine.library.func.FunctionHandle
+            Library function that is used to generate modified values for the
+            updated column(s).
         args: dict, default=None
             Additional keyword arguments that are passed to the callable together
-            with the column values that are extracted from each row. Ignored if
-            the function is an :class:EvalFunction.
+            with the column values that are extracted from each row.
         sources: int, string, or list(int or string), default=None
             List of source columns from which the input values for the
-            callable are extracted. Ignored if the function is an
-            :class:EvalFunction.
+            callable are extracted.
 
-        Returns
         -------
         pd.DataFrame
         """
+        action = UpdateOp(columns=columns, func=func, args=args, sources=sources)
         df = self.datastore.checkout()
-        df = update(df=df, columns=columns, func=func)
-        # df = update(df=df, columns=columns, func=func, args=args, sources=sources)
-        return self.datastore.commit(df=df)
+        df = update(df=df, columns=columns, func=action.to_eval())
+        df = self.datastore.commit(df=df, action=action.to_dict())
+        self.log.add(version=self.datastore.last_version(), action=action)
+        return df
 
     def snapshots(self) -> List[Snapshot]:
         """Get list of snapshot handles for all versions of the dataset.

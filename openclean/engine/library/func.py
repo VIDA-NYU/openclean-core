@@ -77,6 +77,15 @@ class FunctionHandle:
         self.columns = columns if columns is not None else 1
         self.outputs = outputs if outputs is not None else 1
         self.parameters = parameters if parameters is not None else list()
+        # The function handle can be used as a substitue for the registered
+        # function. Use the function name as the name for the handle.
+        self.__name__ = func.__name__
+
+    def __call__(self, *args, **kwargs):
+        """Make the function handle callable so that it can be used as a
+        substitute for the registered function.
+        """
+        return self.func(*args, **kwargs)
 
     @staticmethod
     def from_dict(doc: Dict) -> FunctionHandle:

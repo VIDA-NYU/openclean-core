@@ -16,6 +16,6 @@ def add_ten(n):
 def test_register_and__update(volatile_engine):
     """Test registering and applying a user defined function."""
     volatile_engine.register.eval('addten')(add_ten)
-    f = volatile_engine.register.get_function('addten')
+    f = volatile_engine.register.get('addten')
     assert f(1) == 11
     assert 'addten' in {obj['name'] for obj in volatile_engine.register.serialize()}

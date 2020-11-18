@@ -71,34 +71,35 @@ class CommandRegistry(object):
 
         Returns
         -------
-        callable
+        openclean.engine.library.func.FunctionHandle
         """
         def register_eval(func: Callable) -> Callable:
             """Decorator that registeres the given function in the associated
             object registry.
             """
             # Add function together with its metadata to the repository.
-            self.store.insert_object(
-                object=FunctionHandle(
-                    func=func,
-                    namespace=namespace,
-                    name=name,
-                    label=label,
-                    help=help,
-                    columns=columns,
-                    outputs=outputs,
-                    parameters=parameters
-                ),
+            handle = FunctionHandle(
+                func=func,
+                namespace=namespace,
                 name=name,
+                label=label,
+                help=help,
+                columns=columns,
+                outputs=outputs,
+                parameters=parameters
+            )
+            self.store.insert_object(
+                object=handle,
+                name=handle.name,
                 dtype=DTYPE_FUNC,
-                namespace=namespace
+                namespace=handle.namespace
             )
             # Return the undecorated function so that it can be used normally.
-            return func
+            return handle
         return register_eval
 
-    def get_function(self, name: str, namespace: Optional[str] = None) -> Callable:
-        """Get a functionfrom the object registry. The funciton is identified by
+    def get(self, name: str, namespace: Optional[str] = None) -> Callable:
+        """Get a function from the object registry. The funciton is identified by
         its name and optional namespace. Raises a KeyError if the function is
         unknown.
 
