@@ -11,6 +11,7 @@ operations that use functions from the command registry.
 
 
 from __future__ import annotations
+from abc import ABCMeta, abstractmethod
 from histore.archive.manager.base import ArchiveManager
 from histore.archive.snapshot import Snapshot
 from typing import Dict, List, Optional, Union
@@ -19,27 +20,20 @@ import pandas as pd
 
 from openclean.data.archive.base import Datastore
 from openclean.data.types import Columns, Scalar
-from openclean.engine.library.command import CommandRegistry
+from openclean.engine.library.base import ObjectLibrary
 from openclean.engine.library.func import FunctionHandle
 from openclean.engine.log import InsertOp, OperationLog, UpdateOp
 from openclean.operator.transform.insert import inscol
-from openclean.operator.transform.update import update
+from openclean.operator.transform.update import update, UpdateFunction
 
 
-class DataEngine(object):
-    """Handle for datasets that are maintained by the openclean engine.
-
-    The archive identifier and manager are only set for persisted datasets.
-    This informaiton is required to delete all resources that are associated
-    with a dataset history.
+class DatasetHandle(metaclass=ABCMeta):
+    """Handle for datasets that are managed by the openclean engine and whose
+    snapshot history is maintained by an archive manager.
     """
-    def __init__(
-        self, datastore: Datastore, commands: CommandRegistry,
-        identifier: Optional[str] = None, manager: Optional[ArchiveManager] = None,
-        pk: Optional[Union[List[str], str]] = None, original: Optional[DataEngine] = None
-    ):
-        """Initialize the reference to the datastore that maintains the history
-        of the dataset that is being tranformed.
+    def __init__(self, datastore: Datastore):
+        """Initialize the data store that maintains the different dataset
+        snapshots.
 
         Parameters
         ----------
@@ -47,58 +41,33 @@ class DataEngine(object):
             Datastore for managing dataset snapshots.
         """
         self.datastore = datastore
-        self.commands = commands
-        self.identifier = identifier
-        self.manager = manager
-        self.pk = pk
-        self.original = original
-        # Log for operations that have been applied to the dataset.
-        self.log = OperationLog()
 
-    def checkout(self, version: Optional[int] = None) -> pd.DataFrame:
-        """Get a specific version of a dataset. Raises a ValueError if the
-        given version number is unknown.
+    @abstractmethod
+    def _addlog(self, version: int, action: OpHandle):
+        """Add a new entry for a created dataset snapshot to the log.
 
         Parameters
         ----------
         version: int
-            Unique dataset version identifier.
-
-        Returns
-        -------
-        pd.DataFrame
-
-        Raises
-        ------
-        ValueError
+            Dataset snapshot version identifier.
+        action: openclean.engine.log.OpHandle
+            Handle for the operation that created the dataset snapshot.
         """
-        return self.datastore.checkout(version=version)
+        raise NotImplementedError()
 
-    def commit(self, df: pd.DataFrame, action: Optional[Dict] = None) -> pd.DataFrame:
-        """Insert a new version for a dataset.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data frame containing the new dataset version that is being stored.
-        action: dict, default=None
-            Optional description of the action that created the new dataset
-            version.
-
-        Returns
-        -------
-        pd.DataFrame
+    @abstractmethod
+    def commit(self):
+        """Apply all uncommited changes to an underlying dataset. This method
+        should have no effect for dataset handles that operate directly on the
+        full dataset but only fot those datasets that are a sample of a larger
+        dataset.
         """
-        # Cannot commit new data frame version to sampled data set. A dataset
-        # represents a sample if it has an original dataset.
-        if self.original is not None:
-            raise RuntimeError('cannot commit to sampled dataset')
-        return self.datastore.commit(df=df, action=action)
+        raise NotImplementedError()
 
+    @abstractmethod
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
-        if self.identifier is not None and self.manager is not None:
-            self.manager.delete(self.identifier)
+        raise NotImplementedError()
 
     def insert(
         self, names: Union[str, List[str]], pos: Optional[int] = None,
@@ -127,9 +96,6 @@ class DataEngine(object):
             Single value, tuple of values, or library function that is used to
             generate the values for the inserted column(s). If no default is
             specified all columns will contain None.
-        func: callable or openclean.function.eval.base.EvalFunction
-            Callable that accepts a data frame row as the only argument and
-            outputs a (modified) list of value(s).
         args: dict, default=None
             Additional keyword arguments that are passed to the callable together
             with the column values that are extracted from each row.
@@ -145,8 +111,47 @@ class DataEngine(object):
         df = self.datastore.checkout()
         df = inscol(df=df, names=names, pos=pos, values=action.to_eval())
         df = self.datastore.commit(df=df, action=action.to_dict())
-        self.log.add(version=self.datastore.last_version(), action=action)
+        self._addlog(version=self.datastore.last_version(), action=action)
         return df
+
+    @abstractmethod
+    def log(self) -> List[LogEntry]:
+        """Get the list of log entries for the full history of the dataset. For
+        datasets that are sampled this includes the snapshots that have been
+        committed to the underlying datastore as well as those actions that
+        have yet to be commited.
+
+        Returns
+        -------
+        list of openclean.engine.log.LogEntry
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def rollback(self, identifier: string) -> pd.DataFrame:
+        """Rollback to the dataset version that was created by the log entry
+        with the given identifier. This will make the respective snapshot the
+        new current (head) snapshot for the dataset history.
+
+        Returns the dataframe for the dataset snapshot that is at the head of
+        the dataset history.
+
+        Raises a KeyError if the given log entry identifier is unknown.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique log entry identifier.
+
+        Returns
+        -------
+        pd.DataFrame
+
+        Raises
+        ------
+        KeyError
+        """
+        raise NotImplementedError()
 
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
@@ -155,7 +160,7 @@ class DataEngine(object):
         """Update a given column (or list of columns) by applying the given
         function.
 
-        Columns defines the dataste column(s) that are being updated. If the
+        Columns defines the dataset column(s) that are being updated. If the
         given function is an evaluation function, that function will define the
         columns from which the input values are being retrieved. If the function
         is not an evaluation function, the input values for the update function
@@ -186,18 +191,81 @@ class DataEngine(object):
         df = self.datastore.checkout()
         df = update(df=df, columns=columns, func=action.to_eval())
         df = self.datastore.commit(df=df, action=action.to_dict())
-        self.log.add(version=self.datastore.last_version(), action=action)
+        self._addlog(version=self.datastore.last_version(), action=action)
         return df
 
-    def snapshots(self) -> List[Snapshot]:
-        """Get list of snapshot handles for all versions of the dataset.
 
-        Returns
-        -------
-        list of histore.archive.snapshot.Snapshot
+class DataEngine(DatasetHandle):
+    """Handle for datasets that are managed by the openclean engine and that
+    have their histor being maintained by an archive manager. All operations
+    are applied directly on the full dataset in the underlying archive.
+    """
+    def __init__(
+        self, datastore: Datastore, manager: ArchiveManager, identifier: str,
+        pk: Optional[Union[List[str], str]] = None
+    ):
+        """Initialize the reference to the datastore that maintains the history
+        of the dataset that is being tranformed.
 
-        Raises
-        ------
-        ValueError
+        Parameters
+        ----------
+        datastore: openclean.data.archive.base.Datastore
+            Datastore for managing dataset snapshots.
+        manager: histore.archive.manager.base.ArchiveManager
+            Manager for created dataset archives.
+        identifier: string, default=None
+            Unique identifier of the dataset archive. The identifier is used
+            to access the dataset history in the archive manager.
+        pk: string or list, default=None
+            Column(s) that define the primary key for the dataset. This
+            information is accessed when generating a sample of the dataset
+            (by the data engine).
         """
-        return self.datastore.snapshots()
+        super(DataEngine, self).__init__(datastore=datastore)
+        self.manager = manager
+        self.identifier = identifier
+        self.pk = pk
+
+    def drop(self):
+        """Delete all resources that are associated with the dataset history."""
+        self.manager.delete(self.identifier)
+
+
+class DataSample(DatasetHandle):
+    """Handle for datasets that are samples of a larger dataset. Samples datasets
+    are entirely maintained in main memory.
+    """
+    def __init__(self, datastore: Datastore, original: DatasetHandle):
+        """Initialize the reference to the datastore that maintains the history
+        of the dataset that is being tranformed.
+
+        Parameters
+        ----------
+        datastore: openclean.data.archive.base.Datastore
+            Datastore for managing snapshots for the dataset sample.
+        original: openclean.engine.data.DataEngine, default=None
+            Reference to the original dataset for sampled datasets.
+        """
+        super(DataSample, self).__init__(datastore=datastore)
+        self.original = original
+
+    def commit(self):
+        """Apply all actions in the current log to the underlying original
+        dataset.
+        """
+        df = self.datastore.checkout()
+        # Apply each action that is stored in the log. Removes the operation
+        # from the log if it had been applied succssfully.
+        while not self.log.is_empty():
+            op = self.log.peek()
+            if op.is_insert():
+                df = inscol(df=df, names=op.names, pos=op.pos, values=op.to_eval())
+            else:
+                df = update(df=df, columns=op.columns, func=op.to_eval())
+            df = self.datastore.commit(df=df, action=op.to_dict())
+            self.log.pop()
+        return df
+
+    def drop(self):
+        """Delete all resources that are associated with the dataset history."""
+        self.original.drop()

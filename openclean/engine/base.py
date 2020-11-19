@@ -7,6 +7,11 @@
 
 """The openclean engine maintains a collection of datasets. Each dataset is
 identified by a unique name. Dataset snapshots are maintained by a datastore.
+
+The idea of the engine is to provide a namespace for datasets that are maintained
+by a datastore which keeps track of changes to the data. The engine is associated
+with an object registry that maintains user-defined objects such as functions,
+lookup tables, etc..
 """
 
 from histore.archive.manager.base import ArchiveManager
@@ -22,9 +27,9 @@ from openclean.util.core import unique_identifier
 from openclean.data.archive.base import Datastore, Datasource
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
-from openclean.engine.data import DataEngine
-from openclean.engine.library.func import FunctionSerializer
-from openclean.engine.library.command import CommandRegistry, DTYPE_FUNC
+from openclean.engine.data import DatasetHandle, DataEngine, DataSample
+from openclean.engine.library.base import ObjectLibrary, DTYPE_FUNC
+from openclean.engine.library.func import FunctionHandle, FunctionSerializer
 from openclean.engine.registry import registry
 from openclean.engine.store.base import ObjectRepository
 from openclean.engine.store.fs import FileSystemObjectStore
@@ -36,10 +41,10 @@ from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 
 
 class OpencleanEngine(object):
-    """The idea of the engine is to wrap a set of datasets and provide additional
-    functionality to show a spreadsheet view, register new commands, etc. Many
-    of the methods for this class are direct copies of the methods that are
-    implemented by the data store.
+    """The idea of the engine is to provide a namespace that manages a set of
+    datasets that are identified by unique names. The engine is associated with
+    an object repository that provides additional functionality to register
+    objects like funtions, lookup tables, etc..
 
     Datasets that are created from files of data frames are maintained by an
     archive manager.
@@ -48,7 +53,7 @@ class OpencleanEngine(object):
     engines if necessary.
     """
     def __init__(
-        self, identifier: str, manager: ArchiveManager, objects: ObjectRepository,
+        self, identifier: str, manager: ArchiveManager, library: ObjectLibrary,
         basedir: Optional[str] = None, cached: Optional[bool] = True
     ):
         """Initialize the engine identifier and the manager for created dataset
@@ -60,8 +65,8 @@ class OpencleanEngine(object):
             Unique identifier for the engine instance.
         manager: histore.archive.manager.base.ArchiveManager
             Manager for created dataset archives.
-        objects: openclean.engine.store.base.ObjectRepository
-            Repository for objects (e.g., registered functions).
+        library: openclean.engine.library.base.ObjectLibrary
+            Library manager for objects (e.g., registered functions).
         basedir: string, default=None
             Path to directory on disk where archive metadata is maintained.
         cached: bool, default=True
@@ -71,8 +76,8 @@ class OpencleanEngine(object):
         self.identifier = identifier
         self.manager = manager
         self.basedir = basedir
-        # Registry of commands that can be applied to the maintained datasets.
-        self.register = CommandRegistry(store=objects)
+        # Library of objects that are available to the user of the engine.
+        self.library = library
         # Dictionary for the maintained datasets. Maintains data engines that
         # contain the archive identifier and references to the datastore and
         # the archive manager.
@@ -94,27 +99,26 @@ class OpencleanEngine(object):
                 datastore = CachedDatastore(datastore=datastore)
             self._datasets[descriptor.name()] = DataEngine(
                 datastore=datastore,
-                commands=self.register,
-                identifier=archive_id,
                 manager=self.manager,
+                identifier=archive_id,
                 pk=descriptor.primary_key()
             )
 
-    def checkout(
-        self, name: str, version: Optional[int] = None
-    ) -> pd.DataFrame:
-        """Get a specific version of a dataset. The dataset is identified by
-        the unique name and the dataset version by the unique version
-        identifier.
+    def checkout(self, name: str, commit: Optional[bool] = False) -> pd.DataFrame:
+        """Checkout the latest version of adataset. The dataset is identified by
+        the unique name. If the dataset that is currently associated with the
+        given name is a sample dataset it will be replace by the handle for
+        the original dataset first. If the commit flag is True any uncommited
+        changes for the sample dataset will be commited first.
 
-        Raises a ValueError if the dataset or the given version are unknown.
+        Raises a KeyError if the given dataset name is unknown.
 
         Parameters
         ----------
         name: string
             Unique dataset name.
-        version: int
-            Unique dataset version identifier.
+        commit: bool, default=False
+            Apply all uncommited changes to the original database if True.
 
         Returns
         -------
@@ -122,31 +126,13 @@ class OpencleanEngine(object):
 
         Raises
         ------
-        ValueError
+        KeyError
         """
-        return self.dataset(name=name).checkout(version=version)
-
-    def commit(
-        self, df: pd.DataFrame, name: str, action: Optional[Dict] = None
-    ) -> pd.DataFrame:
-        """Insert a new version for a dataset. If the dataset name is unknown a
-        new dataset archive will be created.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data frame containing the new dataset version that is being stored.
-        name: string
-            Unique dataset name.
-        action: dict, default=None
-            Optional description of the action that created the new dataset
-            version.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        return self.dataset(name=name).commit(df=df, action=action)
+        dataset = self.dataset(name)
+        if commit:
+            dataset.commit()
+        self._datasets[name] = dataset.original
+        return self.dataset(name=name).datastore.checkout()
 
     def create(
         self, source: Datasource, name: str,
@@ -203,17 +189,16 @@ class OpencleanEngine(object):
             datastore = CachedDatastore(datastore=datastore)
         self._datasets[name] = DataEngine(
             datastore=datastore,
-            commands=self.register,
-            identifier=archive_id,
             manager=self.manager,
+            identifier=archive_id,
             pk=primary_key
         )
         # Checkout and return the data frame for the loaded datasets snapshot.
         return datastore.checkout()
 
-    def dataset(self, name: str) -> DataEngine:
-        """Get object that allows to run registered (column) commands on the
-        current version of a dataset that is identified by its unique name.
+    def dataset(self, name: str) -> DatasetHandle:
+        """Get handle for a dataset. Depending on the type of the dataset this
+        will either return a :class:DataEngine or :class:DataSample.
 
         Parameters
         ----------
@@ -222,28 +207,11 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        openclean.engine.data.DataEngine
+        openclean.engine.data.DatasetHandle
         """
-        return self._handle(name)
-
-    def _datastore(self, name: str) -> Datastore:
-        """Get the datastore for the dataset with the given name. Raises a
-        ValueError if the dataset name is unknonw.
-
-        Parameters
-        ----------
-        name: string
-            Unique dataset name.
-
-        Returns
-        -------
-        openclean.data.archive.base.Datastore
-
-        Raises
-        ------
-        ValueError
-        """
-        return self._handle(name).datastore
+        if name not in self._datasets:
+            raise ValueError("unknown dataset '{}'".format(name))
+        return self._datasets[name]
 
     def drop(self, name: str):
         """Delete the full history for the dataset with the given name. Raises
@@ -258,50 +226,26 @@ class OpencleanEngine(object):
         ------
         ValueError
         """
-        self._handle(name).drop()
+        dataset = self.dataset(name).drop()
         del self._datasets[name]
 
-    def _handle(self, name: str) -> DataEngine:
-        """Get the handle for the dataset with the given name. Raises a
-        ValueError if the dataset name is unknonw.
+    def function(self, name: str, namespace: Optional[str] = None) -> FunctionHandle:
+        """Get an function handle from the associated registry. The function is
+        identified by its name and optional namespace. Raises a KeyError if
+        the object is unknown.
 
         Parameters
         ----------
         name: string
-            Unique dataset name.
+            Function name.
+        namespace: string, default=None
+            Optional namespace identifier.
 
         Returns
         -------
-        openclean.engine.data.DataEngine
-
-        Raises
-        ------
-        ValueError
+        any
         """
-        if name not in self._datasets:
-            raise ValueError("unknown dataset '{}'".format(name))
-        return self._datasets[name]
-
-    def history(self, name: str) -> List[Snapshot]:
-        """Get list of snapshot handles for all versions of a given dataset.
-        The datset is identified by the unique dataset name.
-
-        Raises a ValueError if the dataset name is unknown.
-
-        Parameters
-        ----------
-        name: string
-            Unique dataset name.
-
-        Returns
-        -------
-        list of histore.archive.snapshot.Snapshot
-
-        Raises
-        ------
-        ValueError
-        """
-        return self.dataset(name=name).snapshots()
+        return self.library.get(name=name, namespace=namespace).func
 
     def load_dataset(
         self, source: Datasource, name: str,
@@ -369,7 +313,17 @@ class OpencleanEngine(object):
         ------
         ValueError
         """
-        return self._datastore(name=name).metadata(version=version)
+        return self.dataset(name=name).datastore.metadata(version=version)
+
+    @property
+    def register(self) -> ObjectLibrary:
+        """Synonym for accessing the library as a function registry.
+
+        Returns
+        -------
+        openclean.engine.library.base.ObjectLibrary
+        """
+        return self.library
 
     def sample(
         self, name: str, n: Optional[int] = None,
@@ -399,13 +353,13 @@ class OpencleanEngine(object):
 
         Raises
         ------
-        ValueError
+        KeyError
         """
         # Create a sample of size 100 if neither n nor frac is given.
         n = 100 if n is None else n
         # Get the handle for the referenced dataset and checkout the latest
         # dataset snapshot.
-        handle = self._handle(name)
+        handle = self.dataset(name)
         df = self.checkout(name=name)
         # Create a random sample from the dataset. This is only necessary if
         # the dataset contains more rows than the sample size.
@@ -424,16 +378,11 @@ class OpencleanEngine(object):
         # Use a cached datastore to speed-up access to the last datset version.
         datastore = CachedDatastore(datastore=datastore)
         # Do not include the manager in the handle for the created dataset. We
-        # also include the identifier of the original dataset as a reference
-        # for the source of a sampled dataset.
-        ds = DataEngine(
-            datastore=datastore,
-            commands=self.register,
-            original=handle
-        )
+        # instead include a reference to the original dataset to maintain the
+        # link to the source of a sampled dataset.
+        ds = DataSample(datastore=datastore, original=handle)
         self._datasets[name] = ds
-        assert len(df.columns) == 3
-        assert len(df.index) == 1
+        return df
 
 
 # -- Engine factory -----------------------------------------------------------
@@ -486,7 +435,7 @@ def DB(
     engine = OpencleanEngine(
         identifier=engine_id,
         manager=histore,
-        objects=objects,
+        library=ObjectLibrary(store=objects),
         basedir=metadir,
         cached=cached
     )

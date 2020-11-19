@@ -127,6 +127,17 @@ class InsertOp(OpHandle):
         )
         self.pos = pos
 
+    @property
+    def names(self) -> Union[str, List[str]]:
+        """Synonym for accessing the columns (which are the names of the inserted
+        columns for an inscol operator).
+
+        Returns
+        -------
+        string or list of string
+        """
+        return self.columns
+
     def to_dict(self) -> Dict:
         """Get a dictionary serialization for the handle.
 
@@ -152,7 +163,7 @@ class InsertOp(OpHandle):
             return None
             # Use the update columns as input columns if no source columns are
             # specified explicitly.
-        if not callable(self.func):
+        if not isinstance(self.func, FunctionHandle):
             # If the function is not a function handle it is assumed to be
             # a scalar value. Wrap that value in a Constant evaluation function.
             return Const(self.func)
@@ -204,7 +215,7 @@ class UpdateOp(OpHandle):
             return None
             # Use the update columns as input columns if no source columns are
             # specified explicitly.
-        if not callable(self.func):
+        if not isinstance(self.func, FunctionHandle):
             # If the function is not a function handle it is assumed to be
             # a scalar value. Wrap that value in a Constant evaluation function.
             return Const(self.func)
@@ -218,11 +229,25 @@ class UpdateOp(OpHandle):
 
 @dataclass
 class LogEntry:
-    """Entry in an operation log. Maintains the datsset version identifier and
-    the handle for the action that created the dataset version.
+    """Entry in an operation log for a dataset. Each entry maintains information
+    about a committed or uncommitted snapshot of a dataset. Each log entry is
+    associated with a unique UUID identifer and the handle for the action that
+    created the snapshot. For snapshots that have already been commited to the
+    datastore the snapshot handle is maintained in addition.
     """
     action: OpHandle
-    version: int
+    identifier: str
+    snapshot: Snapshot = None
+
+    def is_committed(self) -> bool:
+        """A dataset snapshot has been commited if the log entry is associated
+        with a handle for the commited snapshot.
+
+        Returns
+        -------
+        bool
+        """
+        return self.snapshot is not None
 
 
 class OperationLog(object):
@@ -233,7 +258,11 @@ class OperationLog(object):
         """Initialize the internal entry list."""
         self.entries = list()
 
-    def add(self, version: int, action: OpHandle):
+    def __iter__(self):
+        """Return an iterator over entries in the log."""
+        return iter(self.entries)
+
+    def add(self, version: int, action: OpHandle, snapshot: Optional[Snapshot] = None):
         """Append a record to the log.
 
         Parameters
@@ -242,5 +271,38 @@ class OperationLog(object):
             Dataset snapshot version identifier.
         action: openclean.engine.log.OpHandle
             Handle for the operation that created the dataset snapshot.
+        snapshot: histore.archive.snapshot.Snapshot, default=None
+            Handle for a snapshot that has been commited to an underlying
+            datastore.
         """
-        self.entries.append(LogEntry(version=version, action=action))
+        entry = LogEntry(version=version, action=action, snapshot=snapshot)
+        self.entries.append(entry)
+
+    def is_empty(self) -> bool:
+        """Check if the log is empty.
+
+        Returns
+        -------
+        bool
+        """
+        return len(self.entries) == 0
+
+    def peek(self) -> LogEntry:
+        """Get the first element in the log.
+
+        Returns
+        -------
+        openclean.engine.data.log.LogEntry
+        """
+        return self.entries[0]
+
+    def pop(self):
+        """Remove the first entry from the log and return it.
+
+        Returns
+        -------
+        openclean.engine.data.log.LogEntry
+        """
+        entry = self.entries[0]
+        del self.entries[0]
+        return entry

@@ -17,7 +17,7 @@ from openclean.engine.store.base import ObjectRepository
 DTYPE_FUNC = 'eval'
 
 
-class CommandRegistry(object):
+class ObjectLibrary(object):
     """Registry for commands that can be applied to a single data frame. The
     registry maintains information about available (registered) commands and
     it provides the functionality to add new commands to the registry.
@@ -98,26 +98,29 @@ class CommandRegistry(object):
             return handle
         return register_eval
 
-    def get(self, name: str, namespace: Optional[str] = None) -> Callable:
-        """Get a function from the object registry. The funciton is identified by
-        its name and optional namespace. Raises a KeyError if the function is
-        unknown.
+    def get(self, name: str, namespace: Optional[str] = None) -> Any:
+        """Get an object handle from the associated registry. The object is
+        identified by its name and optional namespace. Raises a KeyError if
+        the object is unknown.
 
         Parameters
         ----------
         name: string
-            Function name.
+            Object name.
         namespace: string, default=None
             Optional namespace identifier.
 
         Returns
         -------
-        callable
+        any
         """
-        return self.store.get_object(name=name, namespace=namespace).func
+        return self.store.get_object(name=name, namespace=namespace)
 
     def serialize(self) -> List[Dict]:
-        """Get serialization of registered commands.
+        """Get serialization of registered objects.
+
+        'functions': []
+        'lookups': []
 
         Returns
         -------

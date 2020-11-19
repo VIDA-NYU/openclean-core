@@ -23,7 +23,7 @@ install_requires = [
     'jsonschema>=3.2.0',
     'Shapely>=1.7.0',
     'histore==0.2.2',
-    'flowserv-core=0.6.0',
+    'flowserv-core==0.6.0',
     'fuzzyset==0.0.19',
     'jellyfish',
     'scipy'
@@ -37,7 +37,7 @@ tests_require = [
 ]
 
 
-dev_require = ['flake8'] + tests_require
+dev_require = ['flake8', 'python-language-server'] + tests_require
 
 
 extras_require = {
