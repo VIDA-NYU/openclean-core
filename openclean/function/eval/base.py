@@ -520,6 +520,8 @@ class Eval(EvalFunction):
             return func
 
         if len(self.producers) == 1 or self.is_unary:
+            # Decorate a unary function that passes the static arguments as
+            # keyword arguments to the decorated function.
 
             def decorated_unary_func(value):
                 return func(value, **self.args)
@@ -527,6 +529,9 @@ class Eval(EvalFunction):
             return decorated_unary_func
 
         else:
+            # Decorate a ternary function that takes multiple column values as
+            # input together with the static arguments that are passed on as
+            # keyword arguments to the decorated function.
 
             def decorated_ternary_func(*value):
                 return func(*value, **self.args)
