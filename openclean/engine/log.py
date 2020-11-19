@@ -148,13 +148,17 @@ class InsertOp(OpHandle):
         """
         # Return nothing if the associated function is None.
         if self.func is None:
+            # Return nothing if the associated function is None.
             return None
-        elif isinstance(self.func, FunctionHandle):
-            return Eval(columns=self.sources, func=self.func, args=self.args)
-        else:
+            # Use the update columns as input columns if no source columns are
+            # specified explicitly.
+        if not callable(self.func):
             # If the function is not a function handle it is assumed to be
             # a scalar value. Wrap that value in a Constant evaluation function.
             return Const(self.func)
+        # Return an evaluation function that wraps the callable. The input for
+        # that function comes from the list of sources.
+        return Eval(columns=self.sources, func=self.func, args=self.args)
 
 
 class UpdateOp(OpHandle):
@@ -195,11 +199,17 @@ class UpdateOp(OpHandle):
         -------
         openclean.function.eval.base.EvalFunction
         """
-        # Return nothing if the associated function is None.
         if self.func is None:
+            # Return nothing if the associated function is None.
             return None
             # Use the update columns as input columns if no source columns are
             # specified explicitly.
+        if not callable(self.func):
+            # If the function is not a function handle it is assumed to be
+            # a scalar value. Wrap that value in a Constant evaluation function.
+            return Const(self.func)
+        # Create an evaluation function that wraps the callable. The input
+        # columns depend on whether sources are given or not.
         columns = self.sources if self.sources is not None else self.columns
         return Eval(columns=columns, func=self.func, args=self.args)
 
@@ -233,4 +243,4 @@ class OperationLog(object):
         action: openclean.engine.log.OpHandle
             Handle for the operation that created the dataset snapshot.
         """
-        self.append(LogEntry(version=version, action=action))
+        self.entries.append(LogEntry(version=version, action=action))
