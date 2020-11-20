@@ -20,7 +20,7 @@ def dataset(
     filename: str, header: Optional[Schema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
     typecast: Optional[DatatypeConverter] = None, none_is: Optional[str] = None,
-    encoding: Optional[str]=None
+    encoding: Optional[str] = None
 ) -> pd.DataFrame:
     """Read a pandas data frame from a CSV file. This function infers the
     CSV file delimiter and compression from the file name (if not specified).

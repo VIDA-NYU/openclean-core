@@ -7,6 +7,8 @@
 
 """Collection of helper functions for various purpoeses."""
 
+from typing import Optional
+
 import uuid
 
 
@@ -165,17 +167,20 @@ def scalar_pass_through(value):
     return value
 
 
-def unique_identifier(length: int) -> str:
+def unique_identifier(length: Optional[int] = None) -> str:
     """Get an identifier string of given length. Uses UUID to generate a unique
     string and return the requested number of characters from that string.
 
     Parameters
     ----------
-    length: int
+    length: int, default=None
         Number of characters in the returned string.
 
     Returns
     -------
     string
     """
-    return str(uuid.uuid4()).replace('-', '')[:length]
+    identifier = str(uuid.uuid4()).replace('-', '')
+    if length is not None:
+        identifier = identifier[:length]
+    return identifier

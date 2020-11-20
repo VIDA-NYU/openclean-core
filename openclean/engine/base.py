@@ -17,21 +17,19 @@ lookup tables, etc..
 from histore.archive.manager.base import ArchiveManager
 from histore.archive.manager.persist import PersistentArchiveManager
 from histore.archive.manager.mem import VolatileArchiveManager
-from histore.archive.snapshot import Snapshot
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 import os
 
 from openclean.util.core import unique_identifier
-from openclean.data.archive.base import Datastore, Datasource
+from openclean.data.archive.base import Datasource
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
-from openclean.engine.data import DatasetHandle, DataEngine, DataSample
+from openclean.engine.data import DatasetHandle, FullDataset, DataSample
 from openclean.engine.library.base import ObjectLibrary, DTYPE_FUNC
 from openclean.engine.library.func import FunctionHandle, FunctionSerializer
 from openclean.engine.registry import registry
-from openclean.engine.store.base import ObjectRepository
 from openclean.engine.store.fs import FileSystemObjectStore
 from openclean.engine.store.mem import VolatileObjectRepository
 from openclean.engine.store.serialized import SerializedObjectRepository
@@ -97,7 +95,7 @@ class OpencleanEngine(object):
             if cached:
                 # Wrapped datastore into a cached store if requested.
                 datastore = CachedDatastore(datastore=datastore)
-            self._datasets[descriptor.name()] = DataEngine(
+            self._datasets[descriptor.name()] = FullDataset(
                 datastore=datastore,
                 manager=self.manager,
                 identifier=archive_id,
@@ -129,9 +127,12 @@ class OpencleanEngine(object):
         KeyError
         """
         dataset = self.dataset(name)
-        if commit:
-            dataset.commit()
-        self._datasets[name] = dataset.original
+        if dataset.is_sample:
+            if commit:
+                # Only need to commit anything if the dataset is a sample.
+                dataset.commit()
+            # Replace the sampled dataset with its original.
+            self._datasets[name] = dataset.original
         return self.dataset(name=name).datastore.checkout()
 
     def create(
@@ -187,7 +188,7 @@ class OpencleanEngine(object):
         if cached:
             # Wrapped datastore into a cached store if requested.
             datastore = CachedDatastore(datastore=datastore)
-        self._datasets[name] = DataEngine(
+        self._datasets[name] = FullDataset(
             datastore=datastore,
             manager=self.manager,
             identifier=archive_id,
@@ -198,7 +199,7 @@ class OpencleanEngine(object):
 
     def dataset(self, name: str) -> DatasetHandle:
         """Get handle for a dataset. Depending on the type of the dataset this
-        will either return a :class:DataEngine or :class:DataSample.
+        will either return a :class:FullDataset or :class:DataSample.
 
         Parameters
         ----------
@@ -226,7 +227,7 @@ class OpencleanEngine(object):
         ------
         ValueError
         """
-        dataset = self.dataset(name).drop()
+        self.dataset(name).drop()
         del self._datasets[name]
 
     def function(self, name: str, namespace: Optional[str] = None) -> FunctionHandle:
@@ -245,7 +246,7 @@ class OpencleanEngine(object):
         -------
         any
         """
-        return self.library.get(name=name, namespace=namespace).func
+        return self.library.get(name=name, namespace=namespace)
 
     def load_dataset(
         self, source: Datasource, name: str,
@@ -289,9 +290,7 @@ class OpencleanEngine(object):
             cached=cached
         )
 
-    def metadata(
-        self, name: str, version: Optional[int] = None
-    ) -> MetadataStore:
+    def metadata(self, name: str, version: Optional[int] = None) -> MetadataStore:
         """Get metadata that is associated with the referenced dataset version.
         If no version is specified the metadata collection for the latest
         version is returned.

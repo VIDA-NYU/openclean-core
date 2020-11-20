@@ -103,5 +103,5 @@ def entropy(values: Counter, default: Optional[float] = None) -> float:
         return default
     # Compute entropy over frequencies for values in the given counter.
     total = float(sum(values.values()))
-    pk = [float(count)/total for _, count in values.items()]
+    pk = [float(count) / total for _, count in values.items()]
     return sp.entropy(pk=pk, base=2)

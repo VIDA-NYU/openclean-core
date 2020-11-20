@@ -11,12 +11,15 @@ the information that is necessary to reapply the opertor to a dataset version.
 """
 
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from histore.archive.snapshot import Snapshot
 from typing import Dict, List, Optional, Union
 
 from openclean.data.types import Columns, Scalar
 from openclean.function.eval.base import Const, Eval, EvalFunction
 from openclean.engine.library.func import FunctionHandle
+
+import openclean.util.core as util
 
 
 # -- Opration handles ---------------------------------------------------------
@@ -57,6 +60,16 @@ class OpHandle(metaclass=ABCMeta):
         self.args = args
         self.sources = sources
 
+    @property
+    def is_insert(self) -> bool:
+        """True if the operator type is 'insert'.
+
+        Returns
+        -------
+        bool
+        """
+        return self.optype == 'insert'
+
     def to_dict(self) -> Dict:
         """Get a dictionary serialization for the handle.
 
@@ -69,6 +82,7 @@ class OpHandle(metaclass=ABCMeta):
             if isinstance(self.func, FunctionHandle):
                 doc['func'] = self.func.to_descriptor()
             else:
+                # Assume that func is a scalar value.
                 doc['func'] = self.func
         if self.args is not None:
             doc['arguments'] = self.args
@@ -119,7 +133,7 @@ class InsertOp(OpHandle):
             callable are extracted.
         """
         super(InsertOp, self).__init__(
-            optype='update',
+            optype='insert',
             columns=names,
             func=values,
             args=args,
@@ -145,7 +159,7 @@ class InsertOp(OpHandle):
         -------
         dict
         """
-        doc = super(self).to_dict()
+        doc = super(InsertOp, self).to_dict()
         doc['pos'] = self.pos
         return doc
 
@@ -231,38 +245,88 @@ class UpdateOp(OpHandle):
 class LogEntry:
     """Entry in an operation log for a dataset. Each entry maintains information
     about a committed or uncommitted snapshot of a dataset. Each log entry is
-    associated with a unique UUID identifer and the handle for the action that
-    created the snapshot. For snapshots that have already been commited to the
-    datastore the snapshot handle is maintained in addition.
-    """
-    action: OpHandle
-    identifier: str
-    snapshot: Snapshot = None
+    associated with a unique UUID identifer and a descriptor for the action that
+    created the snapshot.
 
+    For uncommitted snapshots the handle for the action that created the snapshot
+    is maintained together with the version identifier in the data store for the
+    dataset sample.
+    """
+    # Descriptor for the operation that created a snapshot (used for display).
+    descriptor: Dict
+    # Unique identifier.
+    identifier: str = field(default_factory=util.unique_identifier)
+    # Action that created the snapshot (only set for uncommitted operations).
+    action: Optional[OpHandle] = None
+    # Version identifier for snapshot in a dataset sample (not given for
+    # committed snapshots).
+    version: Optional[int] = None
+
+    @property
     def is_committed(self) -> bool:
-        """A dataset snapshot has been commited if the log entry is associated
-        with a handle for the commited snapshot.
+        """True, if the snapshot has been committed with the datastore that manages
+        the full dataset. False, if the snapshot has only be committed with the
+        datastore that manages the data sample. Only uncommitted snapshots have
+        the operation handle associated with it. This information is used by the
+        `is_committed` property.
 
         Returns
         -------
         bool
         """
-        return self.snapshot is not None
+        return self.action is None
+
+    @is_committed.setter
+    def is_committed(self, value: bool):
+        """Set the committed flag. It is only possible to set the flag to True.
+        An attempt to set the flag to False will raise a ValueError.
+
+        Raises
+        ------
+        ValueError
+        """
+        if not value and self.action is None:
+            raise ValueError('cannot undo operation commit')
+        elif value:
+            self.action = None
 
 
 class OperationLog(object):
     """The operation log maintains a list of entries containing provenance
-    information for each verion of a dataset.
+    information for each snapshot of a dataset. Snapshots in a dataset can either
+    be committed, i.e., persisted with the datastore that manages the full dataset,
+    or uncommitted, i.e., committed only with the datastore for a dataset sample but
+    not the full dataset.
     """
-    def __init__(self):
-        """Initialize the internal entry list."""
-        self.entries = list()
+    def __init__(self, snapshots: List[Snapshot], auto_commit: bool):
+        """Initialize the list of committed snapshots.
+
+        Parameters
+        ----------
+        snapshots: list of histore.archive.snapshot.Snapshot
+            List of committe snapshots from a dataset.
+        auto_commit: bool
+            Flag indicating whether the dataset handle with which this log is
+            associated operates on the full dataset (auto_commit=True) or on a
+            dataset sample (auto_commit=False).
+        """
+        self.entries = [LogEntry(descriptor=s.action) for s in snapshots]
+        self.auto_commit = auto_commit
 
     def __iter__(self):
         """Return an iterator over entries in the log."""
         return iter(self.entries)
 
-    def add(self, version: int, action: OpHandle, snapshot: Optional[Snapshot] = None):
+    def __len__(self):
+        """Get number of entries in the log.
+
+        Returns
+        -------
+        int
+        """
+        return len(self.entries)
+
+    def add(self, version: int, action: OpHandle):
         """Append a record to the log.
 
         Parameters
@@ -271,38 +335,34 @@ class OperationLog(object):
             Dataset snapshot version identifier.
         action: openclean.engine.log.OpHandle
             Handle for the operation that created the dataset snapshot.
-        snapshot: histore.archive.snapshot.Snapshot, default=None
-            Handle for a snapshot that has been commited to an underlying
-            datastore.
         """
-        entry = LogEntry(version=version, action=action, snapshot=snapshot)
+        if self.auto_commit:
+            # Add only the action descriptor for snaphsots that have been
+            # committed.
+            entry = LogEntry(descriptor=action.to_dict())
+        else:
+            # Include the action and version identifier for uncommitted snapshots.
+            entry = LogEntry(
+                action=action,
+                descriptor=action.to_dict(),
+                version=version
+            )
         self.entries.append(entry)
 
-    def is_empty(self) -> bool:
-        """Check if the log is empty.
+    def rollback(self, pos: int, version: int, action: OpHandle):
+        """Remove all log entries starting at the given index Append a new log
+        entry to the truncated list for the given version and action.
 
-        Returns
-        -------
-        bool
+        Parameters
+        ----------
+        pos: int
+            List position from which (including the position) all entries in
+            the log are removed.
+        version: int
+            Dataset snapshot version identifier.
+        action: openclean.engine.log.OpHandle
+            Handle for the operation that created the dataset snapshot identified
+            by the version.
         """
-        return len(self.entries) == 0
-
-    def peek(self) -> LogEntry:
-        """Get the first element in the log.
-
-        Returns
-        -------
-        openclean.engine.data.log.LogEntry
-        """
-        return self.entries[0]
-
-    def pop(self):
-        """Remove the first entry from the log and return it.
-
-        Returns
-        -------
-        openclean.engine.data.log.LogEntry
-        """
-        entry = self.entries[0]
-        del self.entries[0]
-        return entry
+        self.entries = self.entries[:pos]
+        self.add(version=version, action=action)

@@ -13,25 +13,23 @@ operations that use functions from the command registry.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from histore.archive.manager.base import ArchiveManager
-from histore.archive.snapshot import Snapshot
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
 from openclean.data.archive.base import Datastore
 from openclean.data.types import Columns, Scalar
-from openclean.engine.library.base import ObjectLibrary
 from openclean.engine.library.func import FunctionHandle
-from openclean.engine.log import InsertOp, OperationLog, UpdateOp
+from openclean.engine.log import InsertOp, LogEntry, OperationLog, UpdateOp
 from openclean.operator.transform.insert import inscol
-from openclean.operator.transform.update import update, UpdateFunction
+from openclean.operator.transform.update import update
 
 
 class DatasetHandle(metaclass=ABCMeta):
     """Handle for datasets that are managed by the openclean engine and whose
     snapshot history is maintained by an archive manager.
     """
-    def __init__(self, datastore: Datastore):
+    def __init__(self, datastore: Datastore, log: OperationLog, is_sample: bool):
         """Initialize the data store that maintains the different dataset
         snapshots.
 
@@ -39,30 +37,14 @@ class DatasetHandle(metaclass=ABCMeta):
         ----------
         datastore: openclean.data.archive.base.Datastore
             Datastore for managing dataset snapshots.
+        log: openclean.engine.log.OperationLog
+            Log for dataset operations.
+        is_sample: bool
+            Flag indicating if the dataset is a sample of a larger dataset.
         """
         self.datastore = datastore
-
-    @abstractmethod
-    def _addlog(self, version: int, action: OpHandle):
-        """Add a new entry for a created dataset snapshot to the log.
-
-        Parameters
-        ----------
-        version: int
-            Dataset snapshot version identifier.
-        action: openclean.engine.log.OpHandle
-            Handle for the operation that created the dataset snapshot.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def commit(self):
-        """Apply all uncommited changes to an underlying dataset. This method
-        should have no effect for dataset handles that operate directly on the
-        full dataset but only fot those datasets that are a sample of a larger
-        dataset.
-        """
-        raise NotImplementedError()
+        self._log = log
+        self.is_sample = is_sample
 
     @abstractmethod
     def drop(self):
@@ -107,51 +89,31 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         pd.DataFrame
         """
-        action = InsertOp(names=names, pos=pos, values=values, args=args, sources=sources)
+        # Checkout the current dataset snapshot.
         df = self.datastore.checkout()
+        # Create an action object for the insert operation.
+        action = InsertOp(
+            names=names,
+            pos=pos,
+            values=values,
+            args=args,
+            sources=sources
+        )
+        # Run the insert operation and commit the new dataset version.
         df = inscol(df=df, names=names, pos=pos, values=action.to_eval())
         df = self.datastore.commit(df=df, action=action.to_dict())
-        self._addlog(version=self.datastore.last_version(), action=action)
+        # Add the operator to the internal log.
+        self._log.add(version=self.datastore.last_version(), action=action)
         return df
 
-    @abstractmethod
     def log(self) -> List[LogEntry]:
-        """Get the list of log entries for the full history of the dataset. For
-        datasets that are sampled this includes the snapshots that have been
-        committed to the underlying datastore as well as those actions that
-        have yet to be commited.
+        """Get the list of log entries for all dataset snapshots.
 
         Returns
         -------
         list of openclean.engine.log.LogEntry
         """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def rollback(self, identifier: string) -> pd.DataFrame:
-        """Rollback to the dataset version that was created by the log entry
-        with the given identifier. This will make the respective snapshot the
-        new current (head) snapshot for the dataset history.
-
-        Returns the dataframe for the dataset snapshot that is at the head of
-        the dataset history.
-
-        Raises a KeyError if the given log entry identifier is unknown.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique log entry identifier.
-
-        Returns
-        -------
-        pd.DataFrame
-
-        Raises
-        ------
-        KeyError
-        """
-        raise NotImplementedError()
+        return list(self._log)
 
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
@@ -187,15 +149,24 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         pd.DataFrame
         """
-        action = UpdateOp(columns=columns, func=func, args=args, sources=sources)
+        # Checkout the current dataset snapshot.
         df = self.datastore.checkout()
+        # Create an action object for the update operation.
+        action = UpdateOp(
+            columns=columns,
+            func=func,
+            args=args,
+            sources=sources
+        )
+        # Run the update operation and commit the new dataset version.
         df = update(df=df, columns=columns, func=action.to_eval())
         df = self.datastore.commit(df=df, action=action.to_dict())
-        self._addlog(version=self.datastore.last_version(), action=action)
+        # Add the operator to the internal log.
+        self._log.add(version=self.datastore.last_version(), action=action)
         return df
 
 
-class DataEngine(DatasetHandle):
+class FullDataset(DatasetHandle):
     """Handle for datasets that are managed by the openclean engine and that
     have their histor being maintained by an archive manager. All operations
     are applied directly on the full dataset in the underlying archive.
@@ -221,7 +192,11 @@ class DataEngine(DatasetHandle):
             information is accessed when generating a sample of the dataset
             (by the data engine).
         """
-        super(DataEngine, self).__init__(datastore=datastore)
+        super(FullDataset, self).__init__(
+            datastore=datastore,
+            log=OperationLog(snapshots=datastore.snapshots(), auto_commit=True),
+            is_sample=False
+        )
         self.manager = manager
         self.identifier = identifier
         self.pk = pk
@@ -246,26 +221,89 @@ class DataSample(DatasetHandle):
         original: openclean.engine.data.DataEngine, default=None
             Reference to the original dataset for sampled datasets.
         """
-        super(DataSample, self).__init__(datastore=datastore)
+        super(DataSample, self).__init__(
+            datastore=datastore,
+            log=OperationLog(snapshots=original.datastore.snapshots(), auto_commit=False),
+            is_sample=True
+        )
         self.original = original
 
     def commit(self):
         """Apply all actions in the current log to the underlying original
         dataset.
         """
-        df = self.datastore.checkout()
+        # Checkout the current snapshot for the original dataset.
+        df = self.original.datastore.checkout()
         # Apply each action that is stored in the log. Removes the operation
         # from the log if it had been applied succssfully.
-        while not self.log.is_empty():
-            op = self.log.peek()
-            if op.is_insert():
-                df = inscol(df=df, names=op.names, pos=op.pos, values=op.to_eval())
+        for op in self.log():
+            if op.is_committed:
+                # Ignore log entries for committed actions.
+                continue
+            # Execute the operation on the latest snapshot of the original
+            # dataset and commit the modified snapshot to that dataset.
+            action = op.action
+            if action.is_insert:
+                df = inscol(df=df, names=action.names, pos=action.pos, values=action.to_eval())
             else:
-                df = update(df=df, columns=op.columns, func=op.to_eval())
-            df = self.datastore.commit(df=df, action=op.to_dict())
-            self.log.pop()
+                df = update(df=df, columns=action.columns, func=action.to_eval())
+            df = self.original.datastore.commit(df=df, action=action.to_dict())
+            op.is_committed = True
         return df
 
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
         self.original.drop()
+
+    def rollback(self, identifier: str) -> pd.DataFrame:
+        """Rollback to the dataset version that was created by the log entry
+        with the given identifier. This will make the respective snapshot the
+        new current (head) snapshot for the dataset history.
+
+        Rollback is only supported for uncommitted changes. Removes all log
+        entries after the rolledback version.
+
+        Returns the dataframe for the dataset snapshot that is at the head of
+        the dataset history.
+
+        Raises a KeyError if the given log entry identifier is unknown. Raises
+        a ValueError if the log entry references a snapshot that has already
+        been committed.
+
+        Parameters
+        ----------
+        identifier: string
+            Unique log entry identifier.
+
+        Returns
+        -------
+        pd.DataFrame
+
+        Raises
+        ------
+        KeyError
+        ValueError
+        """
+        # Pointer to position of the rollback version in the full log.
+        index = 0
+        for op in self.log():
+            if op.identifier == identifier:
+                if op.is_committed:
+                    raise ValueError('can only rollback uncommitted actions')
+                # Make the dataset snapshot at the identified version the new
+                # current snapshot.
+                df = self.datastore.checkout(version=op.version)
+                self.datastore.commit(df=df, action=op.action.to_dict())
+                # Remove all log entries after the rollback position and set the
+                # rolled back snapshot as the new head of the log.
+                self._log.rollback(
+                    pos=index,
+                    version=self.datastore.last_version(),
+                    action=op.action
+                )
+                # Rollback was successful. Return here to avoid a KeyError at
+                # the end of the method.
+                return
+            index += 1
+        # Raise a KeyError if no log entry with the given identifier was found.
+        raise KeyError("unknown snapshot '{}'".format(identifier))

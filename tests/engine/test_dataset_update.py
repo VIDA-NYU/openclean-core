@@ -14,20 +14,20 @@ def test_dataset_update(persistent_engine, dataset):
     persistent_engine.dataset('my_dataset').update('B', 1)
     persistent_engine.dataset('my_dataset').update('C', 2)
     # Get version history.
-    snapshots = persistent_engine.dataset('my_dataset').snapshots()
+    snapshots = persistent_engine.dataset('my_dataset').datastore.snapshots()
     assert len(snapshots) == 3
     # Version 1
-    df = persistent_engine.checkout('my_dataset', version=0)
+    df = persistent_engine.dataset('my_dataset').datastore.checkout(version=0)
     assert list(df['A']) == [1, 3]
     assert list(df['B']) == [2, 4]
     assert list(df['C']) == [3, 5]
     # Version 2
-    df = persistent_engine.checkout('my_dataset', version=1)
+    df = persistent_engine.dataset('my_dataset').datastore.checkout(version=1)
     assert list(df['A']) == [1, 3]
     assert list(df['B']) == [1, 1]
     assert list(df['C']) == [3, 5]
     # Version 3
-    df = persistent_engine.checkout('my_dataset', version=2)
+    df = persistent_engine.dataset('my_dataset').datastore.checkout(version=2)
     assert list(df['A']) == [1, 3]
     assert list(df['B']) == [1, 1]
     assert list(df['C']) == [2, 2]

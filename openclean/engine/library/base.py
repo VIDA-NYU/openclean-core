@@ -6,7 +6,7 @@
 # full license details.
 
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from openclean.engine.library.func import FunctionHandle
 from openclean.engine.library.parameter import Parameter
@@ -29,9 +29,9 @@ class ObjectLibrary(object):
         # For now we simply add a few string functions for demonstration
         # purposes.
         self.store = store
-        self.eval(namespace='string')(str.lower)
-        self.eval(namespace='string')(str.upper)
-        self.eval(namespace='string')(str.capitalize)
+        # self.eval(namespace='string')(str.lower)
+        # self.eval(namespace='string')(str.upper)
+        # self.eval(namespace='string')(str.capitalize)
 
     def eval(
         self, name: Optional[str] = None, namespace: Optional[str] = None,
