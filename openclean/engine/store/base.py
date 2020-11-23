@@ -128,17 +128,6 @@ class ObjectRepository(metaclass=ABCMeta):  # pargma: no cover
         raise NotImplementedError()
 
     @abstractmethod
-    def namespaces(self) -> Set[str]:
-        """Get list of all defined namespace identifier. Does not include the
-        identifier (None) for the global namespace.
-
-        Returns
-        -------
-        set of string
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def remove_object(self, name: str, namespace: Optional[str] = None):
         """Remove the object that is identified by the given name and namespace
         from the repository. Raises a KeyError if the referenced object does

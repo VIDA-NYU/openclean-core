@@ -6,7 +6,7 @@
 # full license details.
 
 from __future__ import annotations
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List, Optional
 
 from openclean.engine.library.func import FunctionHandle
 from openclean.engine.library.parameter import Parameter
@@ -115,18 +115,3 @@ class ObjectLibrary(object):
         any
         """
         return self.store.get_object(name=name, namespace=namespace)
-
-    def serialize(self) -> List[Dict]:
-        """Get serialization of registered objects.
-
-        'functions': []
-        'lookups': []
-
-        Returns
-        -------
-        list
-        """
-        functions = list()
-        for obj in self.store.find_objects(dtype=DTYPE_FUNC):
-            functions.append(obj.get_object().to_descriptor())
-        return functions

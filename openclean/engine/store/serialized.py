@@ -120,7 +120,6 @@ class JsonSerializer(ObjectSerializer):
         """
         return json.loads(value, object_hook=self.decoder)
 
-    @abstractmethod
     def serialize(self, object: Any) -> str:
         """Serialize the given object.
 
@@ -413,16 +412,6 @@ class SerializedObjectRepository(ObjectRepository):
         # Get the object descriptor and return the associated object
         # serialization. Raises KeyError if the object does not exist.
         return self._metadata.get(namespace, {})[name].get_object()
-
-    def namespaces(self) -> Set[str]:
-        """Get list of all defined namespace identifier. Does not include the
-        identifier (None) for the global namespace.
-
-        Returns
-        -------
-        set of string
-        """
-        return {ns for ns in self._metadata if ns is not None}
 
     def insert_object(
         self, object: Any, name: str, dtype: str, namespace: Optional[str] = None

@@ -25,6 +25,26 @@ def memrepo(basedir):
 
 
 @pytest.mark.parametrize('repo', [fsrepo, memrepo])
+def test_data_type_listings(repo, tmpdir):
+    """Test listing the namespaces and data types for stored objects."""
+    store = repo(tmpdir)
+    # Initially the list of namespaces and data types is empty.
+    assert store.types() == set()
+    # Store several objects with two different name spaces and three types.
+    doc = {'A': 1}
+    store.insert_object(doc, name='o1', dtype='t1')
+    store.insert_object(doc, name='o1', namespace='n1', dtype='t2')
+    store.insert_object(doc, name='o2', namespace='n1', dtype='t3')
+    store.insert_object(doc, name='o3', namespace='n2', dtype='t3')
+    store.insert_object(doc, name='o4', namespace='n2', dtype='t3')
+    assert store.types() == {'t1', 't2', 't3'}
+    # Delete objects for one namespace and one data type.
+    store.remove_object(name='o1', namespace='n1')
+    store.remove_object(name='o2', namespace='n1')
+    assert store.types() == {'t1', 't3'}
+
+
+@pytest.mark.parametrize('repo', [fsrepo, memrepo])
 def test_find_objects(repo, tmpdir):
     """Test object queries."""
     store = repo(tmpdir)
@@ -50,26 +70,3 @@ def test_object_lifecycle(repo, tmpdir):
         store.get_object(name='o1', namespace='n1')
     with pytest.raises(KeyError):
         store.remove_object(name='o1', namespace='n1')
-
-
-@pytest.mark.parametrize('repo', [fsrepo, memrepo])
-def test_namespace_and_type_listings(repo, tmpdir):
-    """Test listing the namespaces and data types for stored objects."""
-    store = repo(tmpdir)
-    # Initially the list of namespaces and data types is empty.
-    assert store.namespaces() == set()
-    assert store.types() == set()
-    # Store several objects with two different name spaces and three types.
-    doc = {'A': 1}
-    store.insert_object(doc, name='o1', dtype='t1')
-    store.insert_object(doc, name='o1', namespace='n1', dtype='t2')
-    store.insert_object(doc, name='o2', namespace='n1', dtype='t3')
-    store.insert_object(doc, name='o3', namespace='n2', dtype='t3')
-    store.insert_object(doc, name='o4', namespace='n2', dtype='t3')
-    assert store.namespaces() == {'n1', 'n2'}
-    assert store.types() == {'t1', 't2', 't3'}
-    # Delete objects for one namespace and one data type.
-    store.remove_object(name='o1', namespace='n1')
-    store.remove_object(name='o2', namespace='n1')
-    assert store.namespaces() == {'n2'}
-    assert store.types() == {'t1', 't3'}

@@ -18,4 +18,3 @@ def test_register_and__update(volatile_engine):
     volatile_engine.register.eval('addten')(add_ten)
     f = volatile_engine.register.get('addten')
     assert f(1) == 11
-    assert 'addten' in {obj['name'] for obj in volatile_engine.register.serialize()}
