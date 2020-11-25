@@ -16,7 +16,7 @@ from histore.archive.snapshot import Snapshot
 from typing import Dict, List, Optional, Union
 
 from openclean.data.types import Columns, Scalar
-from openclean.function.eval.base import Const, Eval, EvalFunction
+from openclean.function.eval.base import Eval, EvalFunction, to_const_eval
 from openclean.engine.library.func import FunctionHandle
 
 import openclean.util.core as util
@@ -180,7 +180,7 @@ class InsertOp(OpHandle):
         if not isinstance(self.func, FunctionHandle):
             # If the function is not a function handle it is assumed to be
             # a scalar value. Wrap that value in a Constant evaluation function.
-            return Const(self.func)
+            return to_const_eval(self.func)
         # Return an evaluation function that wraps the callable. The input for
         # that function comes from the list of sources.
         return Eval(columns=self.sources, func=self.func, args=self.args)
@@ -232,7 +232,7 @@ class UpdateOp(OpHandle):
         if not isinstance(self.func, FunctionHandle):
             # If the function is not a function handle it is assumed to be
             # a scalar value. Wrap that value in a Constant evaluation function.
-            return Const(self.func)
+            return to_const_eval(self.func)
         # Create an evaluation function that wraps the callable. The input
         # columns depend on whether sources are given or not.
         columns = self.sources if self.sources is not None else self.columns

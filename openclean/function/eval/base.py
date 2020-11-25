@@ -634,7 +634,10 @@ class Const(EvalFunction):
         value: scalar or tuple
             Constant return value for the function.
         """
-        self.value = value
+        if isinstance(value, list):
+            self.value = tuple(value)
+        else:
+            self.value = value
 
     def __call__(self, row: DataRow) -> Value:
         """Make the object a stream function. Returns the constant value for
@@ -1142,6 +1145,8 @@ def to_const_eval(value):
     openclean.function.eval.base.EvalFunction
     """
     if not isinstance(value, EvalFunction):
+        if isinstance(value, list):
+            value = tuple(value)
         value = Const(value)
     return value
 
