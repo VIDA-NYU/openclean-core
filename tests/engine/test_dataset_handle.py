@@ -24,16 +24,16 @@ def engine():
     )
     engine = DB()
     engine.create(source=df, name='DS', primary_key='ID')
-    to_lower = engine.register.eval()(str.lower)
-    to_upper = engine.register.eval()(str.upper)
+    engine.register.eval()(str.lower)
+    engine.register.eval()(str.upper)
     return engine
 
 
 def test_full_dataset_operations(engine):
     """Test operations of a full dataset."""
     ds = engine.dataset('DS')
-    ds.update(columns='FNAME', func=engine.function('upper'))
-    df = ds.update(columns='LNAME', func=engine.function('lower'))
+    ds.update(columns='FNAME', func=engine.library.get('upper'))
+    df = ds.update(columns='LNAME', func=engine.library.get('lower'))
     log = ds.log()
     assert len(log) == 3
     for op in log:
@@ -47,9 +47,9 @@ def test_dataset_sample_operations(engine):
     original = engine.dataset('DS')
     engine.sample('DS', n=2)
     ds = engine.dataset('DS')
-    ds.update(columns='FNAME', func=engine.function('upper'))
+    ds.update(columns='FNAME', func=engine.library.get('upper'))
     ds.insert(names='C', values=1)
-    df = ds.update(columns='LNAME', func=engine.function('lower'))
+    df = ds.update(columns='LNAME', func=engine.library.get('lower'))
     # The samples dataset has changed.
     assert list(df['FNAME']) == ['ALICE', 'BOB']
     assert list(df['LNAME']) == ['jones', 'peters']
@@ -72,12 +72,11 @@ def test_dataset_sample_operations(engine):
 
 def test_dataset_sample_rollback(engine):
     """Test rollback operations on a sample of the dataset."""
-    original = engine.dataset('DS')
     engine.sample('DS', n=2)
     ds = engine.dataset('DS')
-    ds.update(columns='FNAME', func=engine.function('upper'))
+    ds.update(columns='FNAME', func=engine.library.get('upper'))
     ds.insert(names='C', values=1)
-    ds.update(columns='LNAME', func=engine.function('lower'))
+    ds.update(columns='LNAME', func=engine.library.get('lower'))
     log = list(ds.log())
     # Test error cases for rollback with invalid identifiers.
     with pytest.raises(ValueError):

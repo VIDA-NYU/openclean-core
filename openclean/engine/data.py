@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 
 from openclean.data.archive.base import Datastore
+from openclean.data.metadata.base import MetadataStore
 from openclean.data.types import Columns, Scalar
 from openclean.engine.library.func import FunctionHandle
 from openclean.engine.log import InsertOp, LogEntry, OperationLog, UpdateOp
@@ -124,6 +125,28 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         return list(self._log)
 
+    def metadata(self, version: Optional[int] = None) -> MetadataStore:
+        """Get metadata that is associated with the referenced dataset version.
+        If no version is specified the metadata collection for the latest
+        version is returned.
+
+        Raises a ValueError if the specified version is unknown.
+
+        Parameters
+        ----------
+        version: int
+            Unique dataset version identifier.
+
+        Returns
+        -------
+        openclean_.data.metadata.base.MetadataStore
+
+        Raises
+        ------
+        ValueError
+        """
+        return self.datastore.metadata(version=version)
+
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
         sources: Optional[Columns] = None
@@ -173,6 +196,15 @@ class DatasetHandle(metaclass=ABCMeta):
         # Add the operator to the internal log.
         self._log.add(version=self.datastore.last_version(), action=action)
         return df
+
+    def version(self) -> int:
+        """Get version identifier for the last snapshot of the dataset.
+
+        Returns
+        -------
+        int
+        """
+        return self.datastore.last_version()
 
 
 class FullDataset(DatasetHandle):

@@ -15,4 +15,4 @@ def test_sample_dataset(dataset, tmpdir):
     engine = DB(str(tmpdir))
     engine.create(source=dataset, name='DS', primary_key='A')
     df = engine.sample('DS', n=1)
-    print(df)
+    assert df.shape == (1, 3)
