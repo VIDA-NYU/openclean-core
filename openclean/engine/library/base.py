@@ -29,9 +29,6 @@ class ObjectLibrary(object):
         # For now we simply add a few string functions for demonstration
         # purposes.
         self.store = store
-        # self.eval(namespace='string')(str.lower)
-        # self.eval(namespace='string')(str.upper)
-        # self.eval(namespace='string')(str.capitalize)
 
     def eval(
         self, name: Optional[str] = None, namespace: Optional[str] = None,
@@ -97,6 +94,15 @@ class ObjectLibrary(object):
             # Return the undecorated function so that it can be used normally.
             return handle
         return register_eval
+
+    def functions(self) -> List[FunctionHandle]:
+        """Get list of all registered functions.
+
+        Returns
+        -------
+        list of openclean.engine.library.func.FunctionHandle
+        """
+        return self.store.find_objects(dtype=DTYPE_FUNC)
 
     def get(self, name: str, namespace: Optional[str] = None) -> Any:
         """Get an object handle from the associated registry. The object is

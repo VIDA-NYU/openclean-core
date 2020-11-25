@@ -46,6 +46,15 @@ class DatasetHandle(metaclass=ABCMeta):
         self._log = log
         self.is_sample = is_sample
 
+    def checkout(self) -> pd.DataFrame:
+        """Checkout the latest version of the dataset.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        return self.datastore.checkout()
+
     @abstractmethod
     def drop(self):
         """Delete all resources that are associated with the dataset history."""

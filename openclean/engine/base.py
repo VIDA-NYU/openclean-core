@@ -103,9 +103,9 @@ class OpencleanEngine(object):
             )
 
     def checkout(self, name: str, commit: Optional[bool] = False) -> pd.DataFrame:
-        """Checkout the latest version of adataset. The dataset is identified by
-        the unique name. If the dataset that is currently associated with the
-        given name is a sample dataset it will be replace by the handle for
+        """Checkout the latest version of a dataset. The dataset is identified
+        by the unique name. If the dataset that is currently associated with
+        the given name is a sample dataset it will be replace by the handle for
         the original dataset first. If the commit flag is True any uncommited
         changes for the sample dataset will be commited first.
 
@@ -230,24 +230,6 @@ class OpencleanEngine(object):
         self.dataset(name).drop()
         del self._datasets[name]
 
-    def function(self, name: str, namespace: Optional[str] = None) -> FunctionHandle:
-        """Get an function handle from the associated registry. The function is
-        identified by its name and optional namespace. Raises a KeyError if
-        the object is unknown.
-
-        Parameters
-        ----------
-        name: string
-            Function name.
-        namespace: string, default=None
-            Optional namespace identifier.
-
-        Returns
-        -------
-        any
-        """
-        return self.library.get(name=name, namespace=namespace)
-
     def load_dataset(
         self, source: Datasource, name: str,
         primary_key: Optional[Union[List[str], str]] = None,
@@ -327,7 +309,7 @@ class OpencleanEngine(object):
     def sample(
         self, name: str, n: Optional[int] = None,
         random_state: Optional[Tuple[int, List]] = None
-    ):
+    ) -> pd.DataFrame:
         """Display the spreadsheet view for a given dataset. The dataset is
         identified by its unique name. Raises a ValueError if no dataset with
         the given name exists.
