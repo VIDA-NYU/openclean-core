@@ -28,7 +28,7 @@ from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.engine.data import DatasetHandle, FullDataset, DataSample
 from openclean.engine.library.base import ObjectLibrary, DTYPE_FUNC
-from openclean.engine.library.func import FunctionHandle, FunctionSerializer
+from openclean.engine.library.func import FunctionSerializer
 from openclean.engine.registry import registry
 from openclean.engine.store.fs import FileSystemObjectStore
 from openclean.engine.store.mem import VolatileObjectRepository
