@@ -10,7 +10,7 @@ openclean.
 """
 
 from openclean.data.types import Column, Columns, Schema
-from openclean.data.select import as_list
+from openclean.data.schema import as_list
 from openclean.operator.base import DataFrameTransformer
 from openclean.util.core import scalar_pass_through
 from openclean.operator.stream.consumer import StreamFunctionHandler

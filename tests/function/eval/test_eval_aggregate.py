@@ -36,5 +36,5 @@ def test_error_aggregate_prepare():
 
 def test_nested_aggregate(dataset):
     """Test aggregate values from a nested evaluation function."""
-    assert Count(Col('A') > Col('B')).eval(dataset) == [0]  * dataset.shape[0]
-    assert Count(Col('A') < Col('B')).eval(dataset) == [3]  * dataset.shape[0]
+    assert Count(Col('A') > Col('B')).eval(dataset) == [0] * dataset.shape[0]
+    assert Count(Col('A') < Col('B')).eval(dataset) == [3] * dataset.shape[0]

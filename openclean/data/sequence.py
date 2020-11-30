@@ -11,7 +11,7 @@ list). This module contains a factory pattern for creating iterators over a
 single column or a set of columns in a pandas data frame.
 """
 
-from openclean.data.select import as_list, select_clause
+from openclean.data.schema import as_list, select_clause
 
 
 class Sequence(object):

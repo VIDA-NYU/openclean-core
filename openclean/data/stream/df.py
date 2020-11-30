@@ -9,10 +9,10 @@
 
 import pandas as pd
 
-from openclean.data.stream.base import DatasetIterator, DatasetStream
+from openclean.data.stream.base import DataIterator, DataReader
 
 
-class DataFrameReader(DatasetIterator):
+class DataFrameReader(DataIterator):
     """Iterable reader for rows in a pandas data frame. Instances of this class
     act as a context manager.
     """
@@ -52,7 +52,7 @@ class DataFrameReader(DatasetIterator):
         raise StopIteration()
 
 
-class DataFrameStream(DatasetStream):
+class DataFrameStream(DataReader):
     """Wrapper for pandas data frames that act as a data stream reader."""
     def __init__(self, df: pd.DataFrame):
         """Set the data frame that is returned as the data stream.

@@ -8,7 +8,7 @@
 import pytest
 
 from openclean.data.types import Column
-from openclean.data.select import select_clause
+from openclean.data.schema import select_clause
 
 
 def test_select_clause_without_duplicates(employees):

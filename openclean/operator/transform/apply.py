@@ -10,7 +10,7 @@
 import pandas as pd
 
 from openclean.data.sequence import Sequence
-from openclean.data.select import as_list, select_clause
+from openclean.data.schema import as_list, select_clause
 from openclean.function.value.base import CallableWrapper, ValueFunction
 from openclean.operator.base import DataFrameTransformer
 

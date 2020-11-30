@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Any, Optional
 from abc import ABCMeta, abstractmethod
 
-from openclean.data.stream.base import DataRow, DatasetStream, StreamFunction
+from openclean.data.stream.base import DataRow, DataReader, StreamFunction
 from openclean.data.types import Schema
 
 
@@ -72,12 +72,12 @@ class StreamConsumer(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def process(self, ds: DatasetStream) -> Any:
+    def process(self, ds: DataReader) -> Any:
         """Consume a given data stream and return the computed result.
 
         Parameters
         ----------
-        ds: from openclean.data.stream.base.DatasetStream
+        ds: from openclean.data.stream.base.DataReader
             Iterable stream of dataset rows.
 
         Returns

@@ -7,6 +7,10 @@
 
 """Collection of helper functions for various purpoeses."""
 
+from typing import Optional
+
+import uuid
+
 
 def always_false(*args):
     """Predicate that always evaluates to False.
@@ -161,3 +165,22 @@ def scalar_pass_through(value):
     scalar
     """
     return value
+
+
+def unique_identifier(length: Optional[int] = None) -> str:
+    """Get an identifier string of given length. Uses UUID to generate a unique
+    string and return the requested number of characters from that string.
+
+    Parameters
+    ----------
+    length: int, default=None
+        Number of characters in the returned string.
+
+    Returns
+    -------
+    string
+    """
+    identifier = str(uuid.uuid4()).replace('-', '')
+    if length is not None:
+        identifier = identifier[:length]
+    return identifier

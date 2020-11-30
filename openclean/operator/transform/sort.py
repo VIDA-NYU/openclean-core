@@ -7,7 +7,7 @@
 
 """Data frame transformation operator for sorting by data frame columns."""
 
-from openclean.data.select import as_list, select_clause
+from openclean.data.schema import as_list, select_clause
 from openclean.operator.base import DataFrameTransformer
 
 

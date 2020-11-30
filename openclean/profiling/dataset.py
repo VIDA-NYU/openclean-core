@@ -10,13 +10,14 @@ profiling results.
 """
 
 from __future__ import annotations
+from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
-from openclean.data.select import select_clause
+from openclean.data.schema import select_clause
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import ColumnRef, Schema
+from openclean.data.types import Columns, ColumnRef, Schema
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 from openclean.profiling.base import DataProfiler
@@ -220,6 +221,35 @@ class DatasetProfile(list):
             if total_count == distinct_values:
                 profile.add(name=col, stats=stats)
         return profile
+
+
+# -- Dataset profiler ---------------------------------------------------------
+
+class Profiler(metaclass=ABCMeta):  # pragma: no cover
+    """Interface for data profiler that generate metadata for a given data
+    frame.
+    """
+    @abstractmethod
+    def profile(self, df: pd.DataFrame, columns: Optional[Columns] = None) -> Dict:
+        """Run profiler on a given data frame. The structure of the resulting
+        dictionary is implementatin dependent.
+
+        TODO: define required components in the result of a data profier.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Input data frame.
+        columns: int, string, or list(int or string), default=None
+            Single column or list of column index positions or column names for
+            those columns that are being profiled. Profile the full dataset if
+            None.
+
+        Returns
+        -------
+        dict
+        """
+        raise NotImplementedError()
 
 
 # -- Data stream profiling operators ------------------------------------------
