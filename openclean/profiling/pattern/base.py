@@ -9,9 +9,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from openclean.function.value.base import ProfilingFunction
-
-import openclean.util.core as util
+from openclean.profiling.base import DistinctSetProfiler
 
 
 class Pattern(metaclass=ABCMeta):
@@ -30,7 +28,7 @@ class Pattern(metaclass=ABCMeta):
         return self.pattern()
 
     @abstractmethod
-    def compile(self, negate=False):
+    def compile(self, negate=False, generator=None):
         """Get an instance of a value function that is predicate which can be
         used to test whether an given value is accepted by the pattern or not.
 
@@ -39,8 +37,11 @@ class Pattern(metaclass=ABCMeta):
         negate: bool, default=False
             If the negate flag is True, the returned predicate should return
             True for values that are not accepeted by the pattern and False for
-
             those that are accepeted.
+        generator: PatternFinder (optional)
+            The patternfinder used to generate the original pattern. required
+            to recreate the tokenization and type detection on the new values
+
         Returns
         -------
         openclean.function.value.base.ValueFunction
@@ -75,6 +76,7 @@ class Pattern(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def to_dict(self):
         """Returns a dictionary serialization of the pattern. This is an
         external representation that is used when the results of a pattern
@@ -87,24 +89,12 @@ class Pattern(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
-class PatternFinder(ProfilingFunction, metaclass=ABCMeta):
+class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
     """Interface for generic regular expression discovery. Each implementation
     should take an interable of (distinct) values (e.g., from a column in a
     data frame) as their input. The result is a (list of) string(s) that each
     represent a regular expression.
     """
-    def __init__(self, name=None):
-        """Initialize the function name for use in data profilers.
-
-        Parameters
-        ----------
-        name: string, default=None
-            Unique function name that is used as label when including the
-            pattern finder results in dictionary returned by a data profiler.
-        """
-        super(PatternFinder, self).__init__(
-            name=name if name else util.funcname(self)
-        )
 
     def exec(self, values):
         """This method is executed when the pattern finder is used as part of a
