@@ -359,7 +359,7 @@ class DataSample(DatasetHandle):
         # Apply each action that is stored in the log. Removes the operation
         # from the log if it had been applied succssfully.
         return exec_operations(
-            df=self.df,
+            df=self.original.checkout(),
             operations=[op for op in self.log() if not op.is_committed],
             datastore=self.original.datastore
         )
@@ -413,7 +413,7 @@ class DataSample(DatasetHandle):
                     raise ValueError('can only rollback uncommitted actions')
                 # Remove all log entries starting from the rollback position.
                 self._log.truncate(i)
-                self._metadata = self._metadata[i - self._offset]
+                self._metadata = self._metadata[:i - self._offset]
                 # Rollback was successful. Make the dataset snapshot at the
                 # previous version the new current snapshot.
                 self._current_df = exec_operations(df=self.df, operations=apply_ops)

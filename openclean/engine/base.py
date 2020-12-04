@@ -343,8 +343,7 @@ class OpencleanEngine(object):
         # Register the generated sample as a new dataset with a reference to
         # the original dataset to maintain the link to the source of a sampled
         # dataset.
-        ds = DataSample(df=df, original=handle)
-        self._datasets[name] = ds
+        self._datasets[name] = DataSample(df=df, original=handle)
         return df
 
 
