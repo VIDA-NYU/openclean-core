@@ -84,7 +84,7 @@ def test_dataset_sample_rollback(engine):
     with pytest.raises(KeyError):
         ds.rollback('undefined')
     # Rollback to the first operation.
-    ds.rollback(log[1].identifier)
+    ds.rollback(log[2].identifier)
     ds.commit()
     df = engine.checkout('DS', commit=True)
     assert len(df.columns) == 3

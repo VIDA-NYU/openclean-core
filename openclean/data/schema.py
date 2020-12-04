@@ -7,4 +7,10 @@
 
 """Schema helper functions imported from HISTORE."""
 
+# The signature of the imported functions are:
+#
+# as_list(columns: Columns) -> List[Union[int, str, Column]]
+# column_ref(schema: Schema, column: ColumnRef) -> Tuple[str, int]
+# select_clause(schema: Schema, columns: Columns) -> Tuple[List[str], List[int]]
+
 from histore.document.schema import as_list, column_ref, select_clause  # noqa: F401

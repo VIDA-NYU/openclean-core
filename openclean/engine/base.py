@@ -26,6 +26,10 @@ from openclean.util.core import unique_identifier
 from openclean.data.archive.base import Datasource
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
+from openclean.data.metadata.base import MetadataStore
+from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
+from openclean.data.metadata.mem import VolatileMetadataStoreFactory
+from openclean.engine.action import LoadOp
 from openclean.engine.data import DatasetHandle, FullDataset, DataSample
 from openclean.engine.library.base import ObjectLibrary, DTYPE_FUNC
 from openclean.engine.library.func import FunctionSerializer
@@ -33,9 +37,6 @@ from openclean.engine.registry import registry
 from openclean.engine.store.fs import FileSystemObjectStore
 from openclean.engine.store.mem import VolatileObjectRepository
 from openclean.engine.store.serialized import SerializedObjectRepository
-from openclean.data.metadata.base import MetadataStore
-from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
-from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 
 
 class OpencleanEngine(object):
@@ -175,8 +176,9 @@ class OpencleanEngine(object):
         descriptor = self.manager.create(name=name, primary_key=primary_key)
         archive_id = descriptor.identifier()
         archive = self.manager.get(archive_id)
-        # Commit the given dataset to the archive.
-        archive.commit(doc=source)
+        # Commit the given dataset to the archive. TODO: We should add a LoadOp
+        # class to represent the action.
+        archive.commit(doc=source, action=LoadOp().to_dict())
         # Create a datastore to manage the archive and register that datastore
         # with this engine under the given name.
         if self.basedir is not None:
@@ -272,29 +274,21 @@ class OpencleanEngine(object):
             cached=cached
         )
 
-    def metadata(self, name: str, version: Optional[int] = None) -> MetadataStore:
-        """Get metadata that is associated with the referenced dataset version.
-        If no version is specified the metadata collection for the latest
-        version is returned.
+    def metadata(self, name: str) -> MetadataStore:
+        """Get metadata that is associated with the current dataset version.
 
-        Raises a ValueError if the dataset or the specified version is unknown.
+        Raises a ValueError if the dataset is unknown.
 
         Parameters
         ----------
         name: string
             Unique dataset name.
-        version: int
-            Unique dataset version identifier.
 
         Returns
         -------
         openclean.data.metadata.base.MetadataStore
-
-        Raises
-        ------
-        ValueError
         """
-        return self.dataset(name=name).datastore.metadata(version=version)
+        return self.dataset(name=name).metadata()
 
     @property
     def register(self) -> ObjectLibrary:
@@ -346,22 +340,10 @@ class OpencleanEngine(object):
         # the dataset contains more rows than the sample size.
         if n < df.shape[0]:
             df = df.sample(n=n, random_state=random_state)
-        # Register the generated sample as a new dataset using a volatile
-        manager = VolatileArchiveManager()
-        descriptor = manager.create(name=name, primary_key=handle.pk)
-        archive_id = descriptor.identifier()
-        archive = manager.get(archive_id)
-        archive.commit(doc=df)
-        datastore = HISTOREDatastore(
-            archive=archive,
-            metastore=VolatileMetadataStoreFactory()
-        )
-        # Use a cached datastore to speed-up access to the last datset version.
-        datastore = CachedDatastore(datastore=datastore)
-        # Do not include the manager in the handle for the created dataset. We
-        # instead include a reference to the original dataset to maintain the
-        # link to the source of a sampled dataset.
-        ds = DataSample(datastore=datastore, original=handle)
+        # Register the generated sample as a new dataset with a reference to
+        # the original dataset to maintain the link to the source of a sampled
+        # dataset.
+        ds = DataSample(df=df, original=handle)
         self._datasets[name] = ds
         return df
 

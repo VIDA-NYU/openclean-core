@@ -10,7 +10,8 @@
 import pytest
 
 from histore.archive.snapshot import SnapshotListing
-from openclean.engine.log import LogEntry, InsertOp, OperationLog
+from openclean.engine.action import InsertOp, OP_INSCOL
+from openclean.engine.log import LogEntry, OperationLog
 
 
 def test_log_entry_committed():
@@ -22,7 +23,7 @@ def test_log_entry_committed():
     with pytest.raises(ValueError):
         e.is_committed = False
     # Can set the is_commited property for an uncommited entry to False (once).
-    e = LogEntry(descriptor=dict(), version=0, action=InsertOp(names='A'))
+    e = LogEntry(descriptor=dict(), version=0, action=InsertOp(schema=[], names='A'))
     assert not e.is_committed
     e.is_committed = False
     assert not e.is_committed
@@ -45,14 +46,14 @@ def test_log_rollback():
     """Test rollback for log operations."""
     log = OperationLog(snapshots=list(), auto_commit=False)
     for i in range(5):
-        log.add(version=i, action=InsertOp(names='A', pos=i))
+        log.add(version=i, action=InsertOp(schema=[], names='A', pos=i))
     assert len(log) == 5
-    log.rollback(pos=2, version=5, action=InsertOp(names='A', pos=2))
+    log.truncate(pos=3)
     assert len(log) == 3
     positions = [op.descriptor['pos'] for op in log]
     assert positions == [0, 1, 2]
     versions = [op.version for op in log]
-    assert versions == [0, 1, 5]
+    assert versions == [0, 1, 2]
 
 
 def test_operation_log_auto_commit():
@@ -61,13 +62,13 @@ def test_operation_log_auto_commit():
     snapshots = snapshots.append(version=0, action={'action': 0})
     log = OperationLog(snapshots=snapshots, auto_commit=True)
     assert len(log) == 1
-    log.add(version=1, action=InsertOp(names=['A', 'B'], pos=1))
+    log.add(version=1, action=InsertOp(schema=[], names=['A', 'B'], pos=1))
     assert len(log) == 2
     for op in log:
         assert op.is_committed
     descriptors = [op.descriptor for op in log]
     assert descriptors[0] == {'action': 0}
-    assert descriptors[1] == {'type': 'insert', 'columns': ['A', 'B'], 'pos': 1}
+    assert descriptors[1] == {'optype': OP_INSCOL, 'columns': ['A', 'B'], 'pos': 1}
 
 
 def test_operation_log_uncommitted():
@@ -76,11 +77,11 @@ def test_operation_log_uncommitted():
     snapshots = snapshots.append(version=0, action={'action': 0})
     log = OperationLog(snapshots=snapshots, auto_commit=False)
     assert len(log) == 1
-    log.add(version=1, action=InsertOp(names=['A', 'B'], pos=1))
+    log.add(version=1, action=InsertOp(schema=[], names=['A', 'B'], pos=1))
     assert len(log) == 2
     operators = [op for op in log]
     assert operators[0].is_committed
     assert not operators[1].is_committed
     descriptors = [op.descriptor for op in log]
     assert descriptors[0] == {'action': 0}
-    assert descriptors[1] == {'type': 'insert', 'columns': ['A', 'B'], 'pos': 1}
+    assert descriptors[1] == {'optype': OP_INSCOL, 'columns': ['A', 'B'], 'pos': 1}

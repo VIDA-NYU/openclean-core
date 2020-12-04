@@ -10,14 +10,14 @@ a new HISTORE archive will be maintained. This archive is augmented with
 storage of dataset metadata.
 """
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 from histore.archive.snapshot import Snapshot
 
 import pandas as pd
 
 from histore.archive.base import Archive
 
-from openclean.data.archive.base import Datastore
+from openclean.data.archive.base import ActionHandle, Datastore
 from openclean.data.metadata.base import MetadataStore, MetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 
@@ -63,7 +63,7 @@ class HISTOREDatastore(Datastore):
         """
         return self.archive.checkout(version=version)
 
-    def commit(self, df: pd.DataFrame, action: Optional[Dict] = None) -> pd.DataFrame:
+    def commit(self, df: pd.DataFrame, action: Optional[ActionHandle] = None) -> pd.DataFrame:
         """Insert a new version for a dataset. Returns the inserted data frame
         (after potentially modifying the row indexes).
 
@@ -71,15 +71,17 @@ class HISTOREDatastore(Datastore):
         ----------
         df: pd.DataFrame
             Data frame containing the new dataset version that is being stored.
-        action: dict, default=None
-            Optional description of the action that created the new dataset
-            version.
+        action: openclean.data.archive.base.ActionHandle, default=None
+            Optional handle of the action that created the new dataset version.
 
         Returns
         -------
         pd.DataFrame
         """
-        self._last_snapshot = self.archive.commit(doc=df, action=action)
+        self._last_snapshot = self.archive.commit(
+            doc=df,
+            action=action.to_dict() if action is not None else None
+        )
         return self.archive.checkout(version=self._last_snapshot.version)
 
     def last_version(self) -> int:

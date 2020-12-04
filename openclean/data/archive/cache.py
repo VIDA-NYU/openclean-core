@@ -11,11 +11,11 @@ memory.
 
 from dataclasses import dataclass
 from histore.archive.snapshot import Snapshot
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import pandas as pd
 
-from openclean.data.archive.base import Datastore
+from openclean.data.archive.base import ActionHandle, Datastore
 from openclean.data.metadata.base import MetadataStore
 
 
@@ -79,7 +79,7 @@ class CachedDatastore(Datastore):
         self._cache = CacheEntry(df=df, version=version)
         return df
 
-    def commit(self, df: pd.DataFrame, action: Optional[Dict] = None) -> pd.DataFrame:
+    def commit(self, df: pd.DataFrame, action: Optional[ActionHandle] = None) -> pd.DataFrame:
         """Insert a new version for a dataset. Returns the inserted data frame
         (after potentially modifying the row indexes).
 
@@ -87,9 +87,8 @@ class CachedDatastore(Datastore):
         ----------
         df: pd.DataFrame
             Data frame containing the new dataset version that is being stored.
-        action: dict, default=None
-            Optional description of the action that created the new dataset
-            version.
+        action: openclean.data.archive.base.ActionHandle, default=None
+            Optional handle of the action that created the new dataset version.
 
         Returns
         -------

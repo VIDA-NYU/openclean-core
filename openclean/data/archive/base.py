@@ -24,6 +24,22 @@ from openclean.data.metadata.base import MetadataStore
 Datasource = Tuple[pd.DataFrame, CSVFile, str]
 
 
+class ActionHandle(metaclass=ABCMeta):  # pragma: no cover
+    """Interface for action handles. Defines the serializatio method `to_dict`
+    that is used to get a descriptor for the action that created a dataset
+    snapshot.
+    """
+    @abstractmethod
+    def to_dict(self) -> Dict:
+        """Get a dictionary serialization for the action.
+
+        Returns
+        -------
+        dict
+        """
+        raise NotImplementedError()
+
+
 class Datastore(metaclass=ABCMeta):  # pragma: no cover
     """Interface for the data store that is used to maintain the different
     versions of a dataset that a user creates using the openclean (Jupyter)
@@ -54,7 +70,7 @@ class Datastore(metaclass=ABCMeta):  # pragma: no cover
         raise NotImplementedError()
 
     @abstractmethod
-    def commit(self, df: pd.DataFrame, action: Optional[Dict] = None) -> pd.DataFrame:
+    def commit(self, df: pd.DataFrame, action: Optional[ActionHandle] = None) -> pd.DataFrame:
         """Insert a new dataset snapshot.
 
         Returns the inserted data frame (after potentially modifying the row
@@ -64,9 +80,8 @@ class Datastore(metaclass=ABCMeta):  # pragma: no cover
         ----------
         df: pd.DataFrame
             Data frame containing the new dataset version that is being stored.
-        action: dict, default=None
-            Optional description of the action that created the new dataset
-            version.
+        action: openclean.data.archive.base.ActionHandle, default=None
+            Optional handle of the action that created the new dataset version.
 
         Returns
         -------
