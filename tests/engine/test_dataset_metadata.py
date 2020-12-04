@@ -16,9 +16,9 @@ def test_dataset_metadata(persistent_engine, dataset):
     """Test accessing snapshot metadata for a dataset via the openclean engine."""
     persistent_engine.create(source=dataset, name='DS')
     persistent_engine.metadata('DS').set_annotation(key='A', value=1)
+    assert persistent_engine.metadata('DS').get_annotation(key='A') == 1
     persistent_engine.dataset('DS').update(columns='A', func=0)
     persistent_engine.metadata('DS').set_annotation(key='A', value=2)
-    assert persistent_engine.metadata('DS', version=0).get_annotation(key='A') == 1
-    assert persistent_engine.metadata('DS', version=1).get_annotation(key='A') == 2
+    assert persistent_engine.metadata('DS').get_annotation(key='A') == 2
     with pytest.raises(ValueError):
         persistent_engine.metadata('UNKNOWN')
