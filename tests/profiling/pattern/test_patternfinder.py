@@ -7,7 +7,7 @@
 
 """Unit tests for the patternfinder class."""
 
-from openclean.profiling.pattern import OpencleanPatternFinder
+from openclean.profiling.pattern.ocpattern import OpencleanPatternFinder
 from openclean_pattern.datatypes.base import SupportedDataTypes
 
 

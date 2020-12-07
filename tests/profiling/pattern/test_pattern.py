@@ -8,7 +8,7 @@
 """Unit tests for the pattern class."""
 
 
-from openclean.profiling.pattern import OpencleanPatternFinder, IsNotMatch, IsMatch
+from openclean.profiling.pattern.ocpattern import OpencleanPatternFinder, IsNotMatch, IsMatch
 
 
 def test_pattern_compare(nyc311):
