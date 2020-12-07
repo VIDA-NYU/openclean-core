@@ -118,9 +118,8 @@ class ValueFunction(metaclass=ABCMeta):
 
         Parameters
         ----------
-        values: dict
-            Set of distinct scalar values or tuples of scalar values that are
-            mapped to their respective frequency count.
+        values: list
+            List of scalar values or tuples of scalar values.
 
         Returns
         -------
@@ -219,6 +218,36 @@ class ConstantValue(PreparedFunction):
         any
         """
         return self.value
+
+
+class UnpreparedFunction(ValueFunction):
+    """Abstract base class for value functions that make use of the prepare
+    method. These functions are expected to return a new instance of a different
+    value function class as the result of the prepare step.
+    """
+    def eval(self, value: Value) -> Value:
+        """Raise an error if the eval method is called since this indicates that
+        the function has not been prepared.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        raise NotImplementedError()
+
+    def is_prepared(self) -> bool:
+        """Returns False because the function required to be prepared.
+
+        Returns
+        -------
+        bool
+        """
+        return False
 
 
 # -- Helper classes and functions ---------------------------------------------

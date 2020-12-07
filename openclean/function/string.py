@@ -7,59 +7,68 @@
 
 """Helper functions for strings."""
 
+from typing import Any
 
-def to_lower(value):
+
+def to_len(value: Any) -> int:
+    """Get the length of a value. The value is converted to string and the
+    number of characters in the resulting string is returned.
+
+    Parameters
+    ----------
+    value: any
+        Value whose length is returned.
+
+    Returns
+    -------
+    int
+    """
+    return len(str(value))
+
+
+def to_lower(value: Any) -> str:
     """Convert value to lower case stirng. Handles cases where value is not a
     string.
 
     Parameters
     ----------
     value: any
-        Value that is converted to lower case strng.
+        Value that is converted to lower case string.
 
     Returns
     -------
     string
     """
-    try:
-        return value.lower()
-    except AttributeError:
-        return str(value).lower()
+    return str(value).lower()
 
 
-def to_upper(value):
+def to_upper(value: Any) -> str:
     """Convert value to upper case stirng. Handles cases where value is not a
     string.
 
     Parameters
     ----------
     value: any
-        Value that is converted to upper case strng.
+        Value that is converted to upper case string.
 
     Returns
     -------
     string
     """
-    try:
-        return value.upper()
-    except AttributeError:
-        return str(value).upper()
+    return str(value).upper()
 
 
-def to_title(value):
+def to_title(value: Any) -> str:
     """Convert value to title case stirng. Handles cases where value is not a
     string.
 
     Parameters
     ----------
     value: any
-        Value that is converted to title case strng.
+        Value that is converted to title case string.
 
     Returns
     -------
     string
     """
-    try:
-        return value.title()
-    except AttributeError:
-        return str(value).title()
+    return str(value).title()
