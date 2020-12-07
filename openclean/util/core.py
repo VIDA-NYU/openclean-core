@@ -167,6 +167,21 @@ def scalar_pass_through(value):
     return value
 
 
+def tenary_pass_through(*args):
+    """Pass-through method for a list of argument values.
+
+    Parameters
+    ----------
+    args: list of scalar
+        List of argument values.
+
+    Returns
+    -------
+    scalar
+    """
+    return args
+
+
 def unique_identifier(length: Optional[int] = None) -> str:
     """Get an identifier string of given length. Uses UUID to generate a unique
     string and return the requested number of characters from that string.

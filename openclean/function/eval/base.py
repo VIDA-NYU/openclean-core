@@ -21,6 +21,7 @@ from openclean.data.stream.base import DataRow, StreamFunction
 from openclean.data.schema import column_ref, select_clause
 from openclean.data.types import Column, Columns, Scalar, Schema, Value
 from openclean.function.value.base import ValueFunction
+from openclean.util.core import scalar_pass_through, tenary_pass_through
 
 
 # -- Evaluation Functions -----------------------------------------------------
@@ -495,6 +496,11 @@ class Eval(EvalFunction):
             # Columns is a single value.
             self.producers.append(to_column_eval(columns))
             self.is_unary = True
+        # Ensure that func is given. If the current value is None we set func
+        # to either a unary function or a tenary function (depending on the
+        # value of the is_unary flag).
+        if func is None:
+            func = scalar_pass_through if self.is_unary else tenary_pass_through
         # The consumer is either a value function or a callable. If it is a
         # value function it might require preparation. A callable will never
         # require preparation.
@@ -1151,7 +1157,7 @@ def to_const_eval(value):
     return value
 
 
-def to_column_eval(value):
+def to_column_eval(value: InputColumn) -> EvalFunction:
     """Convert a value into an evaluation function. If the value s not already
     an evaluation function, a column evaluation function is returned.
 
