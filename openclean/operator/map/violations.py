@@ -163,7 +163,7 @@ class Violations(DataFrameMapper):
         openclean.data.groupby.DataFrameViolation
         """
         groups, meta = self._transform(df=df)
-        grouping = DataFrameViolation(df=df, lhs=self.lhs, rhs=self.rhs)
+        grouping = DataFrameViolation(df=df)
         for key, rows in groups.items():
             if Violations.select(condition=self.having, meta=meta[key]):
                 grouping.add(key=key, rows=rows, meta=meta[key])
