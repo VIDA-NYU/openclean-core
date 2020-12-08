@@ -27,6 +27,10 @@ can output a stage state object.
 from abc import ABCMeta, abstractmethod
 from typing import List, Union
 
+import pandas as pd
+
+from openclean.data.groupby import DataFrameGrouping
+
 
 """Type alias definition for parameters and return values of different
 operators in openclean.
@@ -38,7 +42,7 @@ Names = Union[str, List[str]]
 
 class PipelineStage(metaclass=ABCMeta):
     """Generic pipline stage interface."""
-    def is_group_reducer(self):
+    def is_group_reducer(self) -> bool:
         """Test whether a pipeline operator is a (sub-)class of the data group
         reducer type.
 
@@ -48,7 +52,7 @@ class PipelineStage(metaclass=ABCMeta):
         """
         return isinstance(self, DataGroupReducer)
 
-    def is_group_transformer(self):
+    def is_group_transformer(self) -> bool:
         """Test whether a pipeline operator is a (sub-)class of the data group
         transformer type.
 
@@ -58,7 +62,7 @@ class PipelineStage(metaclass=ABCMeta):
         """
         return isinstance(self, DataGroupTransformer)
 
-    def is_frame_mapper(self):
+    def is_frame_mapper(self) -> bool:
         """Test whether a pipeline operator is a (sub-)class of the data frame
         mapper type.
 
@@ -68,7 +72,7 @@ class PipelineStage(metaclass=ABCMeta):
         """
         return isinstance(self, DataFrameMapper)
 
-    def is_frame_splitter(self):
+    def is_frame_splitter(self) -> bool:
         """Test whether a pipeline operator is a (sub-)class of the data frame
         splitter type.
 
@@ -78,7 +82,7 @@ class PipelineStage(metaclass=ABCMeta):
         """
         return isinstance(self, DataFrameSplitter)
 
-    def is_frame_transformer(self):
+    def is_frame_transformer(self) -> bool:
         """Test whether a pipeline operator is a (sub-)class of the data frame
         transformer type.
 
@@ -93,7 +97,7 @@ class DataGroupReducer(PipelineStage):
     """Abstract class for pipeline components that take a group of data frames
     as input and return a single data frame as output.
     """
-    def __call__(self, df):
+    def __call__(self, groups: DataFrameGrouping) -> pd.DataFrame:
         """Make the operator callable. Executes the reduce method.
 
         Parameters
@@ -105,10 +109,10 @@ class DataGroupReducer(PipelineStage):
         -------
         pd.DataFrame
         """
-        return self.reduce(df)
+        return self.reduce(groups)
 
     @abstractmethod
-    def reduce(self, groups):
+    def reduce(self, groups: DataFrameGrouping) -> pd.DataFrame:
         """This is the main method that each subclass of the group reducer has
         to implement. The input is a pandas data frame grouping. The output is
         a single data frame.

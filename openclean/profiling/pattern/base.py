@@ -14,7 +14,7 @@ from openclean.function.value.base import ProfilingFunction
 import openclean.util.core as util
 
 
-class Pattern(metaclass=ABCMeta):
+class Pattern(metaclass=ABCMeta):  # pragma: no cover
     """Interface for objects representing patterns, e.g., a regular expression,
     that was discovered by a pattern finder. Implementations maintain a
     representation of the pattern itself as well as any additional metadata
@@ -75,6 +75,7 @@ class Pattern(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
+    @abstractmethod
     def to_dict(self):
         """Returns a dictionary serialization of the pattern. This is an
         external representation that is used when the results of a pattern
@@ -126,7 +127,7 @@ class PatternFinder(ProfilingFunction, metaclass=ABCMeta):
         return result
 
     @abstractmethod
-    def find(self, values):
+    def find(self, values):  # pragma: no cover
         """Discover patterns like regular expressions in a given sequence of
         (distinct) values. Returns a list of objects representing the
         discovered patterns.
