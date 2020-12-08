@@ -570,9 +570,8 @@ class Eval(EvalFunction):
             func = self.decorate(prep_consumer)
             return [func(v) for v in data]
         else:
-            # Inputs for the consumer come from multiple producers. Start by a
-            # list of lists by evaluating the producers on the given data
-            # frame.
+            # Inputs for the consumer come from multiple producers. Start with a
+            # list of lists by evaluating the producers on the given data frame.
             data = [f.eval(df) for f in self.producers]
             # Prepare the consumer if necessary.
             if not self._is_prepared:
