@@ -27,7 +27,6 @@ install_requires = [
     'fuzzyset==0.0.19',
     'jellyfish',
     'scipy',
-    'openclean-pattern'
 ]
 
 
