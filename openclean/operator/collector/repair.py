@@ -7,7 +7,7 @@
 
 """Repair function for groups of rows that represent constraint violations."""
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -21,7 +21,7 @@ from openclean.operator.base import DataGroupReducer
 from openclean.operator.transform.update import update
 
 
-"""Import default conflict resolution functions."""
+# Import default conflict resolution functions.
 from openclean.function.value.aggregate import Longest, Max, Min, Shortest  # noqa: F401
 from openclean.function.value.random import RandomSelect as Random  # noqa: F401
 from openclean.function.value.vote import MajorityVote as Vote  # noqa: F401
