@@ -9,18 +9,25 @@
 matcher classes.
 """
 
-from openclean.function.matching.base import StringSimilarity, StringMatchResult
+from openclean.data.mapping import StringMatch
+from openclean.function.matching.base import StringSimilarity
 
 from typing import List, Iterable
 
-class DummySimilarity(StringSimilarity):
-    """Dummy string similarity that uses the normalized difference in value
-    length as the similarity score, i.e., min(len(val1, val2) divided by
-    max(len(val1, val2)).
+
+class DummyMatcher(StringSimilarity):
+    """Dummy string similarity that returns a list of matches that is initialized
+    when the object is constructed.
     """
-    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
-        """Returns the different in length between the query sting and a list of vocabulary as their
-        similarity scores.
+    def __init__(self, matches: List[StringMatch]):
+        """Initialize the list of matches that is returned as the result for
+        any query string.
+        """
+        self.result = matches
+
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:
+        """Returns the list of matches that was initialized when the object was
+        constructed.
 
         Parameters
         ----------
@@ -31,11 +38,6 @@ class DummySimilarity(StringSimilarity):
 
         Returns
         -------
-        List[StringMatchResult]
+        list of openclean.data.mapping.StringMatch
         """
-        matches = list()
-        for term in vocabulary:
-            length = [len(str(query)), len(str(term))]
-            score = min(length) / max(length)
-            matches.append((score, term))
-        return matches
+        return self.result

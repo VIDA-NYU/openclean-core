@@ -8,28 +8,26 @@
 """Base classes and types for string matching functions."""
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Iterable, List, Optional, Tuple
+from typing import Callable, Iterable, List, Optional
 
+from openclean.data.mapping import Mapping, ExactMatch, NoMatch, StringMatch
 from openclean.function.string import to_lower
 from openclean.util.core import scalar_pass_through
 
-"""Type alias for matching results during vocabulary lookups. Matches for a
-query string are represented as (matches-string, score)-pairs.
-"""
-StringMatchResult = Tuple[float, str]
 
 # -- String similarity --------------------------------------------------------
 
 class StringSimilarity(metaclass=ABCMeta):
     """Abstract base class for functions that compute similarity scores between
-    a list of terms and a query string and return a list of StringMatchResults.
-     String similarity scores should be values in the interval [0-1] where 0
-     indicates no match and 1 indicates an exact match.
+    a list of terms and a query string and return a list of StringMatch results.
+    String similarity scores should be values in the interval [0-1] where 0
+    indicates no match and 1 indicates an exact match.
     """
     @abstractmethod
-    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
-        """Compute a similarity score for a string against items from a vocabulary iterable.
-        A score of 1 indicates an exact match. A score of 0 indicates a no match.
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:  # pragma: no cover
+        """Compute a similarity score for a string against items from a vocabulary
+        iterable. A score of 1 indicates an exact match. A score of 0 indicates a
+        no match.
 
         Parameters
         ----------
@@ -40,13 +38,14 @@ class StringSimilarity(metaclass=ABCMeta):
 
         Returns
         -------
-        List[StringMatchResult]
+        list of openclean.data.mapping.StringMatch
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
-    def score(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
-        """Synonym for the match function. Compute a similarity score for a string against items
-        from a vocabulary iterable. A score of 1 indicates an exact match. A score of 0 indicates a no match.
+    def score(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:
+        """Synonym for the match function. Compute a similarity score for a string
+        against items from a vocabulary iterable. A score of 1 indicates an exact
+        match. A score of 0 indicates a no match.
 
         Parameters
         ----------
@@ -57,7 +56,7 @@ class StringSimilarity(metaclass=ABCMeta):
 
         Returns
         -------
-        List[StringMatchResult]
+        list of openclean.data.mapping.StringMatch
         """
         return self.match(vocabulary, query)
 
@@ -93,9 +92,9 @@ class ExactSimilarity(StringSimilarity):
         self.transformer = transformer
         self.ignore_case = ignore_case
 
-    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatchResult]:
-        """Cross reference query with the vocabulary strings for equality. Returns 1 if the given arguments
-        are the same and 0 otherwise.
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:
+        """Cross reference query with the vocabulary strings for equality. Returns
+        an exact match if the given arguments are the same and a NoMatch otherwise.
 
         Parameters
         ----------
@@ -106,13 +105,14 @@ class ExactSimilarity(StringSimilarity):
 
         Returns
         -------
-        List[StringMatchResult]
+        list of openclean.data.mapping.StringMatch
         """
         matches = list()
         for term in vocabulary:
             l_term = to_lower(term) if self.ignore_case else term
             l_query = to_lower(query) if self.ignore_case else query
-            matches.append((1., term)) if self.transformer(l_term) == self.transformer(l_query) else matches.append((0., term))
+            m = ExactMatch(term) if self.transformer(l_term) == self.transformer(l_query) else NoMatch(term)
+            matches.append(m)
         return matches
 
 
@@ -135,7 +135,7 @@ class StringMatcher(metaclass=ABCMeta):
         self.vocabulary = terms
 
     @abstractmethod
-    def find_matches(self, query: str) -> List[StringMatchResult]:
+    def find_matches(self, query: str) -> List[StringMatch]:  # pragma: no cover
         """Find matches for a given query string in the associated vocabulary.
         Depending on the implementation the result may contain more than one
         matched string from the vocabulary. Each match is a pair of matched
@@ -153,7 +153,7 @@ class StringMatcher(metaclass=ABCMeta):
         -------
         list of (string, float) pairs
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     def matched_values(self, query: str) -> List[str]:
         """Get only a list of matched values for a given query string. Excludes
@@ -168,7 +168,7 @@ class StringMatcher(metaclass=ABCMeta):
         -------
         list of string
         """
-        return [value for _, value in self.find_matches(query)]
+        return [m.term for m in self.find_matches(query)]
 
 
 class DefaultStringMatcher(StringMatcher):
@@ -227,7 +227,7 @@ class DefaultStringMatcher(StringMatcher):
         # cache_results flag is True.
         self._cache = dict() if cache_results else None
 
-    def find_matches(self, query: str) -> List[StringMatchResult]:
+    def find_matches(self, query: str) -> List[StringMatch]:
         """Find matches for a given query string in the associated vocabulary.
         Depending on the implementation the result may contain more than one
         matched string from the vocabulary. Each match is a pair of matched
@@ -243,7 +243,7 @@ class DefaultStringMatcher(StringMatcher):
 
         Returns
         -------
-        List[StringMatchResult]
+        list of openclean.data.mapping.StringMatch
         """
         # Lookup results in the cache first.
         if self._cache and query in self._cache:
@@ -253,28 +253,65 @@ class DefaultStringMatcher(StringMatcher):
         matches = list()
         results = self.similarity.score(self.vocabulary, query)
         if results is not None:
-            for score, term in results:
-                if score > self.no_match_threshold:
-                    m = (score, term)
+            for match in results:
+                if match.score > self.no_match_threshold:
                     if self.best_matches_only and matches:
                         # If the best_matches_only flag is True we only need to add
                         # the match if the score is greater or equal than the
                         # current best score.
-                        best_match = matches[0][0]
-                        if score > best_match:
+                        best_match = matches[0].score
+                        if match.score > best_match:
                             # Replace the list of matches with the current match
                             # since it has a higher score that the previous best
                             # match.
-                            matches = [m]
-                        elif score == best_match:
-                            matches.append(m)
+                            matches = [match]
+                        elif match.score == best_match:
+                            matches.append(match)
                     else:
-                        matches.append(m)
+                        matches.append(match)
             # Sort matches by decreasing score (only if best_matches_only is False
             # and we may have matches with different scores).
             if not self.best_matches_only:
-                matches.sort(key=lambda m: m[0], reverse=True)
+                matches.sort(key=lambda m: m.score, reverse=True)
         # Add the result to the cache (if using).
         if self._cache is not None:
             self._cache[query] = matches
         return matches
+
+
+# -- Best match finder function -----------------------------------------------
+
+def best_matches(
+        values: Iterable[str], matcher: StringMatcher,
+        include_vocab: Optional[bool] = False
+) -> Mapping:
+    """Generate a mapping of best matches for a list of values. For each value
+    in the given list the best matches with a given vocabulary are computed and
+    added to the returned mapping.
+
+    If the include_vocab flag is False the resulting mapping will contain a
+    mapping only for those values in the input list that do not already occur
+    in the vocabulary, i.e., the unknown values with respect to the known
+    vocabulary.
+
+    Parameters
+    ----------
+    values: iterable of strings
+        List of terms (e.g., from a data frame column) for which matches are
+        computed for the returned mapping.
+    matcher: openclean.function.matching.base.StringMatcher
+        Matcher to compute matches for the terms in a controlled vocabulary.
+    include_vocab: bool, default=False
+        If this flag is False the resulting mapping will only contain matches
+        for terms that are not in the vocabulary that is associated with the
+        given similarity.
+
+    Returns
+    -------
+    openclean.data.mapping.Mapping
+    """
+    map = Mapping()
+    for val in values:
+        if include_vocab or val not in matcher.vocabulary:
+            map.add(val, matcher.find_matches(val))
+    return map

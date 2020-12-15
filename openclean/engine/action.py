@@ -18,7 +18,7 @@ from openclean.data.archive.base import ActionHandle
 from openclean.data.schema import select_clause
 from openclean.data.types import Columns, Scalar, Schema
 from openclean.function.eval.base import Eval, EvalFunction, to_const_eval
-from openclean.engine.library.func import FunctionHandle
+from openclean.engine.object.function import FunctionHandle
 
 
 """Operator types."""
@@ -51,7 +51,7 @@ class OpHandle(ActionHandle):
         columns: int, string, or list of int or string, default=None
             List of columns. This defines the columns that are affected (e.g.,
             updated) by the operation.
-        func: scalar or openclean.engine.library.func.FunctionHandle
+        func: scalar or openclean.engine.object.func.FunctionHandle
             Scalar value or library function that is used to generate values for
             the modified column(s).
         args: dict, default=None
@@ -147,7 +147,7 @@ class InsertOp(OpHandle):
         pos: int, default=None
             Insert position for the new columns. If None, the columns will be
             appended.
-        values: scalar or openclean.engine.library.func.FunctionHandle, default=None
+        values: scalar or openclean.engine.object.func.FunctionHandle, default=None
             Single value, tuple of values, or library function that is used to
             generate the values for the inserted column(s). If no default is
             specified all columns will contain None.
@@ -247,7 +247,7 @@ class UpdateOp(OpHandle):
             Column names in the dataset schema.
         columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
-        func: openclean.engine.library.func.FunctionHandle
+        func: openclean.engine.object.func.FunctionHandle
             Library function that is used to generate modified values for the
             updated column(s).
         args: dict, default=None

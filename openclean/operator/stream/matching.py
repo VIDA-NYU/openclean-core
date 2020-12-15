@@ -3,7 +3,7 @@ from typing import Optional
 from openclean.data.stream.base import DataRow
 from openclean.data.types import Schema
 from openclean.function.matching.base import StringMatcher
-from openclean.function.matching.mapping import Mapping
+from openclean.data.mapping import Mapping
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 
@@ -24,7 +24,7 @@ class BestMatches(StreamConsumer, StreamProcessor):
             If this flag is False the resulting mapping will only contain matches
             for terms that are not in the vocabulary that is associated with the
             given matcher.
-        mapping: openclean.function.matching.mapping.Mapping, default=None
+        mapping: openclean.data.mapping.Mapping, default=None
             Mapping instance that is used to collect the matches.
         """
         self.matcher = matcher
@@ -36,7 +36,7 @@ class BestMatches(StreamConsumer, StreamProcessor):
 
         Returns
         -------
-        openclean.function.matching.mapping.Mapping
+        openclean.data.mapping.Mapping
         """
         return self.mapping
 
@@ -58,7 +58,7 @@ class BestMatches(StreamConsumer, StreamProcessor):
 
         Returns
         -------
-        openclean.function.matching.mapping.Mapping
+        openclean.data.mapping.Mapping
         """
         val = row[0]
         if self.include_vocab or val not in self.matcher.vocabulary:

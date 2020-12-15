@@ -14,7 +14,7 @@ from openclean.operator.transform.update import swap, update, Update
 
 from openclean.function.matching.fuzzy import FuzzySimilarity
 from openclean.function.matching.base import DefaultStringMatcher
-from openclean.function.matching.mapping import best_matches
+from openclean.function.matching.base import best_matches
 from openclean.function.value.domain import BestMatch
 
 

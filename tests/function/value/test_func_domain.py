@@ -9,8 +9,9 @@
 
 import pytest
 
+from openclean.data.mapping import ExactMatch
 from openclean.function.matching.base import DefaultStringMatcher
-from openclean.function.matching.tests import DummySimilarity
+from openclean.function.matching.tests import DummyMatcher
 from openclean.function.value.domain import (
     BestMatch, IsInDomain, IsNotInDomain
 )
@@ -22,7 +23,7 @@ def test_func_best_match():
     f = BestMatch(
         matcher=DefaultStringMatcher(
             vocabulary=domain,
-            similarity=DummySimilarity(),
+            similarity=DummyMatcher([ExactMatch('b')]),
             no_match_threshold=0.5
         )
     )
@@ -30,9 +31,23 @@ def test_func_best_match():
     assert f.eval('A') == 'b'
     # -- Error cases ----------------------------------------------------------
     # Empty result set.
+    f = BestMatch(
+        matcher=DefaultStringMatcher(
+            vocabulary=domain,
+            similarity=DummyMatcher([]),
+            no_match_threshold=0.5
+        )
+    )
     with pytest.raises(ValueError):
         f.eval('ABCDEFGHIJKLMNOP')
     # Multiple best matches
+    f = BestMatch(
+        matcher=DefaultStringMatcher(
+            vocabulary=domain,
+            similarity=DummyMatcher([ExactMatch('A'), ExactMatch('B')]),
+            no_match_threshold=0.5
+        )
+    )
     with pytest.raises(ValueError):
         f.eval('ad')
 
