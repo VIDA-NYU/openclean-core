@@ -3,7 +3,7 @@ openclean - Data Cleaning for Python
 ====================================
 
 .. image:: https://img.shields.io/badge/License-BSD-green.svg
-    :target: https://github.com/heikomuller/histore/blob/master/LICENSE
+    :target: https://github.com/VIDA-NYU/openclean-core/blob/master/LICENSE
 
 .. image:: https://codecov.io/gh/VIDA-NYU/openclean-core/branch/master/graph/badge.svg?token=5TG0P12FO5
     :target: https://codecov.io/gh/VIDA-NYU/openclean-core
@@ -17,7 +17,7 @@ openclean - Data Cleaning for Python
 About
 =====
 
-**openclean** is a Python library for data profiling and data cleaning. The is motivated by the fact that data preparation is still a major bottleneck for many data science projects. Data preparation requires profiling to gain an understanding of data quality issues, and data manipulation to transform the data into a form that is fit for the intended purpose.
+**openclean** is a Python library for data profiling and data cleaning. The project is motivated by the fact that data preparation is still a major bottleneck for many data science projects. Data preparation requires profiling to gain an understanding of data quality issues, and data manipulation to transform the data into a form that is fit for the intended purpose.
 
 While a large number of different tools and techniques have previously been developed for profiling and cleaning data, one main issue that we see with these tools is the lack of access to them in a single (unified) framework. Existing tools may be implemented in different programming languages and require significant effort to install and interface with. In other cases, promising data cleaning methods have been published in the scientific literature but there is no suitable codebase available for them. We believe that the lack of seamless access to existing work is a major contributor to why data preparation is so time consuming.
 
@@ -47,6 +47,5 @@ New York City Restaurant Inspection Results
 
 In this example our goal is to reproduce a previous `study from 2014 that looks at the distribution of restaurant inspection grades in New York City <https://iquantny.tumblr.com/post/76928412519/think-nyc-restaurant-grading-is-flawed-heres>`_. For our study, we use data that was downloaded in Sept. 2019. The example is split into three different Jupyter notebooks:
 
-- `Download the Dataset <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Download.ipynb>`_
 - `Data Profiling <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Profiling.ipynb>`_
 - `Data Cleaning <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Cleaning.ipynb>`_

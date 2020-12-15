@@ -15,7 +15,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from openclean.data.archive.base import ActionHandle, Datastore
+from openclean.data.archive.base import ActionHandle, ArchiveStore
 from openclean.data.metadata.base import MetadataStore
 
 
@@ -28,13 +28,13 @@ class CacheEntry:
     version: int = None
 
 
-class CachedDatastore(Datastore):
+class CachedDatastore(ArchiveStore):
     """Wrapper around a datastore that maintains the last dataset version that
     was commited or checked out in main memory. This follows the assumption that
     the spreadsheet view will always display (and modify) this version (and only
     this version).
     """
-    def __init__(self, datastore: Datastore):
+    def __init__(self, datastore: ArchiveStore):
         """Initialize the reference to the wrapped datastore.
 
         Parameters
