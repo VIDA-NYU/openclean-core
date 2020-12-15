@@ -7,8 +7,8 @@
 
 """Unit tests for (de-)serialization of function handles."""
 
-from openclean.engine.library.func import FunctionHandle, FunctionSerializer
-from openclean.engine.library.parameter import Int
+from openclean.engine.object.function import FunctionHandle, FunctionFactory
+from openclean.engine.object.function import Int
 
 
 def my_func(n):
@@ -20,12 +20,12 @@ def test_serialize_function():
     """Test serialization and deserialization of function handles."""
     # Serialize minimal function handle.
     f = FunctionHandle(func=my_func)
-    doc = FunctionSerializer().serialize(f)
-    f = FunctionSerializer().deserialize(doc)
+    doc, data = FunctionFactory().serialize(f)
+    f = FunctionFactory().deserialize(descriptor=doc, data=data)
     assert f.name == 'my_func'
     assert f.namespace is None
     assert f.label is None
-    assert f.help is None
+    assert f.description is None
     assert f.columns == 1
     assert f.outputs == 1
     assert f.parameters == []
@@ -36,17 +36,17 @@ def test_serialize_function():
         name='myname',
         namespace='mynamespace',
         label='My Name',
-        help='Just a test',
+        description='Just a test',
         columns=2,
         outputs=3,
         parameters=[Int('sleep')]
     )
-    doc = FunctionSerializer().serialize(f)
-    f = FunctionSerializer().deserialize(doc)
+    doc, data = FunctionFactory().serialize(f)
+    f = FunctionFactory().deserialize(descriptor=doc, data=data)
     assert f.name == 'myname'
     assert f.namespace == 'mynamespace'
     assert f.label == 'My Name'
-    assert f.help == 'Just a test'
+    assert f.description == 'Just a test'
     assert f.columns == 2
     assert f.outputs == 3
     assert len(f.parameters) == 1

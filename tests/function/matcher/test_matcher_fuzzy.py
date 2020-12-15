@@ -11,6 +11,7 @@ implementations.
 
 import pytest
 
+from openclean.data.mapping import StringMatch
 from openclean.function.matching.fuzzy import FuzzySimilarity
 from openclean.function.matching.base import DefaultStringMatcher
 
@@ -25,25 +26,6 @@ VOCABULARY = [
     'Edinburgh',
     'Rio de Janeiro',
 ]
-
-
-@pytest.mark.parametrize('use_cache', [True, False])
-def test_default_vocabulary_matcher_caching(use_cache):
-    """Ensure that the default matcher show the same behavior independently
-    of using result caching or not.
-    """
-    vocab = DefaultStringMatcher(
-        vocabulary=VOCABULARY,
-        similarity=FuzzySimilarity(),
-        cache_results=use_cache
-    )
-    matches = vocab.find_matches('Rio de Janero')
-    assert len(matches) == 1
-    assert set(vocab.matched_values('Rio de Janero')) == {'Rio de Janeiro'}
-
-    matches = vocab.find_matches('New Jersey')
-    assert len(matches) == 1
-    assert set(vocab.matched_values('New Jersey')) == {'New York'}
 
 
 @pytest.mark.parametrize(
@@ -65,6 +47,8 @@ def test_default_vocabulary_matcher_config(
     )
     matches = vocab.find_matches(query)
     assert len(matches) == best_matches
+    for m in matches:
+        assert isinstance(m, StringMatch)
     # Best matches only
     vocab = DefaultStringMatcher(
         vocabulary=VOCABULARY,

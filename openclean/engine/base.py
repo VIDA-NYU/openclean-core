@@ -15,14 +15,13 @@ lookup tables, etc..
 """
 
 from histore.archive.manager.base import ArchiveManager
-from histore.archive.manager.persist import PersistentArchiveManager
 from histore.archive.manager.mem import VolatileArchiveManager
+from histore.archive.manager.persist import PersistentArchiveManager
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 import os
 
-from openclean.util.core import unique_identifier
 from openclean.data.archive.base import Datasource
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
@@ -30,13 +29,11 @@ from openclean.data.metadata.base import MetadataStore
 from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 from openclean.engine.action import LoadOp
-from openclean.engine.data import DatasetHandle, FullDataset, DataSample
-from openclean.engine.library.base import ObjectLibrary, DTYPE_FUNC
-from openclean.engine.library.func import FunctionSerializer
+from openclean.engine.dataset import DatasetHandle, FullDataset, DataSample
+from openclean.engine.library import ObjectLibrary
 from openclean.engine.registry import registry
-from openclean.engine.store.fs import FileSystemObjectStore
-from openclean.engine.store.mem import VolatileObjectRepository
-from openclean.engine.store.serialized import SerializedObjectRepository
+
+import openclean.util.core as util
 
 
 class OpencleanEngine(object):
@@ -64,7 +61,7 @@ class OpencleanEngine(object):
             Unique identifier for the engine instance.
         manager: histore.archive.manager.base.ArchiveManager
             Manager for created dataset archives.
-        library: openclean.engine.library.base.ObjectLibrary
+        library: openclean.engine.object.base.ObjectLibrary
             Library manager for objects (e.g., registered functions).
         basedir: string, default=None
             Path to directory on disk where archive metadata is maintained.
@@ -210,7 +207,7 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        openclean.engine.data.DatasetHandle
+        openclean.engine.dataset.DatasetHandle
         """
         if name not in self._datasets:
             raise ValueError("unknown dataset '{}'".format(name))
@@ -296,7 +293,7 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        openclean.engine.library.base.ObjectLibrary
+        openclean.engine.object.base.ObjectLibrary
         """
         return self.library
 
@@ -353,10 +350,10 @@ def DB(
     basedir: Optional[str] = None, create: Optional[bool] = False,
     cached: Optional[bool] = True
 ) -> OpencleanEngine:
-    """Create an instance of the openclean-goes-jupyter engine. This test
-    implementation uses HISTORE as the underlying datastore. All files will
-    be stored in the given base directory. If no base directory is given, a
-    volatile archive manager will be used instead of a persistent one.
+    """Create an instance of the openclean engine. Uses a persistent engine if
+    a base directory is given. This test implementation uses HISTORE as the
+    underlying datastore for a persistent engine. If no base directory is given,
+    a volatile archive manager will be used instead of a persistent one.
 
     If the create flag is True all existing files in the base directory (if
     given) will be removed.
@@ -379,25 +376,20 @@ def DB(
     # Create a unique identifier to register the created engine in the
     # global registry dictionary. Use an 8-character key here. Make sure to
     # account for possible conflicts.
-    engine_id = unique_identifier(8)
+    engine_id = util.unique_identifier(8)
     while engine_id in registry:
-        engine_id = unique_identifier(8)
+        engine_id = util.unique_identifier(8)
     # Create the engine components and the engine instance itself.
     if basedir is not None:
         histore = PersistentArchiveManager(basedir=basedir, create=create)
-        objects = SerializedObjectRepository(
-            store=FileSystemObjectStore(os.path.join(basedir, '.objects')),
-            serializers={DTYPE_FUNC: FunctionSerializer()}
-        )
         metadir = os.path.join(basedir, '.metadata')
     else:
         histore = VolatileArchiveManager()
-        objects = VolatileObjectRepository()
         metadir = None
     engine = OpencleanEngine(
         identifier=engine_id,
         manager=histore,
-        library=ObjectLibrary(store=objects),
+        library=ObjectLibrary(),
         basedir=metadir,
         cached=cached
     )

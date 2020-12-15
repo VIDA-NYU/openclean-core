@@ -5,7 +5,9 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for registering and executing commands via the openclean engine."""
+"""Unit tests for registering and executing commands via the openclean library."""
+
+from openclean.engine.library import ObjectLibrary
 
 
 def add_ten(n):
@@ -13,8 +15,10 @@ def add_ten(n):
     return n + 10
 
 
-def test_register_and__update(volatile_engine):
+def test_register_user_defined_function():
     """Test registering and applying a user defined function."""
-    volatile_engine.register.eval('addten')(add_ten)
-    f = volatile_engine.register.get('addten')
+    library = ObjectLibrary()
+    f = library.eval('addten')(add_ten)
+    assert f(1) == 11
+    f = library.functions().get_object('addten')
     assert f(1) == 11

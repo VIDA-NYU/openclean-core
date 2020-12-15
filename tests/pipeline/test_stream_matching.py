@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 
 
+from openclean.data.mapping import ExactMatch
 from openclean.function.matching.base import DefaultStringMatcher
 from openclean.function.value.phonetic import Soundex
 from openclean.pipeline import stream
@@ -32,8 +33,8 @@ def test_match_vacabulary_in_stream(dataset):
         similarity=Soundex()
     )
     map = stream(dataset).select('city').match(matcher=vocab)
-    assert map['Brooklin'] == [(1.0, 'Brooklyn')]
-    assert map['Quens'] == [(1.0, 'Queens')]
+    assert map['Brooklin'] == [ExactMatch('Brooklyn')]
+    assert map['Quens'] == [ExactMatch('Queens')]
     # -- Error when trying to map values from more than one column ------------
     with pytest.raises(ValueError):
         stream(dataset).match(matcher=vocab)

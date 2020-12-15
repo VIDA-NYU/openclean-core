@@ -13,6 +13,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
+from openclean.data.mapping import Mapping
 from openclean.data.schema import as_list, select_clause
 from openclean.data.stream.base import DataReader
 from openclean.data.stream.csv import CSVFile
@@ -20,7 +21,6 @@ from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, Schema
 from openclean.function.eval.base import EvalFunction
 from openclean.function.matching.base import StringMatcher
-from openclean.function.matching.mapping import Mapping
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.matching import BestMatches
@@ -276,7 +276,7 @@ class DataPipeline(object):
 
         Returns
         -------
-        openclean.function.matching.mapping.Mapping
+        openclean.data.mapping.Mapping
         """
         collector = BestMatches(matcher=matcher, include_vocab=include_vocab)
         return self.stream(collector)

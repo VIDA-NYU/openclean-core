@@ -22,7 +22,7 @@ from openclean.data.metadata.base import MetadataStore
 from openclean.data.metadata.mem import VolatileMetadataStore
 from openclean.data.types import Columns, Scalar
 from openclean.engine.action import OpHandle, InsertOp, UpdateOp
-from openclean.engine.library.func import FunctionHandle
+from openclean.engine.object.function import FunctionHandle
 from openclean.engine.log import LogEntry, OperationLog
 from openclean.operator.transform.insert import inscol
 from openclean.operator.transform.update import update
@@ -102,7 +102,7 @@ class DatasetHandle(metaclass=ABCMeta):
         pos: int, default=None
             Insert position for the new columns. If None, the columns will be
             appended.
-        values: scalar or openclean.engine.library.func.FunctionHandle, default=None
+        values: scalar or openclean.engine.object.func.FunctionHandle, default=None
             Single value, tuple of values, or library function that is used to
             generate the values for the inserted column(s). If no default is
             specified all columns will contain None.
@@ -172,7 +172,7 @@ class DatasetHandle(metaclass=ABCMeta):
         ----------
         columns: int, string, or list(int or string)
             Single column or list of column index positions or column names.
-        func: openclean.engine.library.func.FunctionHandle
+        func: openclean.engine.object.func.FunctionHandle
             Library function that is used to generate modified values for the
             updated column(s).
         args: dict, default=None
@@ -306,7 +306,7 @@ class DataSample(DatasetHandle):
         ----------
         df: pd.DataFrame
             Data frame for the dataset sample.
-        original: openclean.engine.data.DatasetHandle
+        original: openclean.engine.dataset.DatasetHandle
             Reference to the original dataset for sampled datasets.
         """
         super(DataSample, self).__init__(
