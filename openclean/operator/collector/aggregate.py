@@ -17,7 +17,10 @@ import pandas as pd
 from collections import defaultdict
 
 
-def aggregate(groups: DataFrameGrouping, func: Union[Dict[str, Callable], Callable], schema: Optional[List[str]]=None):
+def aggregate(
+    groups: DataFrameGrouping, func: Union[Dict[str, Callable], Callable],
+    schema: Optional[List[str]] = None
+):
     """Aggregate helper function that takes the DataFrameGouping, a schema and a function(s)
     and returns a dataframe created from the groupings using the functions following that schema
 
@@ -59,10 +62,10 @@ class Aggregate(DataGroupReducer):
             column names of the returned dataframe
         """
         super(Aggregate, self).__init__()
-        self._is_input_dict = isinstance(func, dict) # to retain memory of user input
+        self._is_input_dict = isinstance(func, dict)  # to retain memory of user input
         self.funcs = get_agg_funcs(func=func)
         self.schema = schema
-        
+
     def reduce(self, groups):
         """Reduces the groups using the agg functions and returns a dataframe
 
@@ -138,10 +141,10 @@ def get_agg_funcs(func):
 
 
 def is_single_or_dict(Y):
-  if isinstance(Y, dict):
-    return Y, False
-  elif isinstance(Y, pd.Series):
-    return Y.to_dict(), False
-  elif len([Y]) == 1 and type(Y) not in (list, set, tuple, range, frozenset):
-    return Y, True
-  raise TypeError('func returns unacceptable type: {}'.format(type(Y)))
+    if isinstance(Y, dict):
+        return Y, False
+    elif isinstance(Y, pd.Series):
+        return Y.to_dict(), False
+    elif len([Y]) == 1 and type(Y) not in (list, set, tuple, range, frozenset):
+        return Y, True
+    raise TypeError('func returns unacceptable type: {}'.format(type(Y)))

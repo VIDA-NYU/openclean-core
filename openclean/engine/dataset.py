@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import Datastore
+from openclean.data.archive.base import ArchiveStore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.metadata.mem import VolatileMetadataStore
 from openclean.data.types import Columns, Scalar
@@ -215,7 +215,7 @@ class FullDataset(DatasetHandle):
     are applied directly on the full dataset in the underlying archive.
     """
     def __init__(
-        self, datastore: Datastore, manager: ArchiveManager, identifier: str,
+        self, datastore: ArchiveStore, manager: ArchiveManager, identifier: str,
         pk: Optional[Union[List[str], str]] = None
     ):
         """Initialize the reference to the datastore that maintains the history
@@ -223,7 +223,7 @@ class FullDataset(DatasetHandle):
 
         Parameters
         ----------
-        datastore: openclean.data.archive.base.Datastore
+        datastore: openclean.data.archive.base.ArchiveStore
             Datastore for managing dataset snapshots.
         manager: histore.archive.manager.base.ArchiveManager
             Manager for created dataset archives.

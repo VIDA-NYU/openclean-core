@@ -61,6 +61,28 @@ class ObjectStore(metaclass=ABCMeta):  # pargma: no cover
         """
         raise NotImplementedError()
 
+    def get(self, name: str, namespace: Optional[str] = None) -> ObjectHandle:
+        """Shortcut to get the deseralized object handle that is identified by
+        the given name and namespace from the repository. Raises a KeyError if
+        the referenced object does not exist.
+
+        Parameters
+        ----------
+        name: string
+            Unique object name.
+        namespace: string, default=None
+            Optional identifier for the object namespace.
+
+        Returns
+        -------
+        any
+
+        Raises
+        ------
+        KeyError
+        """
+        return self.get_object(name=name, namespace=namespace)
+
     @abstractmethod
     def insert_object(self, object: ObjectHandle):
         """Store an object in the repository. If an object with the same

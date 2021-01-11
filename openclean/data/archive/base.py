@@ -40,7 +40,7 @@ class ActionHandle(metaclass=ABCMeta):  # pragma: no cover
         raise NotImplementedError()
 
 
-class Datastore(metaclass=ABCMeta):  # pragma: no cover
+class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
     """Interface for the data store that is used to maintain the different
     versions of a dataset that a user creates using the openclean (Jupyter)
     API.

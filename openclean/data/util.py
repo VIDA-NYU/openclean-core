@@ -9,77 +9,86 @@
 versa.
 """
 
+from typing import Dict, List, Tuple, Union
+
 import pandas as pd
 
 from openclean.data.schema import select_clause
+from openclean.data.types import Columns, Scalar
 
 
-def get_value(row, colidx):
-    """Return the cell value(s) from a dat frame row for the columns with the
-    given indices. If the column index list contains only a single element
-    the result is the cell value of the respective column in the data frame
-    row. If the column index list contains multiple values the result is a
-    tuple containing the cell values from the respective columns.
+def get_value(row: Union[List, Tuple], columns: List[int]) -> Union[Scalar, Tuple]:
+    """Helper function to get the value for a single column or multiple columns
+    from a data frame row. If columns contains only a single column index the
+    value at that index position in the given row is returned. If columns
+    contains multiple column indices a tuple with the row values for all the
+    specified columns is returned.
 
     Parameters
     ----------
-    row: pandas.core.series.Series
-        Pandas data frame row object
-    colidx: list(int)
-        List of column indices.
+    row: list or tuple of scalar values
+        Row in a data frame.
+    columns: list of integer
+        List of index positions for extracted column values.
 
-    Returns:
-    scalar or tuple
+    Returns
+    -------
+    scalar or tuple of scalar
     """
-    if len(colidx) == 1:
-        return row[colidx[0]]
+    if len(columns) == 1:
+        return row[columns[0]]
     else:
-        return tuple([row[col] for col in colidx])
+        return tuple([row[c] for c in columns])
 
 
-def to_lookup(df, key_columns=None, target_columns=None, override=True):
-    """Create a lookup dictionary from a given data frame. Values in the key
-    column(s) are mapped to corresponding values in the target column(s).
+def repair_mapping(df: pd.DataFrame, key: Columns, value: Columns) -> Dict:
+    """Create a lookup table from the given data frame that represents a repair
+    mapping for a given combination of lookup key and target value. The key
+    columns and value columns represet the columns from which the lookup key and
+    mapping target value are generated.
 
-    If the override flag is True, duplicate keys in the key columns will
-    override existing entries in the dictionary. Otherwise, a ValueError will
-    be raised when a duplicate key occurs.
+    The resulting mapping is a dictionary that contains entries for all key
+    values that were mapped to target values that are different from the key
+    value.
+
+    The function will raise an error if no unique mapping can be defined from
+    the values in the given data frame.
 
     Parameters
     ----------
-    df: pandas.DataFrame
-        Input data frame.
-    key_columns: int or string or list(int or string), optional
-        List of column index or column name for columns from which the mapping
-        key is computed.
-    target_columns: int or string or list(int or string), optional
-        List of column index or column name for columns from which the mapping
-        value combinations are computed.
-    override: bool, optional
-        Allow duplicate key values in the data frame key columns.
+    df: pd.DataFrame
+        Pandas data frame.
+    key: Columns
+        Single column or list of column names or index positions. The specified
+        column(s) are used to generate the mapping key value.
+    value: Columns
+        Single column or list of column names or index positions. The specified
+        column(s) are used to generate the mapping target value.
 
     Returns
     -------
     dict
-
-    Raises
-    ------
-    ValueError
     """
-    lookup_dict = dict()
-    # Get indices for key and target columns.
-    if not isinstance(key_columns, list):
-        key_columns = [key_columns]
-    _, keycols = select_clause(df.columns, columns=key_columns)
-    if not isinstance(target_columns, list):
-        target_columns = [target_columns]
-    _, targetcols = select_clause(df.columns, columns=target_columns)
-    for values in df.iterrows(index=False, name=None):
-        key = get_value(values, colidx=keycols)
-        if not override and key in lookup_dict:
-            raise ValueError('duplicate key {}'.format(key))
-        lookup_dict[key] = get_value(values, colidx=targetcols)
-    return lookup_dict
+    # Get column indices for source and target values
+    _, keyidx = select_clause(df.columns, key)
+    _, valueidx = select_clause(df.columns, value)
+    # Create the result mapping as a dictionary.
+    mapping = dict()
+    for row in df.itertuples(index=False, name=None):
+        keyval = get_value(row, keyidx)
+        targetval = get_value(row, valueidx)
+        # Ignore row if key value and target value are the same.
+        if keyval == targetval:
+            continue
+        # If the key value exists in the mapping and is mapped to a different
+        # value than he target then an error is raised since the mapping is not
+        # a function of the key values.
+        if keyval in mapping:
+            if mapping[keyval] != targetval:
+                raise ValueError("different targets for '{}'".format(keyval))
+        else:
+            mapping[keyval] = targetval
+    return mapping
 
 
 def to_set(data):
@@ -107,8 +116,4 @@ def to_set(data):
             return set([t for t in data.itertuples(index=False, name=None)])
         else:
             return set(data.iloc[:, 0])
-    elif isinstance(data, list):
-        return set(data)
-    elif isinstance(data, set):
-        return data
     raise ValueError('invalid type {}'.format(type(data)))

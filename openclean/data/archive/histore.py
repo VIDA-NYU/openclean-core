@@ -17,12 +17,12 @@ import pandas as pd
 
 from histore.archive.base import Archive
 
-from openclean.data.archive.base import ActionHandle, Datastore
+from openclean.data.archive.base import ActionHandle, ArchiveStore
 from openclean.data.metadata.base import MetadataStore, MetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 
 
-class HISTOREDatastore(Datastore):
+class HISTOREDatastore(ArchiveStore):
     """Data store implementation that is based on HISTORE. This class is a
     simple wrapper around a HISTORE archive.
     """

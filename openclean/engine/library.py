@@ -18,13 +18,14 @@ dedicated methods to access the object stores for different types.
 """
 
 from __future__ import annotations
-from typing import Callable, List, Optional
+from typing import Callable, Iterable, List, Optional
 
+from openclean.data.mapping import Mapping
 from openclean.data.store.mem import VolatileDataStore
 from openclean.engine.object.base import ObjectFactory
 from openclean.engine.object.function import FunctionFactory, FunctionHandle, Parameter
-from openclean.engine.object.mapping import MappingFactory
-from openclean.engine.object.vocabulary import VocabularyFactory
+from openclean.engine.object.mapping import MappingFactory, MappingHandle
+from openclean.engine.object.vocabulary import VocabularyFactory, VocabularyHandle
 from openclean.engine.store.base import ObjectStore
 from openclean.engine.store.default import DefaultObjectStore
 
@@ -103,7 +104,7 @@ class ObjectLibrary(object):
 
         Returns
         -------
-        openclean.engine.library.func.FunctionHandle
+        openclean.engine.object.function.FunctionHandle
         """
         def register_eval(func: Callable) -> Callable:
             """Decorator that registeres the given function in the associated
@@ -134,6 +135,42 @@ class ObjectLibrary(object):
         """
         return self._functions
 
+    def lookup(
+        self, mapping: Mapping, name: str, namespace: Optional[str] = None,
+        label: Optional[str] = None, description: Optional[str] = None
+    ) -> MappingHandle:
+        """Create a new lookup table object for the given mapping. Returns the
+        handle for the created object.
+
+        Parameters
+        ----------
+        mapping: openclean.data.mapping.Mapping
+            Mapping (lookup table) of matched terms.
+        name: string
+            Name for the mapping.
+        namespace: string, default=None
+            Name of the namespace that this mapping belongs to. By default
+            all mappings will be placed in a global namespace (None).
+        label: string, default=None
+            Optional human-readable name for display purposes.
+        description: str, default=None
+            Descriptive text for the mapping. This text can for example be
+            displayed as a tooltip in a user interface.
+
+        Returns
+        -------
+        openclean.engine.object.mapping.MappingHandle
+        """
+        handle = MappingHandle(
+            mapping=mapping,
+            name=name,
+            namespace=namespace,
+            label=label,
+            description=description
+        )
+        self._lookups.insert_object(object=handle)
+        return handle
+
     def lookups(self) -> ObjectStore:
         """Get object store that manages lookup tables.
 
@@ -151,6 +188,42 @@ class ObjectLibrary(object):
         openclean.engine.store.base.ObjectStore
         """
         return self._vocabularies
+
+    def vocabulary(
+        self, values: Iterable, name: str, namespace: Optional[str] = None,
+        label: Optional[str] = None, description: Optional[str] = None
+    ) -> VocabularyHandle:
+        """Register a controlled vocabulary with the library. Returns the
+        handle for the created object.
+
+        Parameters
+        ----------
+        values: set
+            Terms in the controlled vocabulary.
+        name: string
+            Name for the vocabulary.
+        namespace: string, default=None
+            Name of the namespace that this vocabulary belongs to. By default
+            all vocabularies will be placed in a global namespace (None).
+        label: string, default=None
+            Optional human-readable name for display purposes.
+        description: str, default=None
+            Descriptive text for the vocabulary. This text can for example be
+            displayed as a tooltip in a user interface.
+
+        Returns
+        -------
+        openclean.engine.object.vocabulary.VocabularyHandle
+        """
+        handle = VocabularyHandle(
+            values=set(values),
+            name=name,
+            namespace=namespace,
+            label=label,
+            description=description
+        )
+        self._vocabularies.insert_object(object=handle)
+        return handle
 
 
 # -- Helper functions ---------------------------------------------------------

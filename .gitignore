@@ -109,3 +109,9 @@ ENV/
 
 resources/config/localdev
 .idea/
+
+# Example data files
+
+examples/notebooks/city-names/ic3t-wcy2.tsv.gz
+examples/notebooks/parking-violations/jt7v-77mi.tsv.gz
+examples/notebooks/data/

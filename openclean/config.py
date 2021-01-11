@@ -12,7 +12,6 @@ are maintained in environment variables.
 from pathlib import Path
 
 import os
-import pkg_resources as pkg
 
 
 """Environment variables that maintain configuration parameters."""
@@ -20,8 +19,6 @@ import pkg_resources as pkg
 ENV_DATA_DIR = 'OPENCLEAN_DATA_DIR'
 # Download directory
 ENV_MASTERDATA_DIR = 'OPENCLEAN_MASTERDATA_DIR'
-# Repository registry file
-ENV_REPOSITORY_REGISTRY = 'OPENCLEAN_REPOSITORY_REGISTRY'
 
 
 def DATADIR():
@@ -32,7 +29,7 @@ def DATADIR():
     string
     """
     default_value = os.path.join(str(Path.home()), '.openclean', 'data')
-    return get_variable(ENV_DATA_DIR, default_value=default_value)
+    return os.environ.get(ENV_DATA_DIR, default_value)
 
 
 def MASTERDATADIR():
@@ -43,57 +40,4 @@ def MASTERDATADIR():
     string
     """
     default_value = os.path.join(str(Path.home()), '.openclean', 'masterdata')
-    return get_variable(ENV_MASTERDATA_DIR, default_value=default_value)
-
-
-def REPOSITORY_REGISTRY():
-    """Get path to the repository registration file.
-
-    Returns
-    -------
-    string
-    """
-    # Use the value in the respective environment variable by default. If the
-    # variable is not set use the default repository registration that is part
-    # of the openclean package.
-    filename = get_variable(ENV_REPOSITORY_REGISTRY, raise_error=False)
-    if not filename:
-        pkg_name = __package__.split('.')[0]
-        resource_path = 'data/downloader/registry.json'
-        filename = pkg.resource_filename(pkg_name, resource_path)
-    return filename
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def get_variable(name, default_value=None, raise_error=None):
-    """Get the value for the given  environment variable. Raises a
-    MissingConfigurationError if the raise_error flag is True and the variable
-    is not set. If the raise_error flag is False and the environment variables
-    is not set then the default value is returned.
-
-    Parameters
-    ----------
-    name: string
-        Environment variable name
-    default_value: string, optional
-        Default value if variable is not set and raise_error flag is False
-    raise_error: bool
-        Flag indicating whether an error is raised if the environment variable
-        is not set (i.e., None or and empty string '')
-
-    Returns
-    -------
-    string
-
-    Raises
-    ------
-    ValueError
-    """
-    value = os.environ.get(name)
-    if value is None or value == '':
-        if raise_error:
-            raise ValueError('missing configuration for {}'.format(name))
-        else:
-            value = default_value
-    return value
+    return os.environ.get(ENV_MASTERDATA_DIR, default_value)
