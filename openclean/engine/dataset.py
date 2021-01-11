@@ -428,7 +428,7 @@ class DataSample(DatasetHandle):
 # -- Helper Methods -----------------------------------------------------------
 
 def exec_operations(
-    df: pd.DataFrame, operations: List[OpHandle], datastore: Optional[Datastore] = None
+    df: pd.DataFrame, operations: List[OpHandle], datastore: Optional[ArchiveStore] = None
 ) -> pd.DataFrame:
     """Re-apply a sequence of operators on a given dataframe. If the datastore
     for the original dataset is given the changes will be commited.
@@ -439,7 +439,7 @@ def exec_operations(
         Data frame for original datataset snapshot.
     operations: list of openclean.engine.action.OpHandle
         List of operations that are being appiled.
-    datastore: openclean.data.archive.base.Datastore, default=None
+    datastore: openclean.data.archive.base.ArchiveStore, default=None
         Optional datastore for the full dataset.
 
     Returns
