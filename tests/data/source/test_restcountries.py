@@ -50,8 +50,8 @@ def test_restcountries_load(repo):
 def test_restcountries_write(repo, tmpdir):
     """Test writing the restcountries dataset to a tab-delimited file."""
     filename = os.path.join(tmpdir, 'contries.tsv')
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         repo.dataset(restcountries.COUNTRIES).write(f)
-    with open(filename, 'r') as f:
+    with open(filename, 'rt') as f:
         reader = csv.reader(f, delimiter='\t')
         assert next(reader) == SCHEMA

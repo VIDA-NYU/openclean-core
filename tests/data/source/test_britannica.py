@@ -50,7 +50,7 @@ def test_restcountries_load(repo):
 def test_restcountries_write(repo, tmpdir):
     """Test writing the US cities dataset to a tab-delimited file."""
     filename = os.path.join(tmpdir, 'cities.tsv')
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         repo.dataset(britannica.US_CITIES).write(f)
     with open(filename, 'r') as f:
         reader = csv.reader(f, delimiter='\t')
