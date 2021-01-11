@@ -14,7 +14,7 @@ from openclean.data.stream.csv import CSVFile
 
 
 """Input files for testing."""
-DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.files')
+DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../.files')
 NYC311_FILE = os.path.join(DIR, '311-descriptor.csv')
 ICT_FILE = os.path.join(DIR, 'ICT-development-index.tsv.gz')
 
@@ -27,7 +27,7 @@ ICT_FILE = os.path.join(DIR, 'ICT-development-index.tsv.gz')
     ]
 )
 def test_stream_existing_file(filename, header, rows):
-    """Test streaming exising plain CSV and tab-dlimited, compressed CSV
+    """Test streaming exising plain CSV and tab-delimited, compressed CSV
     files.
     """
     dataset = CSVFile(filename)
