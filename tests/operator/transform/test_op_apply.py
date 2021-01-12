@@ -12,7 +12,7 @@ import numpy as np
 from openclean.function.value.datatype import is_nan
 from openclean.function.value.mapping import replace
 from openclean.function.value.normalize import DivideByTotal
-from openclean.function.string import to_upper
+from openclean.function.text import to_upper
 from openclean.operator.transform.apply import apply
 from openclean.operator.transform.update import update
 

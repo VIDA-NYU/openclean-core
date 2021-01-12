@@ -12,7 +12,7 @@ import pytest
 
 from openclean.data.types import Column
 from openclean.function.eval.base import Col, Cols
-from openclean.function.eval.string import Upper
+from openclean.function.eval.text import Upper
 from openclean.operator.stream.collector import Collector
 from openclean.operator.transform.insert import inscol, insrow, InsCol
 

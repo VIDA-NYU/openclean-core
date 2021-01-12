@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 
 from openclean.function.eval.base import Col
-from openclean.function.eval.string import (
+from openclean.function.eval.text import (
     Capitalize, Concat, Format, Length, Lower, Upper
 )
 

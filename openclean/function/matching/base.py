@@ -11,7 +11,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Callable, Iterable, List, Optional
 
 from openclean.data.mapping import Mapping, ExactMatch, NoMatch, StringMatch
-from openclean.function.string import to_lower
+from openclean.function.text import to_lower
 from openclean.util.core import scalar_pass_through
 
 

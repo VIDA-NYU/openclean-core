@@ -13,7 +13,7 @@ from collections import defaultdict, Counter
 from typing import Callable, List, Optional, Union
 
 from openclean.data.types import Value
-from openclean.function.string import to_len
+from openclean.function.text import to_len
 from openclean.function.value.base import ConstantValue, UnpreparedFunction, ValueFunction
 
 
