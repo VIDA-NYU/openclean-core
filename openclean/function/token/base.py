@@ -10,7 +10,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import Callable, List, Optional
 
-from openclean.data.types import Scalar
+from openclean.data.types import Scalar, Value
+from openclean.function.value.base import PreparedFunction
 
 
 # -- Mixin classes ------------------------------------------------------------
@@ -61,6 +62,66 @@ class TokenTransformer(metaclass=ABCMeta):
         list of string
         """
         raise NotImplementedError()  # pragma: no cover
+
+
+# -- Default tokenizer --------------------------------------------------------
+
+class Tokens(PreparedFunction, StringTokenizer):
+    """
+    """
+    def __init__(
+        self, tokenizer: StringTokenizer, transformer: Optional[TokenTransformer] = None,
+        delim: Optional[str] = '', sort: Optional[bool] = False,
+        reverse: Optional[bool] = False, unique: Optional[bool] = False
+    ):
+        """
+        """
+        self.tokenizer = tokenizer
+        self.transformer = transformer
+        self.delim = delim
+        # Add transformers for sorting, reverse, and unqiue if the respective
+        # flags are set.
+        postproc = list()
+        if sort:
+            postproc.append(SortTokens(reverse=reverse))
+        elif reverse:
+            postproc.append(ReverseTokens())
+        if unique:
+            postproc.append(UniqueTokens())
+        pass
+
+    def eval(self, value: Value) -> str:
+        """Tokenize a given value and return a concatenated string of the
+        resulting tokens.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Input value that is tokenized and concatenated.
+
+        Returns
+        -------
+        string
+        """
+        return self.delim.join(self.tokens(value))
+
+    def tokens(self, value: Scalar) -> List[str]:
+        """Tokenize the given value using the associated tokenizer. Then modify
+        the tokens with the optional token transformer.
+
+        Parameters
+        ----------
+        value: scalar
+            Value that is converted into a list of tokens.
+
+        Returns
+        -------
+        list of string
+        """
+        tokens = self.tokenizer.tokens(value)
+        if self.transformer is not None:
+            tokens = self.transformer.transform(tokens)
+        return tokens
 
 
 # -- Basic token transformers -------------------------------------------------
