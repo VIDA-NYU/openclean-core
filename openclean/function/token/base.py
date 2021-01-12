@@ -67,14 +67,41 @@ class TokenTransformer(metaclass=ABCMeta):
 # -- Default tokenizer --------------------------------------------------------
 
 class Tokens(PreparedFunction, StringTokenizer):
-    """
+    """The default tokenizer is a simple wrapper around a given tokenizer and
+    an (optional) token transformer that is applied on the output of the given
+    tokenizer.
+
+    This class provides to functionality to easily add default transformations
+    to the generated token lists.
+
+    The default tokenizer also extends the ValueFunction class to provide
+    functionality to concatenate the generated token list to a token key string.
     """
     def __init__(
         self, tokenizer: StringTokenizer, transformer: Optional[TokenTransformer] = None,
         delim: Optional[str] = '', sort: Optional[bool] = False,
         reverse: Optional[bool] = False, unique: Optional[bool] = False
     ):
-        """
+        """Initialize the tokenizer and optional token transformer. Provides the
+        option to add basic transformations to the generated token lists.
+
+        Parameters
+        ----------
+        tokenizer: openclean.function.token.base.StringTokenizer
+            Tokenizer that is used to generate initial token list for given
+            values.
+        transformer: openclean.function.token.base.TokenTransformer, default=None
+            Optional transformer that is applied on generated token lists.
+        delim: string, default=''
+            Delimiter that is used to concatenate tokens when used as a value
+            function.
+        sort: bool, default=False
+            Return a sorted token list if True. Tokens are sorted in ascending
+            order by default.
+        reverse: bool, default=False
+            Reverse token lists before returning them.
+        unique: bool, default=True
+            Remove duplicate tokens from the generated token lists.
         """
         self.tokenizer = tokenizer
         self.transformer = transformer
@@ -82,13 +109,16 @@ class Tokens(PreparedFunction, StringTokenizer):
         # Add transformers for sorting, reverse, and unqiue if the respective
         # flags are set.
         postproc = list()
+        if unique:
+            postproc.append(UniqueTokens())
         if sort:
             postproc.append(SortTokens(reverse=reverse))
         elif reverse:
             postproc.append(ReverseTokens())
-        if unique:
-            postproc.append(UniqueTokens())
-        pass
+        if postproc:
+            if self.transformer is not None:
+                postproc = [self.transformer] + postproc
+            self.transformer = TokenTransformerPipeline(transformers=postproc)
 
     def eval(self, value: Value) -> str:
         """Tokenize a given value and return a concatenated string of the
