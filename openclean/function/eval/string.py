@@ -153,36 +153,6 @@ class Lower(Eval):
         )
 
 
-class Split(Eval):
-    """String function that splits a string using a given delimiter."""
-    def __init__(self, columns, delimiter=' ', as_string=False):
-        """Initialize the object properties.
-
-        Parameters
-        ----------
-        columns: int, string, openclean.function,.base.EvalFunction, or list
-            Single column or list of column index positions or column names.
-            This can also be a single evalaution function or a list of
-            functions.
-        delimiter: string
-            Delimiter string.
-        as_string: bool, optional
-            Use string representation for non-string values.
-        """
-
-        def split_string(value):
-            return value.split(delimiter)
-
-        super(Split, self).__init__(
-            func=StringFunction(
-                func=split_string,
-                as_string=as_string
-            ),
-            columns=columns,
-            is_unary=True
-        )
-
-
 class Upper(Eval):
     """String function that converts argument values to upper case."""
     def __init__(self, columns, as_string=False):

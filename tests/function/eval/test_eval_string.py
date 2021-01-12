@@ -12,7 +12,7 @@ import pytest
 
 from openclean.function.eval.base import Col
 from openclean.function.eval.string import (
-    Capitalize, Concat, Format, Length, Lower, Upper, Split
+    Capitalize, Concat, Format, Length, Lower, Upper
 )
 
 
@@ -65,15 +65,6 @@ def test_string_lower(people):
     """Test string to lower characters function for column values."""
     names = Lower(Col('Name')).eval(people)
     assert names == ['alice davies', 'bob smith']
-
-
-def test_string_split_and_concat(people):
-    """Test splitting and concatenating strings extracted from column values.
-    """
-    result = Split(Lower(Col('Name'))).eval(people)
-    assert result == [['alice', 'davies'], ['bob', 'smith']]
-    result = Concat(Split(Lower(Col('Name'))), '|').eval(people)
-    assert result == ['alice|davies', 'bob|smith']
 
 
 def test_string_upper(people):
