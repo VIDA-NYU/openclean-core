@@ -9,7 +9,17 @@
 
 import pytest
 
-from openclean.function.token.split import Split
+from openclean.function.token.split import ChartypeSplit, Split
+
+
+def test_homogeneous_split():
+    """Test tokenizer that splits on character types."""
+    f = ChartypeSplit(chartypes=[str.isalpha, str.isdigit])
+    assert f.tokens('W35ST') == ['W', '35', 'ST']
+    assert f.tokens('W35ST/') == ['W', '35', 'ST', '/']
+    assert f.tokens('W35ST/8AVE') == ['W', '35', 'ST', '/', '8', 'AVE']
+    assert f.tokens(1234) == ['1234']
+    assert f.tokens(12.34) == ['12', '.', '34']
 
 
 def test_split_numeric_value():
@@ -31,5 +41,5 @@ def test_split_numeric_value():
 )
 def test_split_parameters(unique, sorted, reverse, result):
     """Test different transformation options for the returned token sets."""
-    s = Split(pattern=' ', sort=sorted, reverse=reverse, unique=unique)
-    assert s.tokens('A C A B D') == result
+    s = Split(pattern='\\s+', sort=sorted, reverse=reverse, unique=unique)
+    assert s.tokens('A C \t A B  D') == result
