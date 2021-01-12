@@ -74,9 +74,8 @@ class ChartypeSplit(StringTokenizer):
         -------
         list of string
         """
-        # Convert value to string if necessary
-        if not isinstance(value, str):
-            value = str(value)
+        # Ensure that the value is a string.
+        value = str(value) if not isinstance(value, str) else value
         # If the string is empty an empty list is returned.
         if not value:
             return list()
