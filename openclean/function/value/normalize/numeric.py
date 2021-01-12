@@ -5,8 +5,8 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Collection of functions to normalize values in a list (e.g., a data frame
-column).
+"""Collection of functions to normalize numeric values in a list (e.g., a data
+frame column).
 """
 
 from abc import abstractmethod
