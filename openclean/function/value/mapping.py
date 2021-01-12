@@ -12,7 +12,12 @@ function on them.
 Lookup functions represent mappings using dictionaries.
 """
 
+from typing import Callable, Dict, Optional, Union
+
+import pandas as pd
+
 from openclean.data.sequence import Sequence
+from openclean.data.types import Columns, Value
 from openclean.function.value.base import (
     CallableWrapper, PreparedFunction, ValueFunction
 )
@@ -22,7 +27,7 @@ from openclean.util.core import scalar_pass_through
 
 # -- Functions ----------------------------------------------------------------
 
-def mapping(df, columns, func):
+def mapping(df: pd.DataFrame, columns: Columns, func: Union[Callable, ValueFunction]) -> Dict:
     """Get the mapping of values that are modified by a given value function.
 
     Parameters
@@ -54,7 +59,7 @@ def mapping(df, columns, func):
     return result
 
 
-def replace(predicate, value):
+def replace(predicate: Callable, value: Value) -> ConditionalStatement:
     """Return an instance of the Replace class for the given arguments.
 
     Paramaters
@@ -82,7 +87,9 @@ class Lookup(PreparedFunction):
     input values to their pre-defined targets.
     """
     def __init__(
-        self, mapping, raise_error=False, default_value=None, as_string=False
+        self, mapping: Dict, raise_error: Optional[bool] = False,
+        default: Optional[Union[Callable, Value]] = None,
+        as_string: Optional[bool] = False
     ):
         """Initialize the mapping dictionary and properties that control the
         behavior of the lookup function.
@@ -94,9 +101,10 @@ class Lookup(PreparedFunction):
         raise_error: bool, default=False
             Raise ValueError if a value given as argument to the eval function
             is not contained in the mapping.
-        default_value: scalar, default=None
+        default: scalar or callable, default=None
             Default return value for input values that are not contained in the
-            mapping (if the raise error flag is False).
+            mapping (if the raise error flag is False). This can be a function
+            that is used to compute a default value from the given input value.
         as_string: bool, optional
             Convert all input values to string before lookup if True.
 
@@ -104,15 +112,12 @@ class Lookup(PreparedFunction):
         ------
         ValueError
         """
-        # Ensure that the mapping is a dictionary.
-        if not isinstance(mapping, dict):
-            raise ValueError('not a dictionary {}'.format(mapping))
         self.mapping = mapping
         self.raise_error = raise_error
-        self.default_value = default_value
+        self.default = default
         self.as_string = as_string
 
-    def eval(self, value):
+    def eval(self, value: Value) -> Value:
         """Return the defined target value for a given lookup value.
 
         Parameters
@@ -134,7 +139,41 @@ class Lookup(PreparedFunction):
             # the default value (for missing keys).
             if self.raise_error:
                 raise KeyError('unknown value {}'.format(value))
-            if callable(self.default_value):
-                return self.default_value(value)
-            return self.default_value
+            if callable(self.default):
+                return self.default(value)
+            return self.default
         return self.mapping.get(key)
+
+
+class Standardize(PreparedFunction):
+    """Use a mapping dictionary to standardize values. For a given value, if a
+    mapping is defined in the dictionary the mapped value is returned. For all
+    other values the original value is returned.
+    """
+    def __init__(self, mapping: Dict):
+        """Initialize the translation mapping that is used to standardize input
+        values.
+
+        Parameters
+        ----------
+        mapping: dict
+            Mapping of input values to their pre-defined targets.
+        """
+        self.mapping = mapping
+
+    def eval(self, value: Value) -> Value:
+        """Return the defined target value for a given lookup value. If the
+        given value is not included in the standardization mapping it will be
+        returned as is.
+
+
+        Parameters
+        ----------
+        value: scalar
+            Scalar value in a data stream.
+
+        Returns
+        -------
+        any
+        """
+        return self.mapping.get(value, value)
