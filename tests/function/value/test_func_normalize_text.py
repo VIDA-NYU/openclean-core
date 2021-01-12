@@ -14,7 +14,11 @@ from openclean.function.value.normalize.text import TextNormalizer
 
 @pytest.mark.parametrize(
     'text,result',
-    [(u'M\u00FCll\u00E9r', 'Muller'), ('New York', 'New York')]
+    [
+        (u'M\u00FCll\u00E9r', 'Muller'),
+        ('New York', 'New York'),
+        ('5TH AVE, NY.', '5TH AVE NY')
+    ]
 )
 def test_text_normalizer(text, result):
     """Test the text normalization function."""

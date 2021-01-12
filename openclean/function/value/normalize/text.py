@@ -39,6 +39,11 @@ NONDIACRITICS = {
     '\u0153': 'oe'
 }
 
+"""First characters of unicode character categories that are removed. Currently
+we remove control characters 'C' and punctuation 'P'.
+"""
+REMOVE_CATEGORIES = {'C', 'P'}
+
 
 class TextNormalizer(PreparedFunction):
     """Text normalizer that replaces non-diacritic characters, umlauts, accents,
@@ -62,20 +67,23 @@ class TextNormalizer(PreparedFunction):
         """
         # Ensure that the value is a string.
         value = str(value) if not isinstance(value, str) else value
-        # Replace non-diacritic characters and control characters. In many cases
-        # we won't encounter any of these special characters. Thus, we build a
-        # list of replacements first. Only if that list is not empty will we
-        # construct a new string.
-        replace = dict()
-        for i in range(len(value)):
-            c = value[i]
+        # Replace punctuation, non-diacritic characters and control characters.
+        # Assuming that punctuation is probably frequent, we always build a
+        # list containing the sunstituted characters. We also maintain a flag
+        # to indicate if any charaters where replaced. Only if that flag is True
+        # at the end we will generate a new string.
+        replace = list(value)
+        has_replacements = False
+        for i, c in enumerate(value):
             if c in NONDIACRITICS:
                 replace[i] = NONDIACRITICS[c]
-            elif unicodedata.category(c)[0] == 'C':
+                has_replacements = True
+            elif unicodedata.category(c)[0] in REMOVE_CATEGORIES:
                 # Based on https://stackoverflow.com/questions/4324790
                 replace[i] = ''
-        if replace:
-            value = ''.join(replace.get(i, value[i]) for i in range(len(value)))
+                has_replacements = True
+        if has_replacements:
+            value = ''.join(replace)
         # Normalize based on https://gist.github.com/j4mie/557354.
         return unicodedata\
             .normalize('NFKD', value)\
