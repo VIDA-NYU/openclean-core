@@ -62,21 +62,20 @@ class TextNormalizer(PreparedFunction):
         """
         # Ensure that the value is a string.
         value = str(value) if not isinstance(value, str) else value
-        # Replace non-diacritic characters. In most cases we probably won't
-        # encounter any non-diacritic characters. Thus, we build a list of
-        # replacements here first. Only if that list is not empty will we
+        # Replace non-diacritic characters and control characters. In many cases
+        # we won't encounter any of these special characters. Thus, we build a
+        # list of replacements first. Only if that list is not empty will we
         # construct a new string.
-        replace = list()
+        replace = dict()
         for i in range(len(value)):
             c = value[i]
             if c in NONDIACRITICS:
-                c = NONDIACRITICS[c]
-            replace.append((i, c))
+                replace[i] = NONDIACRITICS[c]
+            elif unicodedata.category(c)[0] == 'C':
+                # Based on https://stackoverflow.com/questions/4324790
+                replace[i] = ''
         if replace:
-            characters = list(value)
-            for pos, val in replace:
-                characters[pos] = val
-            value = ''.join(characters)
+            value = ''.join(replace.get(i, value[i]) for i in range(len(value)))
         # Normalize based on https://gist.github.com/j4mie/557354.
         return unicodedata\
             .normalize('NFKD', value)\
