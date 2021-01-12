@@ -7,9 +7,12 @@
 
 """Unit tests for basic token list transformers."""
 
+import pytest
+
+
 from openclean.function.token.base import (
-    ReverseTokens, SortTokens, TokenPrefix, TokenTransformerPipeline,
-    UniqueTokens
+    LowerTokens, ReverseTokens, SortTokens, StandardizeTokens, TokenPrefix,
+    TokenTransformerPipeline, UniqueTokens, UpperTokens
 )
 
 
@@ -35,6 +38,21 @@ def test_sort_transformer():
     assert f.transform(['A2', 'W3', 'Z1']) == ['Z1', 'A2', 'W3']
     f = SortTokens(key=lambda x: x[1], reverse=True)
     assert f.transform(['A2', 'W3', 'Z1']) == ['W3', 'A2', 'Z1']
+
+
+def test_standardize_tokens():
+    """Test token stadardization using a mapping dictionary."""
+    f = StandardizeTokens({'ST': 'STREET'})
+    assert f.transform(['ROAD', 'ST', 'STREET']) == ['ROAD', 'STREET', 'STREET']
+
+
+@pytest.mark.parametrize(
+    'func,result',
+    [(LowerTokens(), ['a', 'b', 'c']), (UpperTokens(), ['A', 'B', 'C'])]
+)
+def test_token_case(func, result):
+    """Test transformers that change token case."""
+    assert func.transform(['A', 'b', 'C']) == result
 
 
 def test_transformer_pipeline():

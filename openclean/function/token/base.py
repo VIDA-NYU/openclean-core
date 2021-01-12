@@ -8,10 +8,11 @@
 """Interfaces for string tokenizer and token set transformers."""
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from openclean.data.types import Scalar, Value
-from openclean.function.value.base import PreparedFunction
+from openclean.function.value.base import CallableWrapper, PreparedFunction, ValueFunction
+from openclean.function.value.mapping import Standardize
 
 
 # -- Mixin classes ------------------------------------------------------------
@@ -286,3 +287,63 @@ class UniqueTokens(TokenTransformer):
         list of string
         """
         return list(set(tokens))
+
+
+class UpdateTokens(TokenTransformer):
+    """Update tokens by applying a value function to each of them."""
+    def __init__(self, func: ValueFunction):
+        """Initialize the update function for tokens.
+
+        Parameters
+        ----------
+        func: openclean.function.value.base.ValueFunction
+            Function that is applied on input tokens to transform them.
+        """
+        self.func = func
+
+    def transform(self, tokens: List[str]) -> List[str]:
+        """Returns the list of tokens that results from applying the associated
+        value function of each of the tokens in the input list.
+
+        Patameters
+        ----------
+        tokens: list of string
+            List of string tokens.
+
+        Returns
+        -------
+        list of string
+        """
+        return self.func.apply(tokens)
+
+
+# -- Shortcuts for common update functions ------------------------------------
+
+class LowerTokens(UpdateTokens):
+    """Convert all tokens in a given list to lower case."""
+    def __init__(self):
+        """Initialize the update function."""
+        super(LowerTokens, self).__init__(func=CallableWrapper(func=str.lower))
+
+
+class StandardizeTokens(UpdateTokens):
+    """Standardize tokens in a given list using a stamdardization mapping."""
+    def __init__(self, mapping: Union[Dict, Standardize]):
+        """Initialize the standardization mapping.
+
+        Parameters
+        ----------
+        mapping: dict or openclean.function.value.mapping.Standardize
+            Standardization mapping.
+        """
+        # Ensure that the mapping is a standardization function.
+        super(StandardizeTokens, self).__init__(
+            func=Standardize(mapping) if isinstance(mapping, dict) else mapping
+        )
+
+
+class UpperTokens(UpdateTokens):
+    """Convert all tokens in a given list to upper case."""
+    def __init__(self):
+        """Initialize the update function."""
+        super(UpperTokens, self).__init__(func=CallableWrapper(func=str.upper))
