@@ -9,7 +9,7 @@
 
 import pytest
 
-from openclean.function.string import to_len, to_lower, to_title, to_upper
+from openclean.function.text import to_len, to_lower, to_title, to_upper
 
 
 @pytest.mark.parametrize(

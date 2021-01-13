@@ -7,7 +7,7 @@
 
 """Unit tests for the distinct value counter."""
 
-from openclean.function.eval.string import Lower
+from openclean.function.eval.text import Lower
 from openclean.function.value.normalize import (
     divide_by_total, MaxAbsScale, MinMaxScale
 )

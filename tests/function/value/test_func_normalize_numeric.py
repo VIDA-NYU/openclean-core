@@ -5,7 +5,7 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Unit tests for normalization functions."""
+"""Unit tests for numeric normalization functions."""
 
 import pytest
 

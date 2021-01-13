@@ -14,7 +14,7 @@ import pandas as pd
 
 from openclean.data.types import Value
 from openclean.function.eval.base import InputColumn
-from openclean.function.value.normalize import DivideByTotal, NormalizeFunction
+from openclean.function.value.normalize import DivideByTotal, NumericNormalizer
 from openclean.profiling.anomalies.base import AnomalyDetector
 from openclean.util.threshold import to_threshold
 
@@ -92,7 +92,7 @@ class FrequencyOutlierResults(list):
 def frequency_outliers(
     df: pd.DataFrame, columns: Union[InputColumn, List[InputColumn]],
     threshold: Union[Callable, int, float],
-    normalize: Optional[NormalizeFunction] = DivideByTotal()
+    normalize: Optional[NumericNormalizer] = DivideByTotal()
 ) -> FrequencyOutlierResults:
     """Detect frequency outliers for values (or value combinations) in one or
     more columns of a data frame. A value (combination) is considered an
@@ -110,7 +110,7 @@ def frequency_outliers(
         Function that accepts a float (i.e., the relative frequency) and that
         returns a Boolean value. True indicates that the value (frequency)
         satisfies the value outlier condition.
-    normalize: openclean.function.value.normalize.NormalizeFunction
+    normalize: openclean.function.value.normalize.NumericNormalizer
         Function used to normalize frequency values befor evaluating the
         threshold constraint.
 
@@ -131,7 +131,7 @@ class FrequencyOutliers(AnomalyDetector):
     """
     def __init__(
         self, threshold: Union[Callable, int, float],
-        normalize: Optional[NormalizeFunction] = DivideByTotal()
+        normalize: Optional[NumericNormalizer] = DivideByTotal()
     ):
         """Initialize the frequency threshold.
 
@@ -141,7 +141,7 @@ class FrequencyOutliers(AnomalyDetector):
             Function that accepts a float (i.e., the relative frequency) and
             that returns a Boolean value. True indicates that the value
             (frequency) satisfies the value outlier condition.
-        normalize: openclean.function.value.normalize.NormalizeFunction
+        normalize: openclean.function.value.normalize.NumericNormalizer
             Function used to normalize frequency values befor evaluating the
             threshold constraint.
         """

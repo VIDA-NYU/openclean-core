@@ -5,8 +5,8 @@
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
 
-"""Collection of functions to normalize values in a list (e.g., a data frame
-column).
+"""Collection of functions to normalize numeric values in a list (e.g., a data
+frame column).
 """
 
 from abc import abstractmethod
@@ -17,11 +17,11 @@ from openclean.function.value.filter import filter
 from openclean.util.core import scalar_pass_through
 
 
-# -- Generic base class for normalization functions ---------------------------
+# -- Generic base class for numeric normalization functions -------------------
 
-class NormalizeFunction(ValueFunction):
-    """Abstract base class form normalization functions. Implementing classes
-    need to implement the compute and prepare methods.
+class NumericNormalizer(ValueFunction):
+    """Abstract base class for numeric normalization functions. Implementing
+    classes need to implement the compute and prepare methods.
     """
     def __init__(self, raise_error=True, default_value=scalar_pass_through):
         """Initialize the raise error flag and the default value that determine
@@ -114,7 +114,7 @@ def divide_by_total(
     return norm.apply(values)
 
 
-class DivideByTotal(NormalizeFunction):
+class DivideByTotal(NumericNormalizer):
     """Divide values in a list by the sum over all values."""
     def __init__(
         self, raise_error=True, default_value=scalar_pass_through, sum=None
@@ -209,7 +209,7 @@ def max_abs_scale(values, raise_error=True, default_value=scalar_pass_through):
     return norm.apply(values)
 
 
-class MaxAbsScale(NormalizeFunction):
+class MaxAbsScale(NumericNormalizer):
     """Divided values in a list by the absolute maximum over all values."""
     def __init__(
         self, raise_error=True, default_value=scalar_pass_through, maximum=None
@@ -306,7 +306,7 @@ def min_max_scale(values, raise_error=True, default_value=scalar_pass_through):
     return norm.apply(values)
 
 
-class MinMaxScale(NormalizeFunction):
+class MinMaxScale(NumericNormalizer):
     """Normalize values in a list using min-max feature scaling."""
     def __init__(
         self, raise_error=True, default_value=scalar_pass_through,
