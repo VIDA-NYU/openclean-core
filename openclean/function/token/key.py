@@ -43,8 +43,8 @@ class Fingerprint(PreparedFunction):
         on whitespaces. the default normalizer is the openclean text normalizer.
 
         Note that the normalizer is a callable and not a ValueFunction. This
-        is because the Fungerprint is a prepared value function and therefore
-        could not prepare a value function.
+        is because the Fingerprint is a prepared value function and therefore
+        could not prepare another value function.
 
         Patameters
         ----------
