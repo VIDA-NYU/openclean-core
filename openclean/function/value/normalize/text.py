@@ -7,6 +7,9 @@
 
 """Collection of functions to normalize test values."""
 
+from typing import Callable, Optional
+
+import re
 import unicodedata
 
 from openclean.data.types import Value
@@ -49,6 +52,27 @@ class TextNormalizer(PreparedFunction):
     """Text normalizer that replaces non-diacritic characters, umlauts, accents,
     etc. with their equivalent ascii character(s).
     """
+    def __init__(self, preproc: Optional[Callable] = None):
+        """Initialize the optional pre-processing function. The pre-processor
+        is applied to any input string as part of the normalization process.
+        The pre-processor can execute transformations in addition to the
+        normalization of unicode characters (e.g., transform characters to
+        lower case).
+
+        The pre-processor is a callable and not a ValueFunction because this
+        class is a prepared value function that cannot prepare another value
+        function.
+
+        Parameters
+        ----------
+        preproc: callable, default=None
+            Pre-processor that is applied to all input values. The default
+            pre-processor will trim the value, convert all characters to lower
+            case and replace (consecutive) whitespaces with a single blank
+            space character.
+        """
+        self.preproc = preproc if preproc is not None else default_preproc
+
     def eval(self, value: Value) -> str:
         """Normalize a given value. Converts the value to string if it is not
         of type string. Then replaces all non-diacritic characters with their
@@ -65,8 +89,8 @@ class TextNormalizer(PreparedFunction):
         -------
         string
         """
-        # Ensure that the value is a string.
-        value = str(value) if not isinstance(value, str) else value
+        # Apply pre-processing function to prepare the input value.
+        value = self.preproc(value)
         # Replace punctuation, non-diacritic characters and control characters.
         # Assuming that punctuation is probably frequent, we always build a
         # list containing the sunstituted characters. We also maintain a flag
@@ -89,3 +113,28 @@ class TextNormalizer(PreparedFunction):
             .normalize('NFKD', value)\
             .encode('ASCII', 'ignore')\
             .decode('utf-8')
+
+
+# -- Basic pre-processing functions -------------------------------------------
+
+
+def default_preproc(value: Value) -> str:
+    """Default pre-processing for string normalization. Ensures that the given
+    argument is a string. Removes leading and trailing whitespaces, converts
+    characters to lower case, and replaces all (consecutive) whitespaces with a
+    single blank space character.
+
+    Parameters
+    ----------
+    value: scalar or tuple
+        INput value that is being prepared for normalization.
+
+    Returns
+    -------
+    string
+    """
+    # Ensure that the value is a string.
+    value = str(value) if not isinstance(value, str) else value
+    # Trim the value, convert to lower case, and replace multiple whitespaces
+    # with a single blank space.
+    return ' '.join(value.lower().split())

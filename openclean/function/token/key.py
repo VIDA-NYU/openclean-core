@@ -67,15 +67,11 @@ class Fingerprint(PreparedFunction):
         -------
         string
         """
-        # Ensure that the value is a string.
-        value = str(value) if not isinstance(value, str) else value
-        # Step 1-2) Trim the value and convert to lower case
-        value = value.strip().lower()
-        # Step 3) Normalize text value.
+        # Step 1-3) Normalize text value (i fdefault normalizer is used.
         value = self.normalizer(value)
         # Step 4-5) Tokenize the string. By default, the tokens are sorted and
         # duplicate tokens are removed. However, the use has the option to
         # override this behaviour by providing their custom tokenizer at object
-        # instantiation.
-        # The returned tokens are then concatenated using a single space.
+        # instantiation. The returned tokens are then concatenated using a
+        # single blank space.
         return ' '.join(self.tokenizer.tokens(value))
