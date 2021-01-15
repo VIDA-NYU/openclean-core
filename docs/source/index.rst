@@ -1,7 +1,7 @@
 .. image:: logo.png
     :width: 350px
     :align: center
-    :height: 100px
+    :height: 80px
     :alt: openclean-logo
 |
 
