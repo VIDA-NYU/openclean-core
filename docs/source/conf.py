@@ -12,8 +12,11 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+package_path = os.path.abspath('../..')
 
+# paths for apidoc and jupyter-sphinx
+sys.path.insert(0, package_path)
+os.environ['PYTHONPATH'] = ':'.join((package_path, os.environ.get('PYTHONPATH', '')))
 
 # -- Project information -----------------------------------------------------
 
@@ -27,7 +30,7 @@ author = 'New York University'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinxcontrib.apidoc', 'jupyter_sphinx.execute']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -37,6 +40,14 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# -- apidoc configuration ----------------------------------------------------
+
+# Configuration for the sphinxcontrib-apidoc extension
+apidoc_module_dir = '../../openclean/'
+apidoc_output_dir = 'api'
+apidoc_separate_modules = False
+apidoc_module_first = True
+apidoc_extra_args = ['-d 2']
 
 # -- Options for HTML output -------------------------------------------------
 

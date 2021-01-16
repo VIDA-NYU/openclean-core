@@ -20,7 +20,13 @@ The goal of openclean goal is to bring together data cleaning tools in a single 
     :caption: Contents:
 
     installation
-    usage
-    guides
+    start
+    examples
     extras
     faq
+
+..  toctree::
+    :maxdepth: 1
+    :caption: API Reference:
+
+    api/modules

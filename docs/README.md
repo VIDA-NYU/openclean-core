@@ -9,17 +9,21 @@ The final documentation is automatically compiled and published after every comm
 This documentation uses the following extra Sphinx packages:
  * sphinx
  * sphinx_rtd_theme
+ * sphinxcontrib.apidoc
+ * jupyter_sphinx.execute
 
 If you use `conda`, these packages can be installed using:
 
 ```
 conda install sphinx
 conda install sphinx_rtd_theme
+conda install sphinxcontrib_apidoc
+conda install jupyter_sphinx_execute
 ```
 or using `pip`:
 
 ```
-pip install sphinx sphinx_rtd_theme
+pip install sphinx sphinx-rtd-theme sphinxcontrib-apidoc jupyter-sphinx
 ```
 
 ### Editing the Documentation
