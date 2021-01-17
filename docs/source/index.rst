@@ -21,6 +21,10 @@ The goal of openclean goal is to bring together data cleaning tools in a single 
 
     installation
     start
+    transform
+    clean
+    profile
+    enrich
     examples
     extras
     faq
