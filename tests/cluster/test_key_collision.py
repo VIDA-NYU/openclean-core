@@ -7,6 +7,8 @@
 
 """Unit tests for the key collision cluster method."""
 
+from collections import Counter
+
 import pytest
 
 from openclean.cluster.key import key_collision
@@ -17,13 +19,24 @@ def key_generator(value):
     return value.lower()
 
 
-@pytest.mark.parametrize('minsize,result', [(2, {'a'}), (1, {'a', 'b', 'c'})])
-def test_key_collision_cluster(minsize, result):
+@pytest.mark.parametrize(
+    'minsize,values,result',
+    [
+        (2, ['a', 'b', 'c', 'A'], {'a'}),
+        (2, ['A', 'b', 'c', 'a'], {'A'}),
+        (2, Counter(['a', 'b', 'c', 'A', 'A', 'A']), {'A'}),
+        (1, ['a', 'b', 'c', 'A'], {'a', 'b', 'c'})
+    ]
+)
+def test_key_collision_cluster(minsize, values, result):
     """Test the key collision cluster method (for single thread and multiple
     threads).
     """
-    values = ['a', 'b', 'c', 'A']
-    clusters = key_collision(values=values, func=key_generator, minsize=minsize, threads=1)
-    assert {c.suggestion() for c in clusters} == result
-    clusters = key_collision(values=values, func=key_generator, minsize=minsize, threads=2)
-    assert {c.suggestion() for c in clusters} == result
+    for threads in [1, 2]:
+        clusters = key_collision(
+            values=values,
+            func=key_generator,
+            minsize=minsize,
+            threads=threads
+        )
+        assert {c.suggestion() for c in clusters} == result

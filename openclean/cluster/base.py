@@ -14,7 +14,8 @@ different values that might be alternative representations of the same thing'*.
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import Iterable, List, Tuple
+from collections import Counter
+from typing import Iterable, List, Optional, Tuple, Union
 
 from openclean.data.types import Value
 
@@ -68,8 +69,9 @@ class Cluster(object):
                 return value
         raise KeyError('invalid key {}'.format(key))
 
-    def add(self, value: Value) -> Cluster:
-        """Add a value to the cluster. Returns a reference to itself.
+    def add(self, value: Value, count: Optional[int] = 1) -> Cluster:
+        """Add a value to the cluster. Allows to provide frequency count for
+        the added value. Returns a reference to itself.
 
         Parameters
         ----------
@@ -81,10 +83,10 @@ class Cluster(object):
         openclean.cluster.base.Cluster
         """
         if value in self.elements:
-            insert_id, count = self.elements[value]
-            self.elements[value] = (insert_id, count + 1)
+            insert_id, vcount = self.elements[value]
+            self.elements[value] = (insert_id, vcount + count)
         else:
-            self.elements[value] = (len(self.elements), 1)
+            self.elements[value] = (len(self.elements), count)
         return self
 
     def suggestion(self) -> Value:
@@ -114,14 +116,17 @@ class Clusterer(metaclass=ABCMeta):
     cluster a given list of values.
     """
     @abstractmethod
-    def clusters(self, values: List[Value]) -> List[Cluster]:
+    def clusters(self, values: Union[List[Value], Counter]) -> List[Cluster]:
         """Compute clusters for a given list of values. Each cluster itself is
-        a list of values, i.e., a subset of values from the input list.
+        a list of values, i.e., a subset of values from the input list. The
+        cluster method should be capable of taking a list of values or a
+        counter of distinct values.
 
         Parameters
         ----------
-        values: List of values
-            List of data values.
+        values: List of values or collections.Counter
+            List of data values or a value counter that maps values to their
+            frequencies.
 
         Returns
         -------

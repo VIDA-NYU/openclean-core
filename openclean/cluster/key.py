@@ -9,6 +9,7 @@
 each value and clusters values based on these keyes.
 """
 
+from collections import Counter
 from typing import Callable, List, Optional, Tuple, Union
 
 from openclean.data.types import Value
@@ -51,14 +52,15 @@ class KeyCollision(Clusterer):
         self.minsize = minsize
         self.threads = threads if threads is not None else config.THREADS()
 
-    def clusters(self, values: List[Value]) -> List[Cluster]:
+    def clusters(self, values: Union[List[Value], Counter]) -> List[Cluster]:
         """Compute clusters for a given list of values. Each cluster itself is
         a list of values, i.e., a subset of values from the input list.
 
         Parameters
         ----------
-        values: list of values
-            List of data values.
+        values: List of values or collections.Counter
+            List of data values or a value counter that maps values to their
+            frequencies.
 
         Returns
         -------
@@ -81,25 +83,28 @@ class KeyCollision(Clusterer):
             kvps = [(f.eval(val), val) for val in values]
         # Sort key-value pairs by their key for clustering.
         kvps.sort(key=lambda t: t[0])
+        # Create a frequency lookup function depending on whether we were given
+        # a counter or simply a list of values.
+        freq = values if isinstance(values, Counter) else ONE()
         clusters = list()
         # Get the key and value for the first element in the key-value pair
         # list. Create a first cluster for the value.
         cluster_key, val = kvps[0]
-        cluster = Cluster().add(val)
+        cluster = Cluster().add(val, count=freq[val])
         # Iterate over the remaining values. Cluster values with equal key
         # values.
         for i in range(1, len(kvps)):
             key, val = kvps[i]
             if key == cluster_key:
                 # Add value to the current cluster.
-                cluster.add(val)
+                cluster.add(val, count=freq[val])
             else:
                 # Next key value detected. Add the current cluster to the result
                 # if it contains at least minsize distinct values.
                 if len(cluster) >= self.minsize:
                     clusters.append(cluster)
                 # Create a new cluster for the next key value.
-                cluster = Cluster().add(val)
+                cluster = Cluster().add(val, count=freq[val])
                 cluster_key = key
         # Add the current cluster to the result if it contains at least minsize
         # distinct values.
@@ -109,7 +114,7 @@ class KeyCollision(Clusterer):
 
 
 def key_collision(
-    values: List[Value], func: Optional[Union[Callable, ValueFunction]] = None,
+    values: Union[List[Value], Counter], func: Optional[Union[Callable, ValueFunction]] = None,
     minsize: Optional[int] = 2, threads: Optional[int] = None
 ) -> List[Cluster]:
     """Run key collision clustering for a given list of values.
@@ -117,8 +122,9 @@ def key_collision(
 
     Parameters
     ----------
-    values: list of values
-        List of data values.
+    values: List of values or collections.Counter
+        List of data values or a value counter that maps values to their
+        frequencies.
     func: callable or ValueFunction, default=None
         Function that is used to generate keys for values. By default the
         token fingerprint generator is used.
@@ -169,3 +175,10 @@ class KeyValueGenerator(object):
         tuple of string and Value
         """
         return (self.func.eval(value), value)
+
+
+class ONE(object):
+    """Helper to simulate a counter where each value has a frequency of 1."""
+    def __getitem__(self, key: Value) -> int:
+        """All value lookups will return 1."""
+        return 1

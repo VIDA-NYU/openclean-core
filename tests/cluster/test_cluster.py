@@ -29,6 +29,14 @@ def test_add_cluster_elements():
     assert counts['c'] == 2
 
 
+def test_cluster_from_counter():
+    """Test adding to a cluster with frequency count values."""
+    c = Cluster().add('a', count=5).add('b', count=10).add('a', count=6)
+    counts = {value: count for value, count in c}
+    assert counts['a'] == 11
+    assert counts['b'] == 10
+
+
 @pytest.mark.parametrize(
     'value,suggest',
     [('acbaabbac', 'a'), ('acbaabbbac', 'a'), ('bacbaabbac', 'b')]
