@@ -14,6 +14,7 @@ from typing import Callable, Optional
 from openclean.data.types import Value
 
 from openclean.function.token.base import StringTokenizer
+from openclean.function.token.ngram import NGrams
 from openclean.function.token.split import Split
 from openclean.function.value.base import PreparedFunction
 from openclean.function.value.normalize.text import TextNormalizer
@@ -50,6 +51,8 @@ class Fingerprint(PreparedFunction):
         ----------
         tokenizer: openclean.function.token.base.StringTokenizer, default=None
             Tokenizer that is used during fingerprint generation.
+        normalizer: callable, default=None
+            Callable that is used to normalize values before token generation.
         """
         self.tokenizer = tokenizer if tokenizer is not None else Split('\\s+', sort=True, unique=True)
         self.normalizer = normalizer if normalizer is not None else TextNormalizer()
@@ -70,8 +73,40 @@ class Fingerprint(PreparedFunction):
         # Step 1-3) Normalize text value (i fdefault normalizer is used.
         value = self.normalizer(value)
         # Step 4-5) Tokenize the string. By default, the tokens are sorted and
-        # duplicate tokens are removed. However, the use has the option to
-        # override this behaviour by providing their custom tokenizer at object
-        # instantiation. The returned tokens are then concatenated using a
-        # single blank space.
+        # duplicate tokens are removed. However, the user has the option to
+        # override this behaviour by providing a custom tokenizer when the
+        # Fingerpring object s instantiated. The tokens that are returned by
+        # the tokenizer are concatenated using a single blank space.
         return ' '.join(self.tokenizer.tokens(value))
+
+
+class NGramFingerprint(Fingerprint):
+    """Fingerprint key generator that uses an n-gram tokenizer instead of the
+    default tokenizer. This is a shortcut to instantiate the Fingerprint key
+    generator.
+    """
+    def __init__(
+        self, n: int, pleft: Optional[str] = None, pright: Optional[str] = None,
+        normalizer: Optional[Callable] = None
+    ):
+        """Create an instance of the Fingerprint key generator that uses an
+        n-gram tokenizer instead of the default tokenizer. Provides the option
+        to set the n-gram tokenizer parameters.
+
+        Patameters
+        ----------
+        n: int
+            Length of generated n-grams.
+        pleft: str, default=None
+            Padding character that is used to create a left-padding for each
+            processed value of length n-1.
+        pright: str, default=None
+            Padding character that is used to create a right-padding for each
+            processed value of length n-1.
+        normalizer: callable, default=None
+            Callable that is used to normalize values before token generation.
+        """
+        super(NGramFingerprint, self).__init__(
+            tokenizer=NGrams(n=n, pleft=pleft, pright=pright),
+            normalizer=normalizer
+        )
