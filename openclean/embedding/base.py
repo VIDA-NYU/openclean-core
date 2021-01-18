@@ -128,7 +128,7 @@ class ValueEmbedder(metaclass=ABCMeta):
         -------
         numpy.array
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def prepare(self, values):
@@ -144,4 +144,4 @@ class ValueEmbedder(metaclass=ABCMeta):
         -------
         openclean.embedding.base.ValueEmbedder
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
