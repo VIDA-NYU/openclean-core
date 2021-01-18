@@ -19,9 +19,11 @@ import os
 ENV_DATA_DIR = 'OPENCLEAN_DATA_DIR'
 # Download directory
 ENV_MASTERDATA_DIR = 'OPENCLEAN_MASTERDATA_DIR'
+# Number of parallel threads to use.
+ENV_THREADS = 'OPENCLEAN_THREADS'
 
 
-def DATADIR():
+def DATADIR() -> str:
     """Get directory where raw data files are maintained.
 
     Returns
@@ -32,7 +34,7 @@ def DATADIR():
     return os.environ.get(ENV_DATA_DIR, default_value)
 
 
-def MASTERDATADIR():
+def MASTERDATADIR() -> str:
     """Get directory where master data repositories are maintained.
 
     Returns
@@ -41,3 +43,20 @@ def MASTERDATADIR():
     """
     default_value = os.path.join(str(Path.home()), '.openclean', 'masterdata')
     return os.environ.get(ENV_MASTERDATA_DIR, default_value)
+
+
+def THREADS() -> int:
+    """Get number of parallel threads. BY default a value of 1 is used. The
+    default value is returned if the environment variable 'OPENCLEAN_THREADS'
+    is not set or contains an invalid value (i.e., non-numeric or smaller than
+    one).
+
+    Returns
+    -------
+    string
+    """
+    try:
+        threads = int(os.environ.get(ENV_THREADS, 1))
+    except ValueError:
+        threads = 1
+    return 1 if threads < 1 else threads
