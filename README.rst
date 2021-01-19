@@ -28,11 +28,11 @@ The goal of **openclean** goal is to bring together data cleaning tools in a sin
 Installation
 ============
 
-Install **openclean** from the  `Python Package Index (PyPI) <https://pypi.org/>`_ using ``pip`` with:
+Install **openclean** from GitHub using ``pip`` with:
 
 .. code-block:: bash
 
-    pip install openclean-core
+    pip install git+git://github.com/VIDA-NYU/openclean-core.git
 
 
 

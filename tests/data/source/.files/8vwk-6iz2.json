@@ -1,0 +1,200 @@
+{
+  "results" :
+    [
+      {
+        "resource" :
+          {
+            "name" : "DOHMH Farmers Markets",
+            "id" : "8vwk-6iz2",
+            "parent_fxf" : [],
+            "description" : "This is a list of farmers markets across the five boroughs. Farmers market vendors, products, and EBT acceptance varies by venue.",
+            "attribution" : "Department of Health and Mental Hygiene (DOHMH)",
+            "attribution_link" : null,
+            "contact_email" : null,
+            "type" : "dataset",
+            "updatedAt" : "2020-12-11T18:29:31.000Z",
+            "createdAt" : "2018-03-07T16:26:53.000Z",
+            "metadata_updated_at" : "2020-12-11T18:29:31.000Z",
+            "data_updated_at" : "2020-12-11T18:29:22.000Z",
+            "page_views" :
+              {
+                "page_views_last_week" : 17,
+                "page_views_last_month" : 61,
+                "page_views_total" : 3375,
+                "page_views_last_week_log" : 4.169925001442312,
+                "page_views_last_month_log" : 5.954196310386876,
+                "page_views_total_log" : 11.721099188707186
+              },
+            "columns_name" :
+              [
+                "Borough",
+                "Market Name",
+                "Street Address",
+                "Community District",
+                "Latitude",
+                "Longitude",
+                "Days of Operation",
+                "Hours of Operations",
+                "Season Dates",
+                "Accepts EBT",
+                "Open Year-Round",
+                "Stellar Cooking Demonstrations",
+                "Food Activities for Kids",
+                "Location Point",
+                "Location Point (address)",
+                "Location Point (city)",
+                "Location Point (state)",
+                "Location Point (zip)",
+                "Zip Codes",
+                "Community Districts",
+                "Borough Boundaries",
+                "City Council Districts",
+                "Police Precincts"
+              ],
+            "columns_field_name" :
+              [
+                "borough",
+                "marketname",
+                "streetaddress",
+                "community_district",
+                "latitude",
+                "longitude",
+                "daysoperation",
+                "hoursoperations",
+                "seasondates",
+                "accepts_ebt",
+                "open_year_round",
+                "nyc_dept_of_health_cooking",
+                "kids",
+                "location_point",
+                "location_point_address",
+                "location_point_city",
+                "location_point_state",
+                "location_point_zip",
+                ":@computed_region_efsh_h5xi",
+                ":@computed_region_f5dn_yrer",
+                ":@computed_region_yeji_bk3q",
+                ":@computed_region_92fq_4b7q",
+                ":@computed_region_sbqj_enih"
+              ],
+            "columns_datatype" :
+              [
+                "text",
+                "text",
+                "text",
+                "text",
+                "number",
+                "number",
+                "text",
+                "text",
+                "text",
+                "text",
+                "text",
+                "text",
+                "text",
+                "point",
+                "text",
+                "text",
+                "text",
+                "text",
+                "number",
+                "number",
+                "number",
+                "number",
+                "number"
+              ],
+            "columns_description" :
+              [
+                "Borough in which site is located",
+                "Name of the Farmers Market site or Food Box site",
+                "Site Address ",
+                "",
+                "Site lattitude coordinate",
+                "Site longitude coordinate",
+                "",
+                "",
+                "",
+                "Location accepts EBT (Yes or No)",
+                "Site is Year round (Yes or No)",
+                "Location offers a nutrition workshop onsite (Yes or No)",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+            "columns_format" :
+              [
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                { "view" : "date", "align" : "left" },
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {},
+                {}
+              ],
+            "download_count" : 1610,
+            "provenance" : "official",
+            "lens_view_type" : "tabular",
+            "blob_mime_type" : null,
+            "hide_from_data_json" : false,
+            "publication_date" : "2020-12-11T18:29:31.000Z"
+          },
+        "classification" :
+          {
+            "categories" : [ "infrastructure" ],
+            "tags" : [],
+            "domain_tags" : [ "farmer", "markets", "food", "boxes", "dohmh" ],
+            "domain_metadata" :
+              [
+                { "key" : "Update_Automation", "value" : "No" },
+                { "key" : "Update_Date-Made-Public", "value" : "4/4/2018" },
+                { "key" : "Update_Update-Frequency", "value" : "Biweekly " },
+                {
+                  "key" : "Dataset-Information_Agency",
+                  "value" : "Department of Health and Mental Hygiene (DOHMH)"
+                }
+              ]
+          },
+        "metadata" : { "domain" : "data.cityofnewyork.us" },
+        "permalink" : "https://data.cityofnewyork.us/d/8vwk-6iz2",
+        "link" : "https://data.cityofnewyork.us/dataset/DOHMH-Farmers-Markets/8vwk-6iz2",
+        "owner" :
+          {
+            "id" : "5fuc-pqz2",
+            "user_type" : "interactive",
+            "display_name" : "NYC OpenData"
+          },
+        "creator" :
+          {
+            "id" : "5fuc-pqz2",
+            "user_type" : "interactive",
+            "display_name" : "NYC OpenData"
+          }
+      }
+    ],
+  "resultSetSize" : 1,
+  "timings" : { "serviceMillis" : 34, "searchMillis" : [ 7, 5 ] }
+}
