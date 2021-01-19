@@ -377,7 +377,7 @@ class USStreetNameKey(Tokens):
     'W', '35', 'ST'. The key generator removes all tokens that contain non-
     alphenumeric characters. The remaining tokens are then normalized using a
     mapping that attempts to standardize different abbreviations for street
-    types (e.g., ST, STR, STREET -> STR).
+    types (e.g., ST, STR, STREET -> ST).
 
     Note that duplicate tokens are not removed by this key generator. The reason
     is that some abbreviations for street types (e.g., ST) can have multiple

@@ -12,7 +12,7 @@ import pytest
 
 from openclean.function.eval.base import Col
 from openclean.function.eval.text import (
-    Capitalize, Concat, Format, Length, Lower, Upper
+    Capitalize, Concat, EndsWith, Format, Length, Lower, StartsWith, Upper
 )
 
 
@@ -35,6 +35,19 @@ def test_string_capitalize(people):
     f = op.prepare(people.columns)
     names = [f(row) for row in people.itertuples(index=False, name=None)]
     assert names == ['Alice davies', 'Bob smith']
+
+
+def test_string_concat(people):
+    """Test string concatenation function for column values."""
+    op = Concat(columns=['Name', 'Age'], delimiter=' ', as_string=True)
+    names = op.eval(people)
+    assert names == ['alice davies 23', 'bob Smith 33']
+
+
+def test_string_endswith(people):
+    """Test string ends with predicate."""
+    matches = EndsWith(Col('Name'), 'Smith').eval(people)
+    assert matches == [False, True]
 
 
 def test_string_format(people):
@@ -65,6 +78,12 @@ def test_string_lower(people):
     """Test string to lower characters function for column values."""
     names = Lower(Col('Name')).eval(people)
     assert names == ['alice davies', 'bob smith']
+
+
+def test_string_startswith(people):
+    """Test string starts with predicate."""
+    matches = StartsWith(Col('Name'), 'alice').eval(people)
+    assert matches == [True, False]
 
 
 def test_string_upper(people):
