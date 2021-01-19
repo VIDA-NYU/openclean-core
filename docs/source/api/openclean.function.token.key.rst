@@ -1,7 +1,7 @@
-openclean.function.token.key module
+openclean.function.value.key.fingerprint module
 ===================================
 
-.. automodule:: openclean.function.token.key
+.. automodule:: openclean.function.value.key.fingerprint
    :members:
    :undoc-members:
    :show-inheritance:

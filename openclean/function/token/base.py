@@ -297,15 +297,16 @@ class UniqueTokens(TokenTransformer):
 
 class UpdateTokens(TokenTransformer):
     """Update tokens by applying a value function to each of them."""
-    def __init__(self, func: ValueFunction):
+    def __init__(self, func: Union[Callable, ValueFunction]):
         """Initialize the update function for tokens.
 
         Parameters
         ----------
-        func: openclean.function.value.base.ValueFunction
+        func: callable or openclean.function.value.base.ValueFunction
             Function that is applied on input tokens to transform them.
         """
-        self.func = func
+        # Ensure that the function is a value function.
+        self.func = CallableWrapper(func) if not isinstance(func, ValueFunction) else func
 
     def transform(self, tokens: List[str]) -> List[str]:
         """Returns the list of tokens that results from applying the associated
@@ -320,7 +321,9 @@ class UpdateTokens(TokenTransformer):
         -------
         list of string
         """
-        return self.func.apply(tokens)
+        # Prepare function if necessary.
+        f = self.func if self.func.is_prepared() else self.func.prepare(tokens)
+        return f.apply(tokens)
 
 
 # -- Shortcuts for common update functions ------------------------------------

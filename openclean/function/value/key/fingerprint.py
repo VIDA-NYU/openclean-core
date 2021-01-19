@@ -6,7 +6,10 @@
 # full license details.
 
 """Collection of token key functions. These functions are used to generate
-keys for input values from intermediate token lists.
+keys for input values from intermediate token lists. The classes resemble
+similar functionality as found in OpenRefine:
+
+https://github.com/OpenRefine/OpenRefine/wiki/Clustering-In-Depth
 """
 
 from typing import Callable, Optional

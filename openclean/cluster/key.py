@@ -15,7 +15,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from openclean.data.types import Value
 from openclean.cluster.base import Cluster, Clusterer
 from openclean.engine.parallel import process_list
-from openclean.function.token.key import Fingerprint
+from openclean.function.value.key.fingerprint import Fingerprint
 from openclean.function.value.base import CallableWrapper, ValueFunction
 
 import openclean.config as config
