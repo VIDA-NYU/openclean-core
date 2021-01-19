@@ -9,6 +9,36 @@
 
 from typing import Any
 
+from openclean.data.types import Value
+from openclean.function.value.base import PreparedFunction
+
+
+class AlphaNumeric(PreparedFunction):
+    """Predicate to test whether a given string contains only alpha-numeric
+    characters.
+    """
+    def eval(self, value: Value) -> bool:
+        """Returns True if the string representation of a given value contains
+        only alpha-numeric characters.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        bool
+        """
+        # Ensure that the given value is a string.
+        value = value if isinstance(value, str) else str(value)
+        for c in value:
+            if not c.isalpha() and not c.isdigit():
+                return False
+        return True
+
+
+# -- Helper Functions ---------------------------------------------------------
 
 def to_len(value: Any) -> int:
     """Get the length of a value. The value is converted to string and the

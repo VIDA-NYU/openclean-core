@@ -9,7 +9,27 @@
 
 import pytest
 
-from openclean.function.text import to_len, to_lower, to_title, to_upper
+from openclean.function.value.text import AlphaNumeric, to_len, to_lower, to_title, to_upper
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    [
+        ('ABC', True),
+        ('ab12', True),
+        ('1-3', False),
+        ('-1', False),
+        ('123', True),
+        (123, True),
+        (12.34, False),
+        (' ', False),
+        ('a#1', False),
+        ('!@#$', False)
+    ]
+)
+def test_alphanumeric_predicate(value, result):
+    """Test the alphanimeric character predicate."""
+    assert AlphaNumeric().eval(value) == result
 
 
 @pytest.mark.parametrize(

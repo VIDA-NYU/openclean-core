@@ -79,7 +79,8 @@ class Tokens(PreparedFunction, StringTokenizer):
     functionality to concatenate the generated token list to a token key string.
     """
     def __init__(
-        self, tokenizer: StringTokenizer, transformer: Optional[TokenTransformer] = None,
+        self, tokenizer: StringTokenizer,
+        transformer: Optional[Union[List[TokenTransformer], TokenTransformer]] = None,
         delim: Optional[str] = '', sort: Optional[bool] = False,
         reverse: Optional[bool] = False, unique: Optional[bool] = False
     ):
@@ -91,8 +92,10 @@ class Tokens(PreparedFunction, StringTokenizer):
         tokenizer: openclean.function.token.base.StringTokenizer
             Tokenizer that is used to generate initial token list for given
             values.
-        transformer: openclean.function.token.base.TokenTransformer, default=None
-            Optional transformer that is applied on generated token lists.
+        transformer: list or single object of openclean.function.token.base.TokenTransformer,
+                default=None
+            Optional transformer that is applied on generated token lists. This
+            can also be a list of transformers that are applied sequentially.
         delim: string, default=''
             Delimiter that is used to concatenate tokens when used as a value
             function.
@@ -105,6 +108,9 @@ class Tokens(PreparedFunction, StringTokenizer):
             Remove duplicate tokens from the generated token lists.
         """
         self.tokenizer = tokenizer
+        # Convert transformer to pipeline if it is of type list.
+        if isinstance(transformer, list):
+            transformer = TokenTransformerPipeline(transformers=transformer)
         self.transformer = transformer
         self.delim = delim
         # Add transformers for sorting, reverse, and unqiue if the respective

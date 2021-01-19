@@ -21,7 +21,7 @@ from openclean.function.token.split import Split
         (Tokens(Split(' '), sort=True, reverse=True), 'FEDCBAA'),
         (Tokens(Split(' '), unique=True, sort=True), 'ABCDEF'),
         (Tokens(Split(' '), transformer=TokenPrefix(2)), 'AD'),
-        (Tokens(Split(' '), transformer=TokenPrefix(2), reverse=True), 'DA')
+        (Tokens(Split(' '), transformer=[TokenPrefix(2)], reverse=True), 'DA')
     ]
 )
 def test_default_tokenizer(tokens, result):
