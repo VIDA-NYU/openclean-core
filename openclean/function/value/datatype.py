@@ -95,6 +95,38 @@ def to_datetime(
     return default_value
 
 
+def to_datetime_format(value: Scalar, formats: Optional[Union[str, List[str]]] = None) -> datetime:
+    """Convert a given value to a datetime object for a given date format. If a
+    list of format specifications is given an attempt is made to convert the
+    value for each format (in given order) until the first format for which
+    the conversion succeeds. If none of the formats match the given value None
+    is returned.
+
+    Parameters
+    ----------
+    value: scalar
+        Scalar value that is converted to a date.
+    formats: string or list(string)
+        Date format string using Python strptime() format directives. This
+        can be a list of date formats.
+
+    Returns
+    -------
+    datetime.datetime
+    """
+    if isinstance(formats, list):
+        for date_format in formats:
+            try:
+                return datetime.strptime(value, date_format)
+            except ValueError:
+                pass
+    else:
+        try:
+            return datetime.strptime(value, formats)
+        except ValueError:
+            pass
+
+
 def to_float(
     value: Scalar, default_value: Optional[Scalar] = None,
     raise_error: Optional[bool] = False
@@ -216,14 +248,14 @@ def is_datetime(
         # characters (one for day, month, two for year and at least two
         # non-alphanumeric characters.
         #
-        # An alternative solution was pointer out by @remram44:
+        # An alternative solution was pointed out by @remram44:
         # https://gitlab.com/ViDA-NYU/datamart/datamart/-/blob/39462a5dca533a1e55596ddcbfc0ac7e98dce4de/lib_profiler/datamart_profiler/temporal.py#L63  # noqa: E501
         #
         # All solutions seem to suffer from the problem that values like
         # 152-12 are valid dates (e.g., 152-12-01 in this case) but also
         # valid house numbers, for example. There is no good solution here.
         # For now we go with the assumption that if someone wants to specify
-        # a date it should have a tleast a day, month and year separated by
+        # a date it should have at least a day, month and year separated by
         # some special (non-alphanumeric) charcater.
         if len(value) >= 6 and has_two_spec_chars(value):
             try:
@@ -231,19 +263,8 @@ def is_datetime(
                 return True
             except (OverflowError, TypeError, ValueError):
                 pass
-    elif isinstance(formats, list):
-        for date_format in formats:
-            try:
-                datetime.strptime(value, date_format)
-                return True
-            except ValueError:
-                pass
     else:
-        try:
-            datetime.strptime(value, formats)
-            return True
-        except ValueError:
-            pass
+        return to_datetime_format(value=value, formats=formats) is not None
     return False
 
 

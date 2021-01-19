@@ -28,10 +28,10 @@ openclean.function.base module
    :undoc-members:
    :show-inheritance:
 
-openclean.function.text module
+openclean.function.value.text module
 ------------------------------
 
-.. automodule:: openclean.function.text
+.. automodule:: openclean.function.value.text
    :members:
    :undoc-members:
    :show-inheritance:

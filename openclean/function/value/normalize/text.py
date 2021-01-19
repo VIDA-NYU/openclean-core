@@ -9,7 +9,6 @@
 
 from typing import Callable, Optional
 
-import re
 import unicodedata
 
 from openclean.data.types import Value
