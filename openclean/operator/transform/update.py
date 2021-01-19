@@ -115,8 +115,8 @@ class Update(StreamProcessor, DataFrameTransformer):
             Single column or list of column index positions or column names.
         func: scalar, dict, callable, openclean.function.value.base.ValueFunction,
             or openclean.function.eval.base.EvalFunction
-        Specification of the (resulting) evaluation function that is used to
-        generate the updated values for each row in the data frame.
+            Specification of the (resulting) evaluation function that is used to
+            generate the updated values for each row in the data frame.
 
         Raises
         ------

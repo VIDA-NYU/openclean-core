@@ -47,3 +47,10 @@ def test_cluster_suggestion(value, suggest):
     for v in list(value):
         c.add(v)
     assert c.suggestion() == suggest
+
+
+def test_cluster_to_mapping():
+    """Test converting a cluster to a mapping dictionary."""
+    c = Cluster().add('a', count=5).add('b', count=10)
+    assert c.to_mapping() == {'a': 'b'}
+    assert c.to_mapping(target='c') == {'a': 'c', 'b': 'c'}

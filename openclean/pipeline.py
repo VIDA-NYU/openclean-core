@@ -32,7 +32,7 @@ from openclean.operator.transform.limit import Limit
 from openclean.operator.transform.move import MoveCols
 from openclean.operator.transform.rename import Rename
 from openclean.operator.transform.select import Select
-from openclean.operator.transform.update import Update
+from openclean.operator.transform.update import Update, UpdateFunction
 from openclean.profiling.dataset import ColumnProfiler, ProfileOperator
 from openclean.profiling.datatype.convert import DatatypeConverter
 from openclean.profiling.datatype.operator import Typecast
@@ -541,26 +541,25 @@ class DataPipeline(object):
         """
         return self.append(Typecast(converter=converter))
 
-    def update(self, *args) -> DataPipeline:
-        """Update rows in a data frame. Expects a list of columns that are
-        updated. The last argument is expected to be an update function that
-        accepts as many arguments as there are columns in the argument list.
+    def update(self, columns: Columns, func: UpdateFunction) -> DataPipeline:
+        """Update rows in a data frame.
 
         Raises a Value error if not enough arguments (at least two) are given.
 
         Parameters
         ----------
-        args: list of int or string
-            List of column names or index positions.
+        columns: int, str, or list of int or string, default=None
+            References to the selected columns.
+        func: scalar, dict, callable, openclean.function.value.base.ValueFunction,
+            or openclean.function.eval.base.EvalFunction
+            Specification of the (resulting) evaluation function that is used to
+            generate the updated values for each row in the data frame.
 
         Returns
         -------
         openclean.data.stream.processor.StreamProcessor
         """
-        args = list(args)
-        if len(args) < 1:
-            raise ValueError('not enough arguments for update')
-        return self.append(Update(columns=args[:-1], func=args[-1]))
+        return self.append(Update(columns=columns, func=func))
 
     def where(
         self, predicate: EvalFunction, limit: Optional[int] = None

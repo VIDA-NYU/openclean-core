@@ -7,6 +7,9 @@
 
 """Collection of evaluation functions that operate on string values."""
 
+from typing import Optional
+
+from openclean.data.types import Columns
 from openclean.function.eval.base import Eval
 
 
@@ -60,6 +63,41 @@ class Concat(Eval):
 
         super(Concat, self).__init__(
             func=join_string,
+            columns=columns,
+            is_unary=True
+        )
+
+
+class EndsWith(Eval):
+    """String predicate that checks if a column value ends with a given
+    prefix string.
+    """
+    def __init__(self, columns: Columns, prefix: str, as_string: Optional[bool] = False):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
+        prefix: str
+            Suffix for values that satisfy the predicate.
+        as_string: bool, optional
+            Use string representation for non-string values.
+        """
+
+        def ends_with(value):
+            if as_string:
+                value = value if isinstance(value, str) else str(value)
+            return value.endswith(prefix)
+
+        super(EndsWith, self).__init__(
+            func=StringFunction(
+                func=ends_with,
+                as_string=as_string,
+                unpack_list=True
+            ),
             columns=columns,
             is_unary=True
         )
@@ -145,6 +183,41 @@ class Lower(Eval):
         super(Lower, self).__init__(
             func=StringFunction(
                 func=str.lower,
+                as_string=as_string,
+                unpack_list=True
+            ),
+            columns=columns,
+            is_unary=True
+        )
+
+
+class StartsWith(Eval):
+    """String predicate that checks if a column value starts with a given
+    prefix string.
+    """
+    def __init__(self, columns: Columns, prefix: str, as_string: Optional[bool] = False):
+        """Initialize the object properties.
+
+        Parameters
+        ----------
+        columns: int, string, openclean.function,.base.EvalFunction, or list
+            Single column or list of column index positions or column names.
+            This can also be a single evalaution function or a list of
+            functions.
+        prefix: str
+            Prefix for values that satisfy the predicate.
+        as_string: bool, optional
+            Use string representation for non-string values.
+        """
+
+        def starts_with(value):
+            if as_string:
+                value = value if isinstance(value, str) else str(value)
+            return value.startswith(prefix)
+
+        super(StartsWith, self).__init__(
+            func=StringFunction(
+                func=starts_with,
                 as_string=as_string,
                 unpack_list=True
             ),

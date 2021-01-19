@@ -15,7 +15,7 @@ different values that might be alternative representations of the same thing'*.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from openclean.data.types import Value
 
@@ -109,6 +109,30 @@ class Cluster(object):
             elif count == max_count and insert_id < suggested_value[1]:
                 suggested_value = (value, insert_id, count)
         return suggested_value[0]
+
+    def to_mapping(self, target: Optional[Value] = None) -> Dict:
+        """Create a mapping for the values in the cluster to a given target
+        value. This is primarily intended for standardization where all values
+        matchin values in this cluster are mapped to a single target value.
+
+        If the target value is not specified the suggested value for this cluster
+        is used as the default.
+
+        The resulting mapping will not include an entry for the target itself.
+        That is, if the target is a value in the cluster that entry is excluded
+        from the generated mapping.
+
+        Parameters
+        ----------
+        target: scalar or tuple, default=None
+            Target value to which all values in this cluster are mapped.
+
+        Returns
+        -------
+        dict
+        """
+        target = target if target is not None else self.suggestion()
+        return {key: target for key in self.elements if key != target}
 
 
 class Clusterer(metaclass=ABCMeta):
