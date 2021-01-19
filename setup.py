@@ -43,7 +43,11 @@ dev_require = ['flake8', 'python-language-server'] + tests_require
 extras_require = {
     'docs': [
         'Sphinx',
-        'sphinx-rtd-theme'
+        'sphinx-rtd-theme',
+        'sphinxcontrib-apidoc',
+        'jupyter-sphinx',
+        'nbshpinx',
+        'nbsphinx-link'
     ],
     'tests': tests_require,
     'dev': dev_require
