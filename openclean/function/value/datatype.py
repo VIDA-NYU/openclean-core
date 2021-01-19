@@ -248,14 +248,14 @@ def is_datetime(
         # characters (one for day, month, two for year and at least two
         # non-alphanumeric characters.
         #
-        # An alternative solution was pointer out by @remram44:
+        # An alternative solution was pointed out by @remram44:
         # https://gitlab.com/ViDA-NYU/datamart/datamart/-/blob/39462a5dca533a1e55596ddcbfc0ac7e98dce4de/lib_profiler/datamart_profiler/temporal.py#L63  # noqa: E501
         #
         # All solutions seem to suffer from the problem that values like
         # 152-12 are valid dates (e.g., 152-12-01 in this case) but also
         # valid house numbers, for example. There is no good solution here.
         # For now we go with the assumption that if someone wants to specify
-        # a date it should have a tleast a day, month and year separated by
+        # a date it should have at least a day, month and year separated by
         # some special (non-alphanumeric) charcater.
         if len(value) >= 6 and has_two_spec_chars(value):
             try:
