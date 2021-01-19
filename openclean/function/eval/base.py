@@ -48,7 +48,7 @@ class EvalFunction(metaclass=ABCMeta):
       starts. The prepare method receives the schema of the data stream as an
       argument. It returns a callable function that accepts a data stream row
       as the only argument and that returns a single value or a tuple of values
-      depending on whether the evaluation function operators on on or more
+      depending on whether the evaluation function operators on one or more
       columns.
     """
     def __add__(self, other: EvalSpec) -> EvalFunction:
