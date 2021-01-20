@@ -11,3 +11,9 @@ flowserv-core==0.6.0
 fuzzyset==0.0.19
 jellyfish
 scipy
+sphinx 
+sphinx-rtd-theme
+sphinxcontrib-apidoc 
+jupyter-sphinx 
+git+https://github.com/spatialaudio/nbsphinx.git@master
+nbsphinx-link
