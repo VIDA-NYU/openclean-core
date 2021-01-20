@@ -1,5 +1,6 @@
 sphinx 
 sphinx-rtd-theme
+pandas
 sphinxcontrib-apidoc 
 jupyter-sphinx 
 git+https://github.com/spatialaudio/nbsphinx.git@master
