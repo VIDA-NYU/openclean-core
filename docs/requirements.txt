@@ -1,0 +1,6 @@
+sphinx 
+sphinx-rtd-theme 
+sphinxcontrib-apidoc 
+jupyter-sphinx 
+nbshpinx 
+nbsphinx-link
