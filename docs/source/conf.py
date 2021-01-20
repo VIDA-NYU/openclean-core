@@ -13,7 +13,13 @@
 import os
 import sys
 
+
+# -- jupyter-sphinx configuration---------------------------------------------
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath('.')), 'docs'))
+
+package_path = os.path.abspath('../..')
+os.environ['PYTHONPATH'] = ':'.join((package_path, os.environ.get('PYTHONPATH', '')))
 
 # -- Project information -----------------------------------------------------
 
