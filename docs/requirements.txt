@@ -1,5 +1,6 @@
 sphinx 
 sphinx-rtd-theme 
+ipykernel
 sphinxcontrib-apidoc 
 jupyter-sphinx 
 nbshpinx 
