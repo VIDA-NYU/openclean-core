@@ -1,7 +1,6 @@
 sphinx 
-sphinx-rtd-theme 
-ipykernel
+sphinx-rtd-theme
 sphinxcontrib-apidoc 
 jupyter-sphinx 
-nbshpinx 
+git+https://github.com/spatialaudio/nbsphinx.git@master
 nbsphinx-link
