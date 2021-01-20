@@ -10,7 +10,7 @@ We use a sample of NYC open data with completed job codes at various locations i
 
     from openclean.data.load import dataset
 
-    ds = dataset('source/data/job_locations.csv')
+    ds = dataset('docs/source/data/job_locations.csv')
 
     ds.head()
 

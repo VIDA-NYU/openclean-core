@@ -10,7 +10,7 @@ We use a sample of NYC open data with completed job codes at various locations i
 
     from openclean.data.load import dataset
 
-    ds = dataset('source/data/job_locations.csv')
+    ds = dataset('docs/source/data/job_locations.csv')
 
     ds.head()
 
@@ -92,7 +92,7 @@ an openclean mapping to be reused later with other datasets as translation table
         similarity=FuzzySimilarity()
     )
 
-    mispelled_data = dataset('source/data/misspellings.csv')
+    mispelled_data = dataset('docs/source/data/misspellings.csv')
 
     map = Mapping()
     for query in set(mispelled_data['Borough']):

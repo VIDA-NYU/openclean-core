@@ -13,7 +13,7 @@ It can be created from any source data type accepted by pandas. Compressed Gzip 
 
     from openclean.data.load import dataset
 
-    ds = dataset('source/data/job_locations.csv')
+    ds = dataset('docs/source/data/job_locations.csv')
 
     ds.head()
 
