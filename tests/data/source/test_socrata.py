@@ -99,16 +99,11 @@ def mock_response(monkeypatch):
     monkeypatch.setattr(requests, "get", mock_get)
 
 
-@pytest.fixture
-def repo():
-    """Fixture to get the Socrata Open Data API repository handle."""
-    return Socrata()
-
-
 # -- Unit tests ---------------------------------------------------------------
 
-def test_socrata_catalog(repo, mock_response):
+def test_socrata_catalog(mock_response):
     """Test getting a list of datasets for domain 'data.cityofnewyork.us'."""
+    repo = Socrata()
     count = 0
     for ds in repo.catalog('data.cityofnewyork.us'):
         count += 1
@@ -118,21 +113,24 @@ def test_socrata_catalog(repo, mock_response):
         repo.dataset('UNKNOWN')
 
 
-def test_socrata_domains(repo, mock_response):
+def test_socrata_domains(mock_response):
     """Test getting a list of domain names from the Socrata Open Data API."""
+    repo = Socrata(app_token='0000')
     domains = repo.domains()
     assert len(domains) > 0
     assert 'data.cityofnewyork.us' in [d for _, d in domains]
 
 
-def test_dataset_load(repo, mock_response):
-    """Test loading the restcountries dataset as a data frame."""
+def test_dataset_load(mock_response):
+    """Test loading s Socrata dataset as a data frame."""
+    repo = Socrata()
     df = repo.dataset(DATASET).load()
     assert len(df.columns) > 0
 
 
-def test_dataset_write(repo, mock_response, tmpdir):
-    """Test writing the restcountries dataset to a tab-delimited file."""
+def test_dataset_write(mock_response, tmpdir):
+    """Test writing a Socrata dataset to a tab-delimited file."""
+    repo = Socrata()
     filename = os.path.join(tmpdir, 'data.tsv')
     with open(filename, 'wb') as f:
         repo.dataset(DATASET).write(f)
