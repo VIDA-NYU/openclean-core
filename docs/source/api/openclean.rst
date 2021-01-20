@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 2
 
+   openclean.cluster
    openclean.data
    openclean.embedding
    openclean.engine

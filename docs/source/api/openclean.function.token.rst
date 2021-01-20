@@ -25,10 +25,10 @@ openclean.function.token.filter module
    :undoc-members:
    :show-inheritance:
 
-openclean.function.value.key.fingerprint module
------------------------------------
+openclean.function.token.ngram module
+-------------------------------------
 
-.. automodule:: openclean.function.value.key.fingerprint
+.. automodule:: openclean.function.token.ngram
    :members:
    :undoc-members:
    :show-inheritance:

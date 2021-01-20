@@ -58,6 +58,14 @@ openclean.engine.log module
    :undoc-members:
    :show-inheritance:
 
+openclean.engine.parallel module
+--------------------------------
+
+.. automodule:: openclean.engine.parallel
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 openclean.engine.registry module
 --------------------------------
 

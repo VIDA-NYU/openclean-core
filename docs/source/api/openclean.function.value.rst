@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 2
 
+   openclean.function.value.key
    openclean.function.value.normalize
 
 Submodules
@@ -125,6 +126,14 @@ openclean.function.value.regex module
 -------------------------------------
 
 .. automodule:: openclean.function.value.regex
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+openclean.function.value.text module
+------------------------------------
+
+.. automodule:: openclean.function.value.text
    :members:
    :undoc-members:
    :show-inheritance:

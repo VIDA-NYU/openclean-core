@@ -12,11 +12,11 @@
 #
 import os
 import sys
-package_path = os.path.abspath('../..')
+# package_path = os.path.abspath('../..')
 
 # paths for apidoc and jupyter-sphinx
-sys.path.insert(0, package_path)
-os.environ['PYTHONPATH'] = ':'.join((package_path, os.environ.get('PYTHONPATH', '')))
+# sys.path.insert(0, package_path)
+# os.environ['PYTHONPATH'] = ':'.join((package_path, os.environ.get('PYTHONPATH', '')))
 
 # -- Project information -----------------------------------------------------
 
