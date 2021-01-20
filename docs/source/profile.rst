@@ -8,9 +8,14 @@ We use a sample of NYC open data with completed job codes at various locations i
 
 .. jupyter-execute::
 
+    import os
+    path_to_file = os.path.join(os.getcwd(), 'source', 'data')
+
+.. jupyter-execute::
+
     from openclean.data.load import dataset
 
-    ds = dataset('docs/source/data/job_locations.csv')
+    ds = dataset(os.path.join(path_to_file, 'job_locations.csv'))
 
     ds.head()
 
