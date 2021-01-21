@@ -3,6 +3,7 @@ python-dateutil
 requests
 dill
 pandas>=1.0.0
+Cython>= 0.28.5
 scikit-learn
 jsonschema>=3.2.0
 Shapely>=1.7.0
