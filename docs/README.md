@@ -2,7 +2,7 @@
 
 This directory contains openclean's documentation.
 It is writen using `reStructuredText` format and is compiled to multiple media formats using Sphinx.
-The final documentation is automatically compiled and published after every commit to http://openclean.readthedocs.io/en/latest/
+The final documentation is automatically compiled and published after every commit to https://openclean.readthedocs.io/
 
 ### Requirements
 
