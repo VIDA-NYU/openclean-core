@@ -9,18 +9,8 @@ openclean.function.value.key package
 Submodules
 ----------
 
-openclean.function.value.key.fingerprint module
------------------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.function.value.key.fingerprint
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.value.key.geo module
----------------------------------------
-
-.. automodule:: openclean.function.value.key.geo
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.function.value.key.fingerprint
+   openclean.function.value.key.geo

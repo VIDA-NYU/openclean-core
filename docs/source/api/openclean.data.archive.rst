@@ -9,26 +9,9 @@ openclean.data.archive package
 Submodules
 ----------
 
-openclean.data.archive.base module
-----------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.data.archive.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.archive.cache module
------------------------------------
-
-.. automodule:: openclean.data.archive.cache
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.archive.histore module
--------------------------------------
-
-.. automodule:: openclean.data.archive.histore
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.data.archive.base
+   openclean.data.archive.cache
+   openclean.data.archive.histore

@@ -9,98 +9,18 @@ openclean.function.eval package
 Submodules
 ----------
 
-openclean.function.eval.aggregate module
-----------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.function.eval.aggregate
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.base module
------------------------------------
-
-.. automodule:: openclean.function.eval.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.datatype module
----------------------------------------
-
-.. automodule:: openclean.function.eval.datatype
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.domain module
--------------------------------------
-
-.. automodule:: openclean.function.eval.domain
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.list module
------------------------------------
-
-.. automodule:: openclean.function.eval.list
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.logic module
-------------------------------------
-
-.. automodule:: openclean.function.eval.logic
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.normalize module
-----------------------------------------
-
-.. automodule:: openclean.function.eval.normalize
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.null module
------------------------------------
-
-.. automodule:: openclean.function.eval.null
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.random module
--------------------------------------
-
-.. automodule:: openclean.function.eval.random
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.regex module
-------------------------------------
-
-.. automodule:: openclean.function.eval.regex
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.row module
-----------------------------------
-
-.. automodule:: openclean.function.eval.row
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.eval.text module
------------------------------------
-
-.. automodule:: openclean.function.eval.text
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.function.eval.aggregate
+   openclean.function.eval.base
+   openclean.function.eval.datatype
+   openclean.function.eval.domain
+   openclean.function.eval.list
+   openclean.function.eval.logic
+   openclean.function.eval.normalize
+   openclean.function.eval.null
+   openclean.function.eval.random
+   openclean.function.eval.regex
+   openclean.function.eval.row
+   openclean.function.eval.text

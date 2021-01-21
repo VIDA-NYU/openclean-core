@@ -9,10 +9,7 @@ openclean.operator.split package
 Submodules
 ----------
 
-openclean.operator.split.split module
--------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.operator.split.split
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.operator.split.split

@@ -16,9 +16,9 @@ import sys
 
 # -- jupyter-sphinx configuration---------------------------------------------
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath('.')), 'docs'))
+# sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath('.')), 'docs'))
 
-package_path = os.path.abspath('../..')
+package_path = os.path.abspath('..')
 os.environ['PYTHONPATH'] = ':'.join((package_path, os.environ.get('PYTHONPATH', '')))
 
 # -- Project information -----------------------------------------------------
@@ -47,11 +47,11 @@ exclude_patterns = []
 # -- apidoc configuration ----------------------------------------------------
 
 # Configuration for the sphinxcontrib-apidoc extension
-apidoc_module_dir = '../../openclean/'
-apidoc_output_dir = 'api'
-apidoc_separate_modules = False
+apidoc_module_dir = '../openclean/'
+apidoc_output_dir = 'source/api'
+apidoc_separate_modules = True
 apidoc_module_first = True
-apidoc_extra_args = ['-d 2']
+apidoc_extra_args = ['-d 3','--force']
 
 # -- Options for HTML output -------------------------------------------------
 

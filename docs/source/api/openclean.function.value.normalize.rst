@@ -9,18 +9,8 @@ openclean.function.value.normalize package
 Submodules
 ----------
 
-openclean.function.value.normalize.numeric module
--------------------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.function.value.normalize.numeric
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.value.normalize.text module
-----------------------------------------------
-
-.. automodule:: openclean.function.value.normalize.text
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.function.value.normalize.numeric
+   openclean.function.value.normalize.text

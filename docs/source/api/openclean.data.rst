@@ -10,7 +10,7 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    openclean.data.archive
    openclean.data.metadata
@@ -21,74 +21,15 @@ Subpackages
 Submodules
 ----------
 
-openclean.data.base module
---------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.data.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.groupby module
------------------------------
-
-.. automodule:: openclean.data.groupby
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.load module
---------------------------
-
-.. automodule:: openclean.data.load
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.mapping module
------------------------------
-
-.. automodule:: openclean.data.mapping
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.masterdata module
---------------------------------
-
-.. automodule:: openclean.data.masterdata
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.schema module
-----------------------------
-
-.. automodule:: openclean.data.schema
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.sequence module
-------------------------------
-
-.. automodule:: openclean.data.sequence
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.types module
----------------------------
-
-.. automodule:: openclean.data.types
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.util module
---------------------------
-
-.. automodule:: openclean.data.util
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.data.base
+   openclean.data.groupby
+   openclean.data.load
+   openclean.data.mapping
+   openclean.data.masterdata
+   openclean.data.schema
+   openclean.data.sequence
+   openclean.data.types
+   openclean.data.util

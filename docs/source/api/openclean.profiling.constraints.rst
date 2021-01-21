@@ -9,18 +9,8 @@ openclean.profiling.constraints package
 Submodules
 ----------
 
-openclean.profiling.constraints.fd module
------------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.profiling.constraints.fd
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.profiling.constraints.ucc module
-------------------------------------------
-
-.. automodule:: openclean.profiling.constraints.ucc
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.profiling.constraints.fd
+   openclean.profiling.constraints.ucc

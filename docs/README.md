@@ -34,9 +34,9 @@ pip install sphinx sphinx-rtd-theme sphinxcontrib-apidoc jupyter-sphinx nbshpinx
 
 ### Editing the Documentation
 
-You can edit any `.rst` file, and then use the make to command to compile the docs:
+You can edit any `.rst` file, and then use the following to command to compile the docs:
 
-    make html
+     sphinx-build -b html . build/
 
 Finally, open the generated HTML file using your web browser. The entry page of
 the documentation can be found at: ``_build/html/index.html``.

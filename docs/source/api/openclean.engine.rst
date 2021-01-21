@@ -10,7 +10,7 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    openclean.engine.object
    openclean.engine.store
@@ -18,58 +18,13 @@ Subpackages
 Submodules
 ----------
 
-openclean.engine.action module
-------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.engine.action
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.base module
-----------------------------
-
-.. automodule:: openclean.engine.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.dataset module
--------------------------------
-
-.. automodule:: openclean.engine.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.library module
--------------------------------
-
-.. automodule:: openclean.engine.library
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.log module
----------------------------
-
-.. automodule:: openclean.engine.log
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.parallel module
---------------------------------
-
-.. automodule:: openclean.engine.parallel
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.registry module
---------------------------------
-
-.. automodule:: openclean.engine.registry
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.engine.action
+   openclean.engine.base
+   openclean.engine.dataset
+   openclean.engine.library
+   openclean.engine.log
+   openclean.engine.parallel
+   openclean.engine.registry

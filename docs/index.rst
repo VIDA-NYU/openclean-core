@@ -1,4 +1,4 @@
-.. image:: logo.png
+.. image:: graphics/logo.png
     :width: 350px
     :align: center
     :height: 80px
@@ -19,15 +19,15 @@ The goal of openclean goal is to bring together data cleaning tools in a single 
     :maxdepth: 2
     :caption: Contents:
 
-    installation
-    start
-    transform
-    clean
-    profile
-    enrich
-    examples
-    extras
-    faq
+    source/installation
+    source/start
+    source/transform
+    source/clean
+    source/profile
+    source/enrich
+    source/examples
+    source/extras
+    source/faq
 
 .. _api-ref:
 
@@ -35,4 +35,4 @@ The goal of openclean goal is to bring together data cleaning tools in a single 
     :maxdepth: 1
     :caption: API Reference:
 
-    api/modules
+    source/api/modules

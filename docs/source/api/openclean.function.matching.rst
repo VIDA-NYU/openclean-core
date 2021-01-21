@@ -9,26 +9,9 @@ openclean.function.matching package
 Submodules
 ----------
 
-openclean.function.matching.base module
----------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.function.matching.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.matching.fuzzy module
-----------------------------------------
-
-.. automodule:: openclean.function.matching.fuzzy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.matching.tests module
-----------------------------------------
-
-.. automodule:: openclean.function.matching.tests
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.function.matching.base
+   openclean.function.matching.fuzzy
+   openclean.function.matching.tests

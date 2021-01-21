@@ -9,18 +9,8 @@ openclean.cluster package
 Submodules
 ----------
 
-openclean.cluster.base module
------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.cluster.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.cluster.key module
-----------------------------
-
-.. automodule:: openclean.cluster.key
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.cluster.base
+   openclean.cluster.key

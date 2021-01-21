@@ -10,17 +10,14 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    openclean.embedding.feature
 
 Submodules
 ----------
 
-openclean.embedding.base module
--------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.embedding.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.embedding.base

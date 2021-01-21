@@ -9,26 +9,9 @@ openclean.data.store package
 Submodules
 ----------
 
-openclean.data.store.base module
---------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.data.store.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.store.fs module
-------------------------------
-
-.. automodule:: openclean.data.store.fs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.store.mem module
--------------------------------
-
-.. automodule:: openclean.data.store.mem
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.data.store.base
+   openclean.data.store.fs
+   openclean.data.store.mem

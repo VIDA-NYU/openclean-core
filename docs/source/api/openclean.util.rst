@@ -9,18 +9,8 @@ openclean.util package
 Submodules
 ----------
 
-openclean.util.core module
---------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.util.core
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.util.threshold module
--------------------------------
-
-.. automodule:: openclean.util.threshold
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.util.core
+   openclean.util.threshold
