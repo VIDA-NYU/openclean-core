@@ -11,7 +11,7 @@ import re
 import math
 import operator
 import collections
-import Levenshtein
+from jellyfish import levenshtein_distance
 
 from typing import Iterable, List, Optional, Tuple, Union
 
@@ -226,7 +226,7 @@ def leven_distance(str1: str, str2: str) -> float:
     -------
         float
     """
-    distance = Levenshtein.distance(str1, str2)
+    distance = levenshtein_distance(str1, str2)
     if len(str1) > len(str2):
         return 1 - float(distance) / len(str1)
     else:
