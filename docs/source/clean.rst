@@ -79,7 +79,7 @@ detect anomalous values using:
     * Metaphone
 
 * Fuzzy Matching
-    Implements fuzzy string matching using the `FuzzySet library <https://pypi.org/project/fuzzyset/>`_.
+    Implementation of fuzzy string matching using ngram overlaps and levenshtein or cosine distance.
 
 StringMatcher objects ingest a vocabulary, and a matching algorithm that is used to identify dataset values that are misspelled. These can optionally be stored into
 an openclean mapping to be reused later with other datasets as translation tables.
