@@ -26,7 +26,8 @@ install_requires = [
     'flowserv-core==0.6.0',
     'fuzzyset==0.0.19',
     'jellyfish',
-    'scipy'
+    'scipy',
+    'refdata'
 ]
 
 
