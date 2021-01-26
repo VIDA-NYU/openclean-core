@@ -4,3 +4,5 @@
 #
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
+
+from refdata.store import LocalStore as RefStore  # noqa: F401

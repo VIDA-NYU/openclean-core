@@ -7,7 +7,7 @@
 
 """Collection of specialized key generation functions for geo-spatial data."""
 
-from openclean.function.token.base import Tokens, StandardizeTokens
+from openclean.function.token.base import Tokens, StandardizeTokens, UpperTokens
 from openclean.function.token.filter import TokenFilter
 from openclean.function.token.split import ChartypeSplit
 from openclean.function.value.text import AlphaNumeric
@@ -390,6 +390,7 @@ class USStreetNameKey(Tokens):
             tokenizer=ChartypeSplit(chartypes=[str.isalpha, str.isdigit]),
             transformer=[
                 TokenFilter(AlphaNumeric()),
+                UpperTokens(),
                 StandardizeTokens(STANDARDIZE_US_STREET_NAME)
             ],
             delim=' ',
