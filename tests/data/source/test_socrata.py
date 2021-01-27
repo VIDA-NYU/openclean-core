@@ -78,7 +78,7 @@ class MockResponse:
             filename = DESCRIPTOR_FILE
         elif self.url == 'http://api.us.socrata.com/api/catalog/v1?domains=data.cityofnewyork.us&only=datasets&limit=10000':
             filename = NYCCATALOG_FILE
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             return json.load(f)
 
     def raise_for_status(self):
