@@ -53,12 +53,6 @@ class MockResponse:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self._fh = None
 
-    @property
-    def content(self):
-        """Raw response for file downloads."""
-        with open(self._datafile(), 'rb') as f:
-            return f.read()
-
     def iter_content(self, chunk_size):
         if self._fh is not None:
             yield self._fh.read()
