@@ -23,7 +23,7 @@ INDEX_JSON = {
     'datasets': [
         {
             'id': 'test',
-            'url': 'test.me',
+            'url': 'http://test.me',
             "checksum": "62b32aeded8f7f29de45f9ce3683811a8136725723170764b092ffa607acdfdf",
             'format': {'type': 'csv', 'parameters': {}},
             'schema': [
@@ -54,9 +54,11 @@ class MockResponse:
         self._fh = None
 
     def iter_content(self, chunk_size):
+        self.__enter__()
         if self._fh is not None:
             yield self._fh.read()
             self._fh = None
+        self.__exit__(None, None, None)
 
     def json(self):
         """If the Url is the DEFAULT_URL the test index is returned. Otherwise
