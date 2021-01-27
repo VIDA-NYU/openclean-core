@@ -9,7 +9,7 @@
 a reference data repository to the local file system.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Set, Union
 
 from refdata.base import DatasetDescriptor
 from refdata.store import LocalStore as RefStore  # noqa: F401
@@ -86,6 +86,29 @@ def remove(key: str) -> bool:
     bool
     """
     return store().remove(key=key)
+
+
+def repository(filter: Optional[Union[str, List[str], Set[str]]] = None) -> List[DatasetDescriptor]:
+    """Query the repository index that is associated with the local reference
+    data store.
+
+    The filter is a single tag or a list of tags. The result will include those
+    datasets that contain all the query tags. The search includes the dataset
+    tags as well a the tags for individual dataset columns.
+
+    If no filter is specified the full list of datasets descriptors in the
+    repository is returned.
+
+    Parameters
+    ----------
+    filter: string, list of string, or set of string
+        (List of) query tags.
+
+    Returns
+    -------
+    list of refdata.base.DatasetDescriptor
+    """
+    return store().repository().find(filter=filter)
 
 
 def store() -> RefStore:
