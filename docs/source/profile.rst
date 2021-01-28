@@ -1,8 +1,11 @@
+.. _profile-ref:
+
 Data Profiling
 ==============
 
 openclean comes with pre-configured tools to profile datasets that help to report some actionable metrics. It
-also provides a fairly easy to implement interface for users to create/attach their own data profilers.
+also provides a fairly easy to implement interface for users to create/attach their own data profilers. A user can select the default
+profiler to get basic statistics (min/max, entropy, distinct values, datatypes etc) or plug in their own profilers for advanced computations.
 
 We use a sample of NYC open data with completed job codes at various locations in New York City to demonstrate some examples.
 

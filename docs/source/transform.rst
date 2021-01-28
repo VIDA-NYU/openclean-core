@@ -1,3 +1,5 @@
+.. _transform-ref:
+
 Data Transformation
 ===================
 openclean provides it's own set of operations to transform datasets whilst keeping row indices intact.
@@ -55,10 +57,12 @@ To insert a new row, use the insrow operation. Let's add a dummy row at the star
 
     new_row.head()
 
+
 Updating
 --------
 Updating a preexisting column is straightforward. The update operator takes the column name and a func argument
-which can be a callable or an Eval function. The following snippet updates the 'Borough' column to Title case.
+which can be a callable or an Eval function. The following snippet updates the 'Borough' column to Title case. The
+func can be a dictionary, a scalar or a function.
 
 .. jupyter-execute::
 
@@ -67,6 +71,7 @@ which can be a callable or an Eval function. The following snippet updates the '
     title_case = update(ds, columns='Borough', func=str.title)
 
     title_case.head()
+
 
 Filtering
 ---------
@@ -82,6 +87,7 @@ show all rows that have the value 'BROOKLYN' in the 'Borough' column.
     filtered = filter(ds, predicate=Col('Borough')=='BROOKLYN')
 
     filtered.head()
+
 
 Moving
 ------

@@ -1,8 +1,10 @@
+.. _enrich-ref:
+
 Data Enrichment
 ===============
 
-Masterdata
-----------
+Masterdata using Socrates
+-------------------------
 Masterdata can be downloaded into openclean to enrich datasets and support the data cleaning process. In this quick example,
 we download the `ITU ICT Development Index (IDI) <https://www.opendatanetwork.com/dataset/idp.nz/3bxy-wfk9>`_  from `Socrata <https://dev.socrata.com/data/>`_ to demonstrate this.
 
@@ -14,10 +16,13 @@ we download the `ITU ICT Development Index (IDI) <https://www.opendatanetwork.co
 
     print(idi.head())
 
-There are many examples in the `Masterdata guide <examples.html#examples>`_ which shows all the data repositories openclean currently supports.
+Masterdata using Reference Data Repository
+------------------------------------------
+openclean integrates the refdata package to provides easy access to several different reference datasets that are
+available online for download. Reference datasets are for example a great source for lookup tables and mappings that
+are used in data cleaning for outlier detection and data standardization.
 
-Reference Data Repository
--------------------------
-The aim of the Reference Data Repository is to provide access to reference data sets (e.g., controlled vocabularies, gazetteers, ...) that are accessible on the Web and that are useful for tools like openclean, DataMart Profiler, D4 etc.
+There are a couple of examples in the `Masterdata guide <examples.html#examples>`_ which show how refdata package
+can be used to get masterdata for cleaning operations.
 
-It's still under development but do check again soon for updates!
+For more information, `visit the official repo <https://www.github.com/VIDA-NYU/reference-data-repository/>`_

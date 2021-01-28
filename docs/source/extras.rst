@@ -1,3 +1,5 @@
+.. _extras-ref:
+
 Extensions
 ==========
 

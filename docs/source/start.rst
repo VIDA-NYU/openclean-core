@@ -1,141 +1,185 @@
+.. _start-ref:
+
 Getting Started
 ===============
 
-openclean provides useful functionality to identify bugs and anomalous values, make fixes and wrangle datasets. To help
-illustrate different operations, we use a sample of NYC open data with completed job codes at various locations in New York City.
+openclean provides useful functionality to identify bugs and anomalous values, make fixes and wrangle datasets. Here, we walkthrough
+a simple example to get you acquainted with openclean in 10 minutes! Our `misspellings dataset <https://github.com/VIDA-NYU/openclean-core/blob/documentation/docs/source/data/misspellings.csv>`_
+contains Street, Neighborhood and Borough names for New York City with a bunch of spelling mistakes. The goal of this exercise
+is to fix those errors using some tools we have at our disposal.
+
 
 Loading Data
 ------------
 openclean uses a dataset (a wrapped pandas dataframe) as it's primary data storage object.
 It can be created from any source data type accepted by pandas. Compressed Gzip files (.gz) are also accepted.
+For large datasets, it might be desirable to perform lazy evaluation on the data instead of loading it all to memory.
+To allow this, openclean lets users stream their datasets. More information on Datasets and Streams is provided in the
+:ref:`concepts-ref` section.
 
 .. jupyter-execute::
 
     import os
+
     path_to_file = os.path.join(os.getcwd(), 'source', 'data')
 
 .. jupyter-execute::
 
     from openclean.data.load import dataset
 
-    ds = dataset(os.path.join(path_to_file, 'job_locations.csv'))
+    ds = dataset(os.path.join(path_to_file, 'misspellings.csv'))
 
     ds.head()
 
-for larger datasets, instead of loading the entire dataset into memory as above, openclean provides a streaming operator:
+
+Profiling the Dataset
+---------------------
+To provide insights about the dataset features, openclean comes with data profiling capabilities. A user can select the default
+profiler to get basic statistics or plug in their own profilers for advanced computations. More information about
+profilers is available in the :ref:`profile-ref` section.
 
 .. jupyter-execute::
 
-    from openclean.pipeline import stream
+    from openclean.profiling.dataset import dataset_profile
 
-    sm = stream(os.path.join(path_to_file, 'job_locations.csv'))
+    # generate a profile
+    profiles = dataset_profile(ds)
 
-    print(sm)
+    # see all stats
+    profiles.stats()
 
-Eval Functions
+
+We see that there exist 11 distinct values in the `Borough` column whereas there are only 5 Boroughs in New York City and
+a bunch of them are empty/missing values.
+
+.. jupyter-execute::
+
+    ds['Borough'].value_counts()
+
+
+Going into further depth, we see realize there are a few variations for `Brooklyn`, `Queens`, `Bronx` and `Manhattan`.
+
+
+Selecting Columns
+-----------------
+As discussed earlier, we want to fix the mistakes in the `Borough` column. We can separate this column from the entire dataset using
+the select operation. Before we do that, for this example, let's assume we need to get rid of rows that have missing values.
+So we'll use the filter operator and the IsNotEmpty Eval function. Eval functions are explained in :ref:`concepts-ref`.
+
+.. jupyter-execute::
+
+    from openclean.operator.transform.filter import filter
+    from openclean.function.eval.null import IsNotEmpty
+
+    ds = filter(ds, predicate=IsNotEmpty('Borough'))
+
+    ds['Borough'].value_counts()
+
+
+Now, let's separate out the column of interest. You can read more on selecting columns and other dataset/stream transformations
+in the :ref:`transform-ref` section.
+
+.. jupyter-execute::
+
+    from openclean.operator.transform.select import select
+
+    misspelled_data = select(ds, columns=['Borough'], names=['messy_borough'])
+
+    misspelled_data['messy_borough'].unique()
+
+
+Downloading and Preparing Masterdata
+------------------------------------
+With openclean, a user can easily incorporate other datasets to enrich the data cleaning process. For e.g., let's download an official
+list of borough names from the `Borough Population projections dataset <https://dev.socrata.com/foundry/data.cityofnewyork.us/xywu-7bv9>`_
+using Socrata to help us with the wrangling. We shall use this as the ground truth for correct spellings.
+You can read more about master datasets in the :ref:`enrich-ref` section.
+
+After downloading the masterdata, we preprocess it a bit to match the case with our input dataset. We use the update
+transformation from :ref:`clean-ref` to achieve this which can accept both: a dictionary or a function as the second argument.
+
+.. jupyter-execute::
+
+    from openclean.data.source.socrata import Socrata
+    from openclean.operator.transform.update import update
+
+    # download the masterdata and select the relevant column
+    nyc_boroughs = Socrata().dataset('xywu-7bv9').load()
+    nyc_boroughs = select(nyc_boroughs, columns=['Borough'])
+
+    # uppercase and strip the values to match with the misspelled data
+    nyc_boroughs = update(nyc_boroughs, 'Borough', str.upper)
+    nyc_boroughs = update(nyc_boroughs, 'Borough', str.strip)
+
+    nyc_boroughs
+
+
+Identifying Fixes
+-----------------
+We are now familiar with the mistakes in the data and have a master dataset with corrections available. openclean
+provides cleaning operators and repair strategies to let users fix their datasets with the minimum amount of coding
+involved. A list of various cleaning operators available can be accessed in the :ref:`clean-ref` section.
+
+Here, we calculate Fuzzy String Similarity between `messy_borough` and Masterdata to create a mapping of misspellings
+to the possible fixes.
+
+.. jupyter-execute::
+
+    from openclean.function.matching.base import DefaultStringMatcher
+    from openclean.function.matching.fuzzy import FuzzySimilarity
+    from openclean.data.mapping import Mapping
+    from pprint import pprint
+
+    # the master vocabulary list
+    VOCABULARY = nyc_boroughs['Borough']
+
+    # create a string matcher that uses the provided vocabulary and similarity algorithm
+    matcher = DefaultStringMatcher(
+            vocabulary=VOCABULARY,
+            similarity=FuzzySimilarity()
+    )
+
+    # create a mapping to store the fixes
+    fixes = Mapping()
+
+    # look for matches in the vocabulary
+    for query in set(misspelled_data['messy_borough']):
+        fixes.add(query, matcher.find_matches(query))
+
+    # print the fixes
+    pprint(fixes)
+
+
+The generated `fixes` mapping contains `messy_borough` content as keys and found matches from the vocabulary along with
+a match score as values.
+
+Making Repairs
 --------------
-Evaluation functions are used to compute results over rows in a dataframe
-or a data stream. Conceptually, evaluation functions are evaluated
-over one or more columns for each row in the input data. For each row, the
-function is expected to generate one (or more) (transformed) value(s) for
-the column (columns) on which it operates.
-
-Evaluation functions are building blocks for data frame operators as well
-as data stream pipelines. Each of these two use cases is supported by a
-different (abstract) method:
-
-    * eval: The eval function is used by data frame operators. The function
-      receives the full data frame as an argument. It returns a data series
-      (or list) of values with one value for each row in the input data frame.
-      Functions that operate over multiple columns will return a list of
-      tuples.
-
-    * prepare: If an evaluation function is used as part of a data stream
-      operator the function needs to be prepared. That is, the function will
-      need to know the schema of the rows in the data frame before streaming
-      starts. The prepare method receives the schema of the data stream as an
-      argument. It returns a callable function that accepts a data stream row
-      as the only argument and that returns a single value or a tuple of values
-      depending on whether the evaluation function operators on one or more
-      columns.
-
-Evaluation functions can be considered as wrappers around callables that store column
-information and can be passed around through openclean pipelines. The eval and prepare methods execute them.
-Here is a basic Eval function:
+The simplest repair strategy here would be to look up `messy_borough` values in the `fixes` map and replace them. We
+achieve this with the update transformation from the :ref:`clean-ref` section.
 
 .. jupyter-execute::
 
-    from openclean.function.eval.base import Eval
+    from openclean.operator.transform.update import update
 
-    lower_case = Eval('Borough', str.lower)
+    misspelled_data = update(misspelled_data, 'messy_borough', fixes.to_lookup())
 
-    print(ds['Borough'].to_list())
-    print()
-    print(lower_case.eval(ds))
+    misspelled_data['messy_borough'].unique()
 
 
-Some important Eval functions that become building blocks for bigger operations are as follows.
-The complete list of Eval Functions can be found in the `API Reference <index.html#api-ref>`_.
-
-Col
-^^^
-Col is an Evaluation function that returns the value from a single column in a data frame.
+We fixed it! One can also observe the decrease in uniqueness and entropy.
 
 .. jupyter-execute::
 
-    from openclean.function.eval.base import Col
-
-    boro = Col('Borough').eval(ds)
-
-    print(boro)
-
-Cols
-^^^^
-Cols is an Evaluation function that returns the values from a multiple columns in a data frame row. Let's try
-to get values from 2 columns together. Multiple columns are returned as a list of tuples:
-
-.. jupyter-execute::
-
-    from openclean.function.eval.base import Cols
-
-    job_locations = Cols(['Job #','Borough']).eval(ds)
-
-    print(job_locations)
+    dataset_profile(misspelled_data).stats()
 
 
-Const
-^^^^^
-Const is an Evaluation function that creates a column with the provided constant value. For e.g:
-
-.. jupyter-execute::
-
-    from openclean.function.eval.base import Const
-
-    complaint_phone = Const('311').eval(ds)
-
-    print(complaint_phone)
+As we saw in this tiny real world example, openclean makes it straightforward to
+not only load and stream datasets, but also to profile them to identify bugs and provide masterdata alongside providing
+a toolkit to identify and make fixes.
 
 
-And
-^^^
-And is an important logical Evaluation function that validates whether the outputs of the input functions are all true and creates a list of predicates.
-
-.. jupyter-execute::
-
-    from openclean.function.eval.logic import And
-
-    pred = And(Eval('Borough', str.lower) == str.lower('BROOKLYN'), Col('Street Name') == 'BROADWAY').eval(ds)
-
-    print(ds[pred])
-
-Or
-^^
-Or validates that atleast one of the outputs of the input functions is true and creates a list of predicates.
-
-.. jupyter-execute::
-
-    from openclean.function.eval.logic import Or
-
-    pred = Or(Eval('Borough', str.lower) == str.lower('BROOKLYN'), Col('Street Name') == 'BROADWAY').eval(ds)
-
-    print(ds[pred])
+More Examples
+-------------
+We provide many other Jupyter notebooks as examples to demonstrate different capabilities of openclean. All our notebooks
+along with the used datasets can be found in the :ref:`examples-ref`.
