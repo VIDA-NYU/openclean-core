@@ -9,18 +9,8 @@ openclean.profiling.datatype package
 Submodules
 ----------
 
-openclean.profiling.datatype.convert module
--------------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.profiling.datatype.convert
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.profiling.datatype.operator module
---------------------------------------------
-
-.. automodule:: openclean.profiling.datatype.operator
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.profiling.datatype.convert
+   openclean.profiling.datatype.operator

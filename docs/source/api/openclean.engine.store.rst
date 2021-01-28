@@ -9,26 +9,9 @@ openclean.engine.store package
 Submodules
 ----------
 
-openclean.engine.store.base module
-----------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.engine.store.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.store.default module
--------------------------------------
-
-.. automodule:: openclean.engine.store.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.store.function module
---------------------------------------
-
-.. automodule:: openclean.engine.store.function
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.engine.store.base
+   openclean.engine.store.default
+   openclean.engine.store.function

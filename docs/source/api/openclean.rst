@@ -10,8 +10,9 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
+   openclean.cluster
    openclean.data
    openclean.embedding
    openclean.engine
@@ -23,26 +24,9 @@ Subpackages
 Submodules
 ----------
 
-openclean.config module
------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.config
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.pipeline module
--------------------------
-
-.. automodule:: openclean.pipeline
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.version module
-------------------------
-
-.. automodule:: openclean.version
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.config
+   openclean.pipeline
+   openclean.version

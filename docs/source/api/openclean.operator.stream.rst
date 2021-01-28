@@ -9,42 +9,11 @@ openclean.operator.stream package
 Submodules
 ----------
 
-openclean.operator.stream.collector module
-------------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.operator.stream.collector
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.operator.stream.consumer module
------------------------------------------
-
-.. automodule:: openclean.operator.stream.consumer
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.operator.stream.matching module
------------------------------------------
-
-.. automodule:: openclean.operator.stream.matching
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.operator.stream.processor module
-------------------------------------------
-
-.. automodule:: openclean.operator.stream.processor
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.operator.stream.sample module
----------------------------------------
-
-.. automodule:: openclean.operator.stream.sample
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.operator.stream.collector
+   openclean.operator.stream.consumer
+   openclean.operator.stream.matching
+   openclean.operator.stream.processor
+   openclean.operator.stream.sample

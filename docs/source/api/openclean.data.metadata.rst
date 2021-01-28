@@ -9,26 +9,9 @@ openclean.data.metadata package
 Submodules
 ----------
 
-openclean.data.metadata.base module
------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.data.metadata.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.metadata.fs module
----------------------------------
-
-.. automodule:: openclean.data.metadata.fs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.metadata.mem module
-----------------------------------
-
-.. automodule:: openclean.data.metadata.mem
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.data.metadata.base
+   openclean.data.metadata.fs
+   openclean.data.metadata.mem

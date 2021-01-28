@@ -10,7 +10,7 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    openclean.profiling.anomalies
    openclean.profiling.classifier
@@ -21,42 +21,11 @@ Subpackages
 Submodules
 ----------
 
-openclean.profiling.base module
--------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.profiling.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.profiling.column module
----------------------------------
-
-.. automodule:: openclean.profiling.column
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.profiling.dataset module
-----------------------------------
-
-.. automodule:: openclean.profiling.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.profiling.stats module
---------------------------------
-
-.. automodule:: openclean.profiling.stats
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.profiling.tests module
---------------------------------
-
-.. automodule:: openclean.profiling.tests
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.profiling.base
+   openclean.profiling.column
+   openclean.profiling.dataset
+   openclean.profiling.stats
+   openclean.profiling.tests

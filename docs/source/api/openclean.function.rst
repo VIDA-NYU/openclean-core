@@ -10,7 +10,7 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    openclean.function.eval
    openclean.function.matching
@@ -20,18 +20,7 @@ Subpackages
 Submodules
 ----------
 
-openclean.function.base module
-------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.function.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.function.value.text module
-------------------------------
-
-.. automodule:: openclean.function.value.text
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.function.base

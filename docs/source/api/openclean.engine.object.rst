@@ -9,34 +9,10 @@ openclean.engine.object package
 Submodules
 ----------
 
-openclean.engine.object.base module
------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.engine.object.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.object.function module
----------------------------------------
-
-.. automodule:: openclean.engine.object.function
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.object.mapping module
---------------------------------------
-
-.. automodule:: openclean.engine.object.mapping
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.engine.object.vocabulary module
------------------------------------------
-
-.. automodule:: openclean.engine.object.vocabulary
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.engine.object.base
+   openclean.engine.object.function
+   openclean.engine.object.mapping
+   openclean.engine.object.vocabulary

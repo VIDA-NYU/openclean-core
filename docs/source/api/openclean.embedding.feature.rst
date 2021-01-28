@@ -9,42 +9,11 @@ openclean.embedding.feature package
 Submodules
 ----------
 
-openclean.embedding.feature.base module
----------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.embedding.feature.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.embedding.feature.character module
---------------------------------------------
-
-.. automodule:: openclean.embedding.feature.character
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.embedding.feature.default module
-------------------------------------------
-
-.. automodule:: openclean.embedding.feature.default
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.embedding.feature.frequency module
---------------------------------------------
-
-.. automodule:: openclean.embedding.feature.frequency
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.embedding.feature.length module
------------------------------------------
-
-.. automodule:: openclean.embedding.feature.length
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.embedding.feature.base
+   openclean.embedding.feature.character
+   openclean.embedding.feature.default
+   openclean.embedding.feature.frequency
+   openclean.embedding.feature.length

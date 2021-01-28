@@ -9,10 +9,7 @@ openclean.profiling.pattern package
 Submodules
 ----------
 
-openclean.profiling.pattern.base module
----------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.profiling.pattern.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.profiling.pattern.base

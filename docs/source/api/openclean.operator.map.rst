@@ -9,18 +9,8 @@ openclean.operator.map package
 Submodules
 ----------
 
-openclean.operator.map.groupby module
--------------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.operator.map.groupby
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.operator.map.violations module
-----------------------------------------
-
-.. automodule:: openclean.operator.map.violations
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.operator.map.groupby
+   openclean.operator.map.violations

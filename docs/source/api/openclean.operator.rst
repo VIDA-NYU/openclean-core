@@ -10,7 +10,7 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    openclean.operator.collector
    openclean.operator.map
@@ -21,10 +21,7 @@ Subpackages
 Submodules
 ----------
 
-openclean.operator.base module
-------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.operator.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.operator.base

@@ -9,26 +9,9 @@ openclean.data.stream package
 Submodules
 ----------
 
-openclean.data.stream.base module
----------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: openclean.data.stream.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.stream.csv module
---------------------------------
-
-.. automodule:: openclean.data.stream.csv
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-openclean.data.stream.df module
--------------------------------
-
-.. automodule:: openclean.data.stream.df
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   openclean.data.stream.base
+   openclean.data.stream.csv
+   openclean.data.stream.df

@@ -8,9 +8,14 @@ We use a sample of NYC open data with completed job codes at various locations i
 
 .. jupyter-execute::
 
+    import os
+    path_to_file = os.path.join(os.getcwd(), 'source', 'data')
+
+.. jupyter-execute::
+
     from openclean.data.load import dataset
 
-    ds = dataset('source/data/job_locations.csv')
+    ds = dataset(os.path.join(path_to_file, 'job_locations.csv'))
 
     ds.head()
 
@@ -74,7 +79,7 @@ detect anomalous values using:
     * Metaphone
 
 * Fuzzy Matching
-    Implements fuzzy string matching using the `FuzzySet library <https://pypi.org/project/fuzzyset/>`_.
+    Implementation of fuzzy string matching using ngram overlaps and levenshtein or cosine distance.
 
 StringMatcher objects ingest a vocabulary, and a matching algorithm that is used to identify dataset values that are misspelled. These can optionally be stored into
 an openclean mapping to be reused later with other datasets as translation tables.
@@ -92,10 +97,10 @@ an openclean mapping to be reused later with other datasets as translation table
         similarity=FuzzySimilarity()
     )
 
-    mispelled_data = dataset('source/data/misspellings.csv')
+    misspelled_data = dataset(os.path.join(path_to_file, 'misspellings.csv'))
 
     map = Mapping()
-    for query in set(mispelled_data['Borough']):
+    for query in set(misspelled_data['Borough']):
         map.add(query, matcher.find_matches(query))
 
     print(map)
@@ -112,7 +117,7 @@ Fixing is easy, we can use the update and Lookup operations.
     from openclean.function.eval.base import Col
 
 
-    fixed = update(mispelled_data, 'Borough', Lookup(columns=['Borough'], mapping=map.to_lookup(), default=Col('Borough')))
+    fixed = update(misspelled_data, 'Borough', Lookup(columns=['Borough'], mapping=map.to_lookup(), default=Col('Borough')))
 
     print(fixed['Borough'].unique())
 
