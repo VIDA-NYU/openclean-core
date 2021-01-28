@@ -3,7 +3,8 @@ Step by Step Guides
 
 .. examples:
 
-We provide a number of Jupyter notebooks examples to walk through various openclean functionalities.
+We provide a number of Jupyter notebooks examples to walk through various openclean functionalities. All notebooks
+and datasets are available in the `Github repository <https://github.com/VIDA-NYU/openclean-core/tree/master/examples/notebooks>`_.
 
 ..  toctree::
     :maxdepth: 2

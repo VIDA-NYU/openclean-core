@@ -34,7 +34,7 @@ pip install sphinx sphinx-rtd-theme sphinxcontrib-apidoc jupyter-sphinx nbshpinx
 
 ### Editing the Documentation
 
-You can edit any `.rst` file, and then use the following to command to compile the docs:
+You can edit any `.rst` file, and then use the following (in the docs/ directory) to command to compile the docs:
 
      sphinx-build -b html . build/
 

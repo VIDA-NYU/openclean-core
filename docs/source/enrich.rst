@@ -18,6 +18,6 @@ There are many examples in the `Masterdata guide <examples.html#examples>`_ whic
 
 Reference Data Repository
 -------------------------
-The aim of the Reference Data Repository is to provide access to reference data sets (e.g., controlled vocabularies, gazetteers, ...) that are accessible on the Web and that are useful for tools like openclean, DataMart Profiler, D4 etc.
+The Reference Data Repository provides access to reference data sets (e.g., controlled vocabularies, gazetteers, etc.) that are accessible on the Web and that are useful for data cleaning and data profiling tools like openclean and Auctus.
 
-It's still under development but do check again soon for updates!
+For more information, `visit the official repo <https://www.github.com/VIDA-NYU/reference-data-repository/>`_
