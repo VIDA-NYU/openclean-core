@@ -1,3 +1,5 @@
+.. _enrich-ref:
+
 Data Enrichment
 ===============
 

@@ -1,3 +1,5 @@
+.. _concepts-ref:
+
 Major Concepts
 ==============
 
@@ -78,7 +80,8 @@ Here is a basic Eval function:
 
 
 Some important Eval functions that become building blocks for bigger operations are as follows.
-The complete list of Eval Functions can be found in the `API Reference <index.html#api-ref>`_.
+The whole range of eval functions and value functions can be accessed in the `Eval package of the API Reference <api/openclean.function.eval.html>`_
+and `Value package of the API Reference <api/openclean.function.value.html>`_ respectively.
 
 Col
 ^^^

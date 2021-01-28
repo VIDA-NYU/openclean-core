@@ -1,3 +1,5 @@
+.. _contribute-ref:
+
 Contributing
 ============
 openclean is a community effort and is continuously growing. All contributions, bug reports, bug fixes,

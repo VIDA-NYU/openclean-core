@@ -1,3 +1,5 @@
+.. _clean-ref:
+
 Data Wrangling and Cleaning
 ===========================
 openclean comes with the following operators to help users find anomalies, make fixes and wrangle their datasets.
@@ -64,6 +66,46 @@ This should replace the violation value with the maximum frequency value of the 
 A complete list of repair strategies can be accessed in the `API Reference <index.html#api-ref>`_
 
 
+Missing Values
+--------------
+Depending on the usecase, missing values can be handled by the filter transformation (removing them) or by the update
+transformation (new values). They are both explained in :ref:`transform-ref`. We demonstrate both again here.
+
+.. jupyter-execute::
+
+    misspelled_data = dataset(os.path.join(path_to_file, 'misspellings.csv'))
+    misspelled_data['Borough'].value_counts()
+
+
+We see there are empty values in this column. First let's update them using a lambda function that uses the is_empty value function.
+
+.. jupyter-execute::
+
+    from openclean.operator.transform.update import update
+    from openclean.function.value.null import is_empty
+
+    updated_misspelled = update(misspelled_data, 'Borough', lambda x: 'Unknown' if is_empty(x) else x)
+
+    updated_misspelled['Borough'].value_counts()
+
+
+We've replaced missing values with `Unknown`. But, because there is no way to be sure of the correct value without
+using other columns and data augmentation techniques from the :ref:`enrich-ref` section to get the correct Borough,
+we shall filter out the nulls in this example using the IsNotEmpty eval function.
+
+.. jupyter-execute::
+
+    from openclean.operator.transform.filter import filter
+    from openclean.function.eval.null import IsNotEmpty
+
+    misspelled_data = filter(misspelled_data, predicate=IsNotEmpty('Borough'))
+
+    misspelled_data['Borough'].value_counts()
+
+The whole range of eval functions and value functions can be accessed in the `Eval package of the API Reference <api/openclean.function.eval.html>`_
+and `Value package of the API Reference <api/openclean.function.value.html>`_ respectively as explained in :ref:`concepts-ref`.
+
+
 Misspellings and Data Entry Bugs
 --------------------------------
 openclean can help identify misspellings and data entry bugs using it's powerful string matcher class. It helps
@@ -97,8 +139,6 @@ an openclean mapping to be reused later with other datasets as translation table
         similarity=FuzzySimilarity()
     )
 
-    misspelled_data = dataset(os.path.join(path_to_file, 'misspellings.csv'))
-
     map = Mapping()
     for query in set(misspelled_data['Borough']):
         map.add(query, matcher.find_matches(query))
@@ -108,7 +148,7 @@ an openclean mapping to be reused later with other datasets as translation table
 The map shows all misspellings matched atleast one value from the vocabulary so the map can be used to fix the `Borough` column.
 The user will have to manually intervene and update the map if for a query value there were zero or more than one matches from the vocabulary.
 
-Fixing is easy, we can use the update and Lookup operations.
+Fixing is easy, we can use the update operation with the Lookup eval function (to provide default values if key not found in the map).
 
 .. jupyter-execute::
 
@@ -174,6 +214,7 @@ We then count for each value, the number of operators that classified the value 
 
 Statistically classified as anomalies, these neighborhoods can be those with fewer job requests or misspellings. Something a user
 with domain knowledge can verify.
+
 
 Custom functions
 ----------------

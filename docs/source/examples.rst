@@ -1,3 +1,5 @@
+.. _examples-ref:
+
 Step by Step Guides
 ===================
 
