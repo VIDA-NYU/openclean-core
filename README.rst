@@ -24,6 +24,22 @@ While a large number of different tools and techniques have previously been deve
 The goal of **openclean** goal is to bring together data cleaning tools in a single environment that is easy and intuitive to use for a data scientist. **openclean** allows users to compose and execute cleaning pipelines that are built using a variety of different tools. We aim for **openclean** to be flexible and extensible to allow easy integration of new functionality. To this end, we define a set of primitives and API’s for the different types of operators (actors) in **openclean** pipelines.
 
 
+Features
+========
+openclean has many features that make the Data munging experience straightforward. It shines particularly in these areas:
+
+Data Profiling
+--------------
+openclean comes with a profiler to provide users actionable metrics about their data's quality. It allows users to detect possible problems early on by providing various statistical measures of the data from min-max frequencies, to uniqueness and entropy calculations. The interface is easy to implement and can be extended by python savvy users to cater their needs.
+
+Data Cleaning & Wrangling
+-------------------------
+openclean's operators have been created specifically to handle data janitorial tasks. They help identify and present statistical anomalies, fix functional dependency violations, locate and update spelling mistakes, and handle missing values gracefully. As openclean is growing fast, so is this list of operators!
+
+Data Enrichment
+---------------
+openclean seamlessly integrates with `Socrata <https://dev.socrata.com/data/>`_ and `Reference Data Repository <https://github.com/VIDA-NYU/reference-data-repository>`_ to provide it's users master datasets which can be incorporated in the data cleaning process.
+
 
 Installation
 ============
@@ -35,17 +51,24 @@ Install **openclean** from GitHub using ``pip`` with:
     pip install git+git://github.com/VIDA-NYU/openclean-core.git
 
 
+Usage
+=====
 
-Examples
-========
-
-We include several example notebooks in this repository that demonstrate possible use cases for **openclean**.
-
-
-New York City Restaurant Inspection Results
--------------------------------------------
-
-In this example our goal is to reproduce a previous `study from 2014 that looks at the distribution of restaurant inspection grades in New York City <https://iquantny.tumblr.com/post/76928412519/think-nyc-restaurant-grading-is-flawed-heres>`_. For our study, we use data that was downloaded in Sept. 2019. The example is split into three different Jupyter notebooks:
+We include several example notebooks in this repository that demonstrate possible use cases for **openclean**. We recommend starting with the `documentation <http://openclean.readthedocs.io/>`_ or the New York City Restaurant Inspection Results notebook. In that example our goal is to reproduce a previous `study from 2014 that looks at the distribution of restaurant inspection grades in New York City <https://iquantny.tumblr.com/post/76928412519/think-nyc-restaurant-grading-is-flawed-heres>`_. For our study, we use data that was downloaded in Sept. 2019. The example is split into two different Jupyter notebooks:
 
 - `Data Profiling <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Profiling.ipynb>`_
 - `Data Cleaning <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/NYCRestaurantInspections/NYC%20Restaurant%20Inspections%20-%20Cleaning.ipynb>`_
+
+Other examples along with the datasets are located in `the examples' folder <https://github.com/VIDA-NYU/openclean-core/tree/master/examples/notebooks>`_
+
+
+Documentation
+=============
+The official documentation is hosted on readthedocs: http://openclean.readthedocs.io/
+
+
+Contributing
+============
+We welcome all contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas.
+
+A detailed overview on how to contribute can be found in the `documentation <https://openclean.readthedocs.io/source/contribute.html>`_.
