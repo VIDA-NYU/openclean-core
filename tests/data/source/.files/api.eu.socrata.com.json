@@ -1,0 +1,34 @@
+{
+  "results" :
+    [
+      { "domain" : "hub.dati.lombardia.it", "count" : 207 },
+      {
+        "domain" : "lombardia-staging.azure-westeurope-prod.socrata.com",
+        "count" : 3
+      },
+      { "domain" : "cohesiondata.ec.europa.eu", "count" : 927 },
+      { "domain" : "opendata.l-h.cat", "count" : 82 },
+      {
+        "domain" : "generalitatdecatalunya.demo.eu.socrata.com",
+        "count" : 64
+      },
+      { "domain" : "www.dati.friuliveneziagiulia.it", "count" : 451 },
+      { "domain" : "data.cdp.net", "count" : 351 },
+      { "domain" : "catalegdades.caib.cat", "count" : 199 },
+      { "domain" : "lombardia-scgc.demo.eu.socrata.com", "count" : 4 },
+      { "domain" : "gavaobert.gavaciutat.cat", "count" : 234 },
+      { "domain" : "performance.westsussex.gov.uk", "count" : 332 },
+      { "domain" : "www.dati.lombardia.it", "count" : 6016 },
+      { "domain" : "analisi.transparenciacatalunya.cat", "count" : 854 },
+      { "domain" : "opendata.terrassa.cat", "count" : 222 },
+      { "domain" : "opendata.camden.gov.uk", "count" : 1041 },
+      { "domain" : "reports.cdp.net", "count" : 2 },
+      {
+        "domain" : "cdp-staging.azure-westeurope-prod.socrata.com",
+        "count" : 0
+      },
+      { "domain" : "opendata.rdw.nl", "count" : 1073 }
+    ],
+  "resultSetSize" : 18,
+  "timings" : { "serviceMillis" : 18, "searchMillis" : [ 6, 5 ] }
+}

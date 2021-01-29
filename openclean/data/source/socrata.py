@@ -8,12 +8,11 @@
 """Data repository for accessing datasets via the Socrata Open Data API."""
 
 from io import BytesIO
+from refdata.base import Descriptor, DatasetDescriptor
 from typing import Dict, IO, Iterable, List, Optional, Tuple
 
 import pandas as pd
 import requests
-
-from openclean.data.source.base import ColumnDescriptor, DatasetHandle, DataRepository
 
 
 """Base Urls for the different Socrata Data Discovery API catalogs."""
@@ -25,7 +24,7 @@ API_URLS = [
 LIMIT = 10000
 
 
-class SODADataset(DatasetHandle):
+class SODADataset(DatasetDescriptor):
     """Handle for a SODA dataset."""
     def __init__(self, doc: Dict, app_token: Optional[str] = None):
         """Initialize the dataset descriptor from the metadata dictionary that
@@ -46,19 +45,17 @@ class SODADataset(DatasetHandle):
             resource.get('columns_description'),
             resource.get('columns_datatype')
         )
-        super(SODADataset, self).__init__(
-            identifier=doc.get('resource').get('id'),
-            name=doc.get('resource').get('name'),
-            description=doc.get('resource').get('description'),
-            columns=[
-                ColumnDescriptor(
-                    identifier=id,
-                    name=name,
-                    description=desc,
-                    dtype=dtype
-                ) for id, name, desc, dtype in columns
-            ]
-        )
+        super(SODADataset, self).__init__({
+            'id': doc.get('resource').get('id'),
+            'name': doc.get('resource').get('name'),
+            'description': doc.get('resource').get('description'),
+            'schema': [{
+                'id': id,
+                'name': name,
+                'description': desc,
+                'dtype': dtype
+            } for id, name, desc, dtype in columns]
+        })
         # Maintain the Socrata domain for the dataset.
         self.domain = doc.get('metadata').get('domain')
         # Create url to download the dataset.
@@ -99,7 +96,7 @@ class SODADataset(DatasetHandle):
                 file.write(buf)
 
 
-class Socrata(DataRepository):
+class Socrata(Descriptor):
     """Repository handle for the Socrata Open Data API."""
     def __init__(self, app_token: Optional[str] = None):
         """Initialize the data repository descriptor and the optional API
@@ -111,14 +108,14 @@ class Socrata(DataRepository):
             Optional application token to be included in the header for all API
             requests.
         """
-        super(Socrata, self).__init__(
-            identifier='socrata',
-            name='Socrata Open Data API',
-            description='Open data resources from governments, non-profits, and NGOs around the world'
-        )
+        super(Socrata, self).__init__({
+            'id': 'socrata',
+            'name': 'Socrata Open Data API',
+            'description': 'Open data resources from governments, non-profits, and NGOs around the world'
+        })
         self.app_token = app_token
 
-    def catalog(self, domain: Optional[str] = None) -> Iterable[DatasetHandle]:
+    def catalog(self, domain: Optional[str] = None) -> Iterable[SODADataset]:
         """Generator for a listing of all datasets that are available from the
         repository. Provides to option to filter datasets by their domain.
 
@@ -129,7 +126,7 @@ class Socrata(DataRepository):
 
         Returns
         -------
-        iterable of openclean.data.source.DatasetHandle
+        iterable of openclean.data.source.socrata.SODADataset
         """
         # Create a list of domains for which datasets are returned.
         domains = self.domains(filter=domain)
@@ -149,7 +146,7 @@ class Socrata(DataRepository):
                     yield SODADataset(doc=obj, app_token=self.app_token)
                 done = len(results) < LIMIT
 
-    def dataset(self, identifier: str) -> DatasetHandle:
+    def dataset(self, identifier: str) -> SODADataset:
         """Get the handle for the dataset with the given identifier.
 
         Parameters
@@ -159,7 +156,7 @@ class Socrata(DataRepository):
 
         Returns
         -------
-        openclean.data.source.DatasetHandle
+        openclean.data.source.socrata.SODADataset
         """
         for catalog_url in API_URLS:
             url = '{}?ids={}'.format(catalog_url, identifier)
