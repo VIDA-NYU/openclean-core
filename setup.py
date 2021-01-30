@@ -21,7 +21,6 @@ install_requires = [
     'pandas>=1.0.0',
     'scikit-learn',
     'jsonschema>=3.2.0',
-    'Shapely>=1.7.0',
     'histore==0.2.2',
     'flowserv-core==0.6.0',
     'jellyfish',
