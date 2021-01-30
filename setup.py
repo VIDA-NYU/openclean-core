@@ -21,7 +21,6 @@ install_requires = [
     'pandas>=1.0.0',
     'scikit-learn',
     'jsonschema>=3.2.0',
-    'Shapely>=1.7.0',
     'histore==0.2.2',
     'flowserv-core==0.6.0',
     'jellyfish',
@@ -94,6 +93,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python'
     ]
 )
