@@ -5,6 +5,9 @@ openclean - Data Cleaning for Python
 .. image:: https://img.shields.io/badge/License-BSD-green.svg
     :target: https://github.com/VIDA-NYU/openclean-core/blob/master/LICENSE
 
+.. image:: https://github.com/VIDA-NYU/openclean-core/workflows/build/badge.svg
+    :target: https://github.com/VIDA-NYU/openclean-core/actions?query=workflow%3A%22build%22
+
 .. image:: https://codecov.io/gh/VIDA-NYU/openclean-core/branch/master/graph/badge.svg?token=5TG0P12FO5
     :target: https://codecov.io/gh/VIDA-NYU/openclean-core
 
