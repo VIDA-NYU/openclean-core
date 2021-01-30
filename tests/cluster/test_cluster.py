@@ -18,23 +18,16 @@ def test_add_cluster_elements():
     for value in list('acbaabbac'):  # 4xa, 3xb, 2xc
         c.add(value)
     assert len(c) == 3
-    assert c[0] == 'a'
-    assert c[1] == 'c'
-    assert c[2] == 'b'
-    with pytest.raises(KeyError):
-        c[3]
-    counts = {value: count for value, count in c}
-    assert counts['a'] == 4
-    assert counts['b'] == 3
-    assert counts['c'] == 2
+    assert c['a'] == 4
+    assert c['b'] == 3
+    assert c['c'] == 2
 
 
 def test_cluster_from_counter():
     """Test adding to a cluster with frequency count values."""
     c = Cluster().add('a', count=5).add('b', count=10).add('a', count=6)
-    counts = {value: count for value, count in c}
-    assert counts['a'] == 11
-    assert counts['b'] == 10
+    assert c['a'] == 11
+    assert c['b'] == 10
 
 
 @pytest.mark.parametrize(

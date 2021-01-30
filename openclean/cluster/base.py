@@ -15,62 +15,18 @@ different values that might be alternative representations of the same thing'*.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 from openclean.data.types import Value
 
 
-class Cluster(object):
+class Cluster(Counter):
     """Cluster of values. Maintains the frequency count for each value in order
     to be able to suggest a 'new values' as the common value for all values in
     the cluster.
     """
-    def __init__(self):
-        """Initialize the dictionary that maps the cluster values to their
-        identifier and frequency. Theidentifier defines the order in which
-        values where inserted into the cluster.
-        """
-        self.elements = dict()
-
-    def __iter__(self) -> Iterable[Tuple[Value, int]]:
-        """Iterator over the distinct values in the cluster and their counts.
-
-        Returns
-        -------
-        iterable
-        """
-        for key, value in self.elements.items():
-            yield (key, value[1])
-
-    def __len__(self) -> int:
-        """Get number of distinct values in the cluster.
-
-        Returns
-        -------
-        int
-        """
-        return len(self.elements)
-
-    def __getitem__(self, key: int) -> Value:
-        """Get the value that was inserted with the given identifier, i.e., the
-        i-th value that was added to the cluster.
-
-        Parameters
-        ----------
-        key: int
-            Identifier for an inserted value.
-
-        Returns
-        -------
-        scalar or tuple
-        """
-        for value, valmeta in self.elements.items():
-            if valmeta[0] == key:
-                return value
-        raise KeyError('invalid key {}'.format(key))
-
     def add(self, value: Value, count: Optional[int] = 1) -> Cluster:
-        """Add a value to the cluster. Allows to provide frequency count for
+        """Add a value to the cluster. Allows to provide a frequency count for
         the added value. Returns a reference to itself.
 
         Parameters
@@ -82,41 +38,28 @@ class Cluster(object):
         -------
         openclean.cluster.base.Cluster
         """
-        if value in self.elements:
-            insert_id, vcount = self.elements[value]
-            self.elements[value] = (insert_id, vcount + count)
-        else:
-            self.elements[value] = (len(self.elements), count)
+        self[value] += count
         return self
 
     def suggestion(self) -> Value:
         """Suggest a new value as the common value for all values in the cluster.
         The suggestion is the most frequent value in the cluster. If multiple
-        values have the same frequency the order in which the values were added
-        to the cluster is used as the tie-breaker, i.e., the value of those
-        in the tie that was inserted first is returned as the result.
+        values have the same frequency the returned value depends on how ties
+        are broken in the super class ``collections.Counter``.
 
         Returns
         -------
         scalar or tuple
         """
-        suggested_value = (None, -1, -1)
-        for value, valmeta in self.elements.items():
-            insert_id, count = valmeta
-            max_count = suggested_value[2]
-            if count > max_count:
-                suggested_value = (value, insert_id, count)
-            elif count == max_count and insert_id < suggested_value[1]:
-                suggested_value = (value, insert_id, count)
-        return suggested_value[0]
+        return self.most_common(1)[0][0]
 
     def to_mapping(self, target: Optional[Value] = None) -> Dict:
         """Create a mapping for the values in the cluster to a given target
         value. This is primarily intended for standardization where all values
-        matchin values in this cluster are mapped to a single target value.
+        in this cluster are mapped to a single target value.
 
-        If the target value is not specified the suggested value for this cluster
-        is used as the default.
+        If the target value is not specified the suggested value for this
+        cluster is used as the default.
 
         The resulting mapping will not include an entry for the target itself.
         That is, if the target is a value in the cluster that entry is excluded
@@ -132,7 +75,7 @@ class Cluster(object):
         dict
         """
         target = target if target is not None else self.suggestion()
-        return {key: target for key in self.elements if key != target}
+        return {key: target for key in self.keys() if key != target}
 
 
 class Clusterer(metaclass=ABCMeta):
