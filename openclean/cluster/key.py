@@ -10,15 +10,31 @@ each value and clusters values based on these keyes.
 """
 
 from collections import Counter
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 from openclean.data.types import Value
-from openclean.cluster.base import Cluster, Clusterer
+from openclean.cluster.base import Cluster, Clusterer, ONE
 from openclean.engine.parallel import process_list
 from openclean.function.value.key.fingerprint import Fingerprint
 from openclean.function.value.base import CallableWrapper, ValueFunction
 
 import openclean.config as config
+
+
+class KeyCollisionCluster(Cluster):
+    """Key collision clusters are used to represent results of the key collision
+    clusterer. The key collision cluster extends the super class with a reference
+    to the collision key for all values in the cluster.
+    """
+    def __init__(self, key: str):
+        """Initialize the reference to the collision key.
+
+        Parameters
+        ----------
+        key: string
+            Collision key for all values in the cluster.
+        """
+        self.key = key
 
 
 class KeyCollision(Clusterer):
@@ -52,19 +68,19 @@ class KeyCollision(Clusterer):
         self.minsize = minsize
         self.threads = threads if threads is not None else config.THREADS()
 
-    def clusters(self, values: Union[List[Value], Counter]) -> List[Cluster]:
+    def clusters(self, values: Union[Iterable[Value], Counter]) -> List[KeyCollisionCluster]:
         """Compute clusters for a given list of values. Each cluster itself is
         a list of values, i.e., a subset of values from the input list.
 
         Parameters
         ----------
-        values: List of values or collections.Counter
-            List of data values or a value counter that maps values to their
+        values: iterable of values or collections.Counter
+            Iterable of data values or a value counter that maps values to their
             frequencies.
 
         Returns
         -------
-        list of openclean.cluster.base.Cluster
+        list of openclean.cluster.key.KeyCollisionCluster
         """
         # Return empty list if values are empty.
         if not values:
@@ -90,7 +106,7 @@ class KeyCollision(Clusterer):
         # Get the key and value for the first element in the key-value pair
         # list. Create a first cluster for the value.
         cluster_key, val = kvps[0]
-        cluster = Cluster().add(val, count=freq[val])
+        cluster = KeyCollisionCluster(key=cluster_key).add(val, count=freq[val])
         # Iterate over the remaining values. Cluster values with equal key
         # values.
         for i in range(1, len(kvps)):
@@ -104,7 +120,7 @@ class KeyCollision(Clusterer):
                 if len(cluster) >= self.minsize:
                     clusters.append(cluster)
                 # Create a new cluster for the next key value.
-                cluster = Cluster().add(val, count=freq[val])
+                cluster = KeyCollisionCluster(key=key).add(val, count=freq[val])
                 cluster_key = key
         # Add the current cluster to the result if it contains at least minsize
         # distinct values.
@@ -114,16 +130,16 @@ class KeyCollision(Clusterer):
 
 
 def key_collision(
-    values: Union[List[Value], Counter], func: Optional[Union[Callable, ValueFunction]] = None,
+    values: Union[Iterable[Value], Counter],
+    func: Optional[Union[Callable, ValueFunction]] = None,
     minsize: Optional[int] = 2, threads: Optional[int] = None
-) -> List[Cluster]:
+) -> List[KeyCollisionCluster]:
     """Run key collision clustering for a given list of values.
-
 
     Parameters
     ----------
-    values: List of values or collections.Counter
-        List of data values or a value counter that maps values to their
+    values: iterable of values or collections.Counter
+        Iterable of data values or a value counter that maps values to their
         frequencies.
     func: callable or ValueFunction, default=None
         Function that is used to generate keys for values. By default the
@@ -138,7 +154,7 @@ def key_collision(
 
     Returns
     -------
-    list of openclean.cluster.base.Cluster
+    list of openclean.cluster.key.KeyCollisionCluster
     """
     return KeyCollision(
         func=func if func is not None else Fingerprint(),
@@ -175,10 +191,3 @@ class KeyValueGenerator(object):
         tuple of string and Value
         """
         return (self.func.eval(value), value)
-
-
-class ONE(object):
-    """Helper to simulate a counter where each value has a frequency of 1."""
-    def __getitem__(self, key: Value) -> int:
-        """All value lookups will return 1."""
-        return 1

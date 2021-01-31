@@ -15,7 +15,7 @@ different values that might be alternative representations of the same thing'*.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-from typing import Dict, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from openclean.data.types import Value
 
@@ -83,7 +83,7 @@ class Clusterer(metaclass=ABCMeta):
     cluster a given list of values.
     """
     @abstractmethod
-    def clusters(self, values: Union[List[Value], Counter]) -> List[Cluster]:
+    def clusters(self, values: Union[Iterable[Value], Counter]) -> List[Cluster]:
         """Compute clusters for a given list of values. Each cluster itself is
         a list of values, i.e., a subset of values from the input list. The
         cluster method should be capable of taking a list of values or a
@@ -91,8 +91,8 @@ class Clusterer(metaclass=ABCMeta):
 
         Parameters
         ----------
-        values: List of values or collections.Counter
-            List of data values or a value counter that maps values to their
+        values: iterable of values or collections.Counter
+            Iterable of data values or a value counter that maps values to their
             frequencies.
 
         Returns
@@ -100,3 +100,12 @@ class Clusterer(metaclass=ABCMeta):
         list of openclean.cluster.base.Cluster
         """
         raise NotImplementedError()  # pragma: no cover
+
+
+# -- Helper Classes -----------------------------------------------------------
+
+class ONE(object):
+    """Helper to simulate a counter where each value has a frequency of 1."""
+    def __getitem__(self, key: Value) -> int:
+        """All value lookups will return 1."""
+        return 1

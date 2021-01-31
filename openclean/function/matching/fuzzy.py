@@ -255,13 +255,13 @@ def gram_counter(value: str, gram_size: int = 2) -> dict:
 
 def gram_iterator(value: str, gram_size: int = 2):
     """Iterates and yields all the ngrams from the given value
-    
+
     Parameters
     ----------
     value: str
         The string to compute the n-grams from
     gram_size: int, default= 2
-        The n in the n-gram            
+        The n in the n-gram
     """
     no_punc_regex = re.compile(r'[^\w, ]+')
     simplified = '-' + no_punc_regex.sub('', value.lower()) + '-'
