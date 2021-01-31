@@ -19,6 +19,16 @@ def key_generator(value):
     return value.lower()
 
 
+def test_collision_key():
+    """Test accessing the collision key for generated clusters."""
+    clusters = key_collision(
+        values=['a', 'A', 'b', 'B', 'C'],
+        func=key_generator,
+        minsize=2
+    )
+    assert {c.key for c in clusters} == {'a', 'b'}
+
+
 @pytest.mark.parametrize(
     'minsize,values,result',
     [
