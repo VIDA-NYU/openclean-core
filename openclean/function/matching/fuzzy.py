@@ -1,6 +1,6 @@
 # This file is part of the Data Cleaning Library (openclean).
 #
-# Copyright (C) 2018-2020 New York University.
+# Copyright (C) 2018-2021 New York University.
 #
 # openclean is released under the Revised BSD License. See file LICENSE for
 # full license details.
@@ -70,7 +70,7 @@ class FuzzySimilarity(StringSimilarity):
         in the internal dictionaries
 
         the steps are as such:
-        - n grams are computed. e.g. tokyo -> -tokyo- (add start+end chars) -> -t, to, ok, ky, yo, o- (2grams) [similarly for 3 grams]
+        - n grams are computed. e.g. tokyo -> -tokyo- (add start+end chars) -> -t, to, ok, ky, yo, o- (2grams)
         - 2 and 3 gram frequencies counted and norms calculated using it.
         - the norms along with words are stored in self.items for all words in the vocab
         - the ngrams along with frequencies are in self.match_dict
