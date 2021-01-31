@@ -7,12 +7,12 @@
 
 """Collection of helper functions for parallel processing."""
 
-from typing import Callable, List
+from typing import Callable, Iterable, List
 
 import multiprocessing as mp
 
 
-def process_list(func: Callable, values: List, processes: int) -> List:
+def process_list(func: Callable, values: Iterable, processes: int) -> List:
     """Process a given list of values in parallel. Applies the given function
     to each value in the list and returnes the processed result.
 
@@ -24,8 +24,8 @@ def process_list(func: Callable, values: List, processes: int) -> List:
     ----------
     func: callable
         Function that is applied to list values.
-    values: list
-        List of values that are processed by the given function.
+    values: iterable
+        Iterable of values that are processed by the given function.
     processes: int
         Number of parallel proceses to use.
 

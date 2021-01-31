@@ -10,10 +10,10 @@ each value and clusters values based on these keyes.
 """
 
 from collections import Counter
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 from openclean.data.types import Value
-from openclean.cluster.base import Cluster, Clusterer
+from openclean.cluster.base import Cluster, Clusterer, ONE
 from openclean.engine.parallel import process_list
 from openclean.function.value.key.fingerprint import Fingerprint
 from openclean.function.value.base import CallableWrapper, ValueFunction
@@ -68,14 +68,14 @@ class KeyCollision(Clusterer):
         self.minsize = minsize
         self.threads = threads if threads is not None else config.THREADS()
 
-    def clusters(self, values: Union[List[Value], Counter]) -> List[KeyCollisionCluster]:
+    def clusters(self, values: Union[Iterable[Value], Counter]) -> List[KeyCollisionCluster]:
         """Compute clusters for a given list of values. Each cluster itself is
         a list of values, i.e., a subset of values from the input list.
 
         Parameters
         ----------
-        values: List of values or collections.Counter
-            List of data values or a value counter that maps values to their
+        values: iterable of values or collections.Counter
+            Iterable of data values or a value counter that maps values to their
             frequencies.
 
         Returns
@@ -130,16 +130,16 @@ class KeyCollision(Clusterer):
 
 
 def key_collision(
-    values: Union[List[Value], Counter], func: Optional[Union[Callable, ValueFunction]] = None,
+    values: Union[Iterable[Value], Counter],
+    func: Optional[Union[Callable, ValueFunction]] = None,
     minsize: Optional[int] = 2, threads: Optional[int] = None
 ) -> List[KeyCollisionCluster]:
     """Run key collision clustering for a given list of values.
 
-
     Parameters
     ----------
-    values: List of values or collections.Counter
-        List of data values or a value counter that maps values to their
+    values: iterable of values or collections.Counter
+        Iterable of data values or a value counter that maps values to their
         frequencies.
     func: callable or ValueFunction, default=None
         Function that is used to generate keys for values. By default the
@@ -191,10 +191,3 @@ class KeyValueGenerator(object):
         tuple of string and Value
         """
         return (self.func.eval(value), value)
-
-
-class ONE(object):
-    """Helper to simulate a counter where each value has a frequency of 1."""
-    def __getitem__(self, key: Value) -> int:
-        """All value lookups will return 1."""
-        return 1
