@@ -7,7 +7,7 @@
 
 """Unit tests for the kNN cluster method."""
 
-from openclean.cluster.knn import knn_clusters
+from openclean.cluster.knn import knn_clusters, knn_collision_clusters
 from openclean.function.similarity.base import SimilarityConstraint
 from openclean.function.similarity.text import LevenshteinDistance
 from openclean.function.token.ngram import NGrams
@@ -52,6 +52,13 @@ def test_knn_clusters():
         values=VALUES,
         sim=SimilarityConstraint(func=LevenshteinDistance(), pred=GreaterThan(0.7)),
         tokenizer=NGrams(n=4),
+        minsize=3
+    )
+    assert len(clusters) == 3
+    clusters = knn_clusters(
+        values=VALUES,
+        sim=SimilarityConstraint(func=LevenshteinDistance(), pred=GreaterThan(0.7)),
+        tokenizer=NGrams(n=4),
         minsize=2,
         remove_duplicates=False
     )
@@ -63,3 +70,25 @@ def test_knn_clusters():
         minsize=2
     )
     assert len(clusters) == 0
+
+
+def test_knn_collision_clusters():
+    """Test the kNN clustering method that performs key collision clustering
+    as a pre-processing step.
+    """
+    values = ['AMY/S PIZZA/S.', 'AMY\'S PIZZA', 'AMMYS PIZZA']
+    sim = SimilarityConstraint(func=LevenshteinDistance(), pred=GreaterThan(0.9))
+    clusters = knn_clusters(
+        values=values,
+        sim=sim,
+        tokenizer=NGrams(n=4),
+        minsize=2
+    )
+    assert len(clusters) == 0
+    clusters = knn_collision_clusters(
+        values=values,
+        sim=sim,
+        tokenizer=NGrams(n=4),
+        minsize=2
+    )
+    assert len(clusters) == 1

@@ -20,10 +20,12 @@ created blocks.
 """
 
 from collections import Counter, defaultdict
-from typing import Iterable, List, Optional, Union
+from typing import Callable, Iterable, List, Optional, Union
 
 from openclean.data.types import Value
 from openclean.cluster.base import Cluster, Clusterer, ONE
+from openclean.cluster.key import key_collision
+from openclean.function.value.base import ValueFunction
 from openclean.function.token.base import StringTokenizer
 from openclean.function.token.ngram import NGrams
 from openclean.function.similarity.base import SimilarityConstraint
@@ -92,11 +94,13 @@ class kNNClusterer(Clusterer):
         # Group values within blocks based on string similarity.
         clusters = defaultdict(Cluster)
         for block in blocks:
-            # Ignore blocks with only one element.
-            if len(block) < 2:
-                continue
             for i in range(len(block) - 1):
                 val_i = block[i]
+                # Add cluster for the value if it does ot exist yet. This
+                # ensures that we will have a cluster for every value that
+                # we encountered (in case minsize is 1).
+                if val_i not in clusters and self.minsize <= 1:
+                    clusters[val_i] = Cluster()
                 for j in range(i + 1, len(block)):
                     val_j = block[j]
                     # No need to compare if values are already part of each
@@ -154,6 +158,8 @@ class kNNClusterer(Clusterer):
         """
         result = list()
         for cluster in clusters:
+            if len(cluster) < self.minsize:
+                continue
             is_duplicate = False
             if self.remove_duplicates:
                 for c in result:
@@ -200,3 +206,69 @@ def knn_clusters(
         minsize=minsize,
         remove_duplicates=remove_duplicates
     ).clusters(values=values)
+
+
+def knn_collision_clusters(
+    values: Union[Iterable[Value], Counter], sim: SimilarityConstraint,
+    keys: Optional[Union[Callable, ValueFunction]] = None,
+    tokenizer: Optional[StringTokenizer] = None, minsize: Optional[int] = 2,
+    remove_duplicates: Optional[bool] = True, threads: Optional[int] = None
+) -> List[Cluster]:
+    """Run kNN clustering on a set of values that have been grouped using
+    collision clustering.
+
+    This algorithm first performs collision key clustering for the given list
+    of values using the key generator. It then uses kNN clustering on the keys
+    for the generated clusters.
+
+    Parameters
+    ----------
+    values: iterable of values or collections.Counter
+        Iterable of data values or a value counter that maps values to their
+        frequencies.
+    sim: openclean.function.similarity.base.SimilarityConstraint
+        String similarity constraint for grouping strings in the generated
+        blocks.
+    keys: callable or ValueFunction, default=None
+        Function that is used to generate keys for values. By default the
+        token fingerprint generator is used.
+    tokenizer: openclean.function.token.base.StringTokenizer, default=None
+        Generator for tokens that are used to group string values in the
+        first step of the algorithm. By default, n-grams of length 6 are
+        used as blocking tokens.
+    minsize: int, default=2
+        Minimum number of distinct values that each cluster in the returned
+        result has to have.
+    remove_duplicates: bool, default=True
+        Remove identical clusters from the result if True.
+    threads: int, default=None
+        Number of parallel threads to use for key generation. If None the
+        value from the environment variable 'OPENCLEAN_THREADS' is used as
+        the default.
+
+    Returns
+    -------
+    list of openclean.cluster.base.Cluster
+    """
+    # Group values using collision key clustering. The result is a mapping of
+    # key values to the created groups. Make sure to set minsize to 1 to retain
+    # all values.
+    groups = key_collision(values=values, func=keys, minsize=1, threads=threads)
+    groups_map = {c.key: c for c in groups}
+    # Cluster key values using kNN clustering.
+    group_clusters = knn_clusters(
+        values=groups_map.keys(),
+        sim=sim,
+        minsize=1,
+        remove_duplicates=remove_duplicates
+    )
+    # Expands group clusters to get the final result.
+    clusters = list()
+    for cluster in group_clusters:
+        c = Cluster()
+        for key in cluster:
+            for value, count in groups_map[key].items():
+                c.add(value, count)
+        if len(c) > minsize:
+            clusters.append(c)
+    return clusters
