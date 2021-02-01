@@ -51,7 +51,7 @@ class SimilarityConstraint(object):
     This class is a simple wrapper around a similarity function and a predicate
     that is evaluated on the similarity score for a given pair of values.
     """
-    def __init__(self, sim: SimilarityFunction, pred: Callable):
+    def __init__(self, func: SimilarityFunction, pred: Callable):
         """Initialize the similarity function and the predicate representing a
         constraint.
 
@@ -61,13 +61,13 @@ class SimilarityConstraint(object):
 
         Parameters
         ----------
-        sim: openclean.function.similairty.base.SimilarityFunction
+        func: openclean.function.similairty.base.SimilarityFunction
             Function to compute the similarity between a pair of values.
         pred: callable
             Boolean function that is called with the similarity score for a
             pair of values.
         """
-        self.sim = sim
+        self.func = func
         self.pred = pred
 
     def __call__(self, val_1: Value, val_2: Value) -> bool:
@@ -99,4 +99,4 @@ class SimilarityConstraint(object):
         -------
         bool
         """
-        return self.pred(self.sim(val_1, val_2))
+        return self.pred(self.func(val_1, val_2))
