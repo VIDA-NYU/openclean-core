@@ -24,7 +24,7 @@ class StringSimilarity(metaclass=ABCMeta):
     indicates no match and 1 indicates an exact match.
     """
     @abstractmethod
-    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:  # pragma: no cover
+    def match(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:
         """Compute a similarity score for a string against items from a vocabulary
         iterable. A score of 1 indicates an exact match. A score of 0 indicates a
         no match.
@@ -40,7 +40,7 @@ class StringSimilarity(metaclass=ABCMeta):
         -------
         list of openclean.data.mapping.StringMatch
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def score(self, vocabulary: Iterable[str], query: str) -> List[StringMatch]:
         """Synonym for the match function. Compute a similarity score for a string
