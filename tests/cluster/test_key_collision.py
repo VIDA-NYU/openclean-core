@@ -19,6 +19,12 @@ def key_generator(value):
     return value.lower()
 
 
+def test_key_collision_cluster_with_empty_input():
+    """Test collision key clustering with empty input."""
+    clusters = key_collision(values=[], func=key_generator)
+    assert len(clusters) == 0
+
+
 def test_collision_key():
     """Test accessing the collision key for generated clusters."""
     clusters = key_collision(
