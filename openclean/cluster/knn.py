@@ -24,6 +24,7 @@ from typing import Callable, Iterable, List, Optional, Union
 
 from openclean.data.types import Value
 from openclean.cluster.base import Cluster, Clusterer, ONE
+from openclean.cluster.index import ClusterIndex
 from openclean.cluster.key import key_collision
 from openclean.function.value.base import ValueFunction
 from openclean.function.token.base import StringTokenizer
@@ -157,17 +158,16 @@ class kNNClusterer(Clusterer):
         list of openclean.cluster.base.Cluster
         """
         result = list()
+        # Helper for duplicate removal.
+        cluster_index = ClusterIndex()
         for cluster in clusters:
             if len(cluster) < self.minsize:
                 continue
-            is_duplicate = False
-            if self.remove_duplicates:
-                for c in result:
-                    if c == cluster:
-                        is_duplicate = True
-                        break
-            if not is_duplicate:
-                result.append(cluster)
+            if self.remove_duplicates and not cluster_index.add(cluster):
+                # If the cluster is not added to the index, i.e., it already
+                # exists in the index we won't include it in the results again.
+                continue
+            result.append(cluster)
         return result
 
 
