@@ -7,7 +7,9 @@
 
 """Unit test for regular expression outlier detection operators."""
 
-from openclean.profiling.anomalies.pattern import regex_outliers
+import pytest
+
+from openclean.profiling.anomalies.pattern import regex_outliers, TokenSignatureOutliers
 
 
 def test_regex_outliers_for_data_frame(nyc311):
@@ -28,3 +30,17 @@ def test_regex_outliers_for_data_frame(nyc311):
     assert len(outlier) == 24
     for boro in ['BRONX', 'BROOKLYN', 'MANHATTAN', 'QUEENS', 'STATEN ISLAND']:
         assert boro not in outlier
+
+
+@pytest.mark.parametrize(
+    'values,exactly_one,result',
+    [
+        (['3rd Ave', 'Bway', 'St. Marks Ave.'], False, ['Bway']),
+        (['3rd Ave', 'Bway', 'St. Marks Ave.'], True, ['Bway', 'St. Marks Ave.'])
+    ]
+)
+def test_token_signature_outliers(values, exactly_one, result):
+    """Test token signature outlier detection."""
+    signature = [{'street', 'str', 'st'}, {'avenue', 'ave'}]
+    op = TokenSignatureOutliers(signature=signature, exactly_one=exactly_one)
+    assert op.find(values) == result

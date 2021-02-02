@@ -8,7 +8,7 @@
 """Abstract base class for anomaly and outlier detection operators."""
 
 from collections import Counter
-from typing import Dict, List, Union
+from typing import Dict, Iterable, List, Union
 
 from openclean.data.types import Value
 from openclean.profiling.base import DistinctSetProfiler
@@ -20,13 +20,13 @@ class AnomalyDetector(DistinctSetProfiler):
     frame or a metadata object) as input and return a list of values that were
     identified as outliers.
     """
-    def find(self, values: List[Value]) -> List[Union[Dict, Value]]:
+    def find(self, values: Iterable[Value]) -> List[Union[Dict, Value]]:
         """Identify values in a given set of values that are classified as
         outliers or anomalities. Returns a list of identified values.
 
         Parameters
         ----------
-        values: list
+        values: iterable of values
             List of input values.
 
         Returns

@@ -16,10 +16,16 @@ import pandas as pd
 
 from openclean.data.types import Value
 from openclean.function.eval.base import InputColumn
+from openclean.function.token.base import StringTokenizer
+from openclean.function.token.split import Split
+from openclean.function.value.normalize.text import TextNormalizer
 from openclean.function.value.regex import IsMatch, IsNotMatch
 from openclean.profiling.anomalies.conditional import ConditionalOutliers
+from openclean.profiling.pattern.token_signature import TokenSignature
 from openclean.util.core import always_false, eval_all
 
+
+# -- Regular expressions ------------------------------------------------------
 
 def regex_outliers(
     df: pd.DataFrame, columns: Union[InputColumn, List[InputColumn]],
@@ -103,3 +109,71 @@ class RegExOutliers(ConditionalOutliers):
         """
         if self.predicate(value):
             return value
+
+
+# -- Token signatures ---------------------------------------------------------
+
+def DefaultTokenizer() -> StringTokenizer:
+    """Create an instance of the default tokenizer."""
+    return Split('\\s+', unique=True, preproc=TextNormalizer())
+
+
+class TokenSignatureOutliers(ConditionalOutliers):
+    """Identify values that do not contain at least one token from a given
+    token signature.
+
+    Uses a given tokenizer to transform a given value into a set of tokens. Then
+    checks if at least one of the tokens matches one of the entries in a token
+    signature. To match an entry, the token has to be a member of the set of
+    tokens for that entry.
+    """
+    def __init__(
+        self, signature: TokenSignature, tokenizer: Optional[StringTokenizer] = None,
+        exactly_one: Optional[bool] = False
+    ):
+        """Initialize the token signature and the string tokenizer.
+
+        If no tokenizer is given the default tokenizer :class:Split is used to
+        split on whitespaces with :class:TextNormalizer as a pre-processing
+        step.
+
+        signature: openclean.profiling.pattern.token_signature.TokenSignature
+            Token signature.
+        tokenizer: openclean.function.token.base.StringTokenizer, default=None
+            Tokenizer that is used to generate tokens for input values.
+        exactly_one: bool, default=False
+            If the exactly one flag is set a value that matches multiple entries
+            in the token signature is considered an outlier as well. Only values
+            that match exactly one entry in the signature are not considered
+            outliers.
+        """
+        super(TokenSignatureOutliers, self).__init__()
+        self.signature = signature
+        self.tokenizer = tokenizer if tokenizer is not None else DefaultTokenizer()
+        self.exactly_one = exactly_one
+
+    def outlier(self, value: Value) -> bool:
+        """Test if a given value is a match for the associated regular
+        expressions. If the value is not a match it is considered an outlier.
+
+        Returns a dictionary for values that are classified as outliers that
+        contains one element 'value' for the tested value.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value that is being tested for the outlier condition.
+
+        Returns
+        -------
+        bool
+        """
+        # Get the set of tokens for the given value.
+        tokens = set(self.tokenizer.tokens(value))
+        match_count = 0
+        for entry in self.signature:
+            if any(t in entry for t in tokens):
+                if not self.exactly_one:
+                    return None
+                match_count += 1
+        return value if match_count != 1 else None
