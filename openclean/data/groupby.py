@@ -87,6 +87,16 @@ class DataFrameGrouping(object):
         self._groups[key] = rows
         return self
 
+    @property
+    def columns(self) -> List[str]:
+        """Get the names of columns in the schema of the grouped data frame.
+
+        Returns
+        -------
+        list of string
+        """
+        return list(self.df.columns)
+
     def get(self, key: str) -> pd.DataFrame:
         """Get the data frame that is associated with the given key. Returns
         None if the given key does not exist in the grouping.
