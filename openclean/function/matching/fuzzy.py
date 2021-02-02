@@ -11,12 +11,12 @@ import re
 import math
 import operator
 import collections
-from jellyfish import levenshtein_distance
 
 from typing import Iterable, List, Optional, Tuple, Union
 
 from openclean.data.mapping import StringMatch
 from openclean.function.matching.base import StringSimilarity
+from openclean.function.similarity.text import LevenshteinDistance
 
 
 class FuzzySimilarity(StringSimilarity):
@@ -138,6 +138,7 @@ class FuzzySimilarity(StringSimilarity):
         # if levenshtein preferred instead, for the top 50 results, calculate the levenshtein distance
         # b/w each match and query word
         if self.use_levenshtein:
+            leven_distance = LevenshteinDistance()
             results = [(leven_distance(matched, lvalue), matched)
                        for _, matched in results[:50]]
             results.sort(reverse=True, key=operator.itemgetter(0))
@@ -209,29 +210,7 @@ class FuzzySimilarity(StringSimilarity):
         return [StringMatch(term=t, score=s) for s, t in self.search(query)]
 
 
-# Utility methods
-
-def leven_distance(str1: str, str2: str) -> float:
-    """calculates the levenshtein distance between two strings and
-    returns the similarity b/w them (1 - normalized distance)
-
-    Parameters
-    ----------
-    str1: str
-        value 1
-    str2: str
-        value 2
-
-    Returns
-    -------
-        float
-    """
-    distance = levenshtein_distance(str1, str2)
-    if len(str1) > len(str2):
-        return 1 - float(distance) / len(str1)
-    else:
-        return 1 - float(distance) / len(str2)
-
+# -- Utility methods ----------------------------------------------------------
 
 def gram_counter(value: str, gram_size: int = 2) -> dict:
     """Counts the ngrams and their frequency from the given value
