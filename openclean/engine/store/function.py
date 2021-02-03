@@ -23,7 +23,7 @@ import openclean.config as config
 class FunctionRepository(DefaultObjectStore):
     """Object store for library functions. Persists all user-defined functions
     on disk using a file system data store. The files are stored under the
-    openclean home directory if no nbase directory is specififed.
+    openclean home directory if no base directory is specififed.
     """
     def __init__(
         self, basedir: Optional[str] = None,
