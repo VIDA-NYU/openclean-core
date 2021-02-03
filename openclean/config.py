@@ -9,7 +9,7 @@
 are maintained in environment variables.
 """
 
-from pathlib import Path
+from appdirs import user_cache_dir
 
 import os
 
@@ -30,7 +30,7 @@ def DATADIR() -> str:
     -------
     string
     """
-    default_value = os.path.join(str(Path.home()), '.openclean', 'data')
+    default_value = os.path.join(user_cache_dir(appname=__name__.split('.')[0]), 'data')
     return os.environ.get(ENV_DATA_DIR, default_value)
 
 
@@ -41,7 +41,7 @@ def MASTERDATADIR() -> str:
     -------
     string
     """
-    default_value = os.path.join(str(Path.home()), '.openclean', 'masterdata')
+    default_value = os.path.join(user_cache_dir(appname=__name__.split('.')[0]), 'masterdata')
     return os.environ.get(ENV_MASTERDATA_DIR, default_value)
 
 

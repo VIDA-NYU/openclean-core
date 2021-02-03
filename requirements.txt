@@ -1,4 +1,5 @@
 future
+appdirs>=1.4.4
 python-dateutil
 requests
 dill
