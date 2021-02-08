@@ -47,7 +47,7 @@ class DatasetHandle(metaclass=ABCMeta):
         self.is_sample = is_sample
 
     @abstractmethod
-    def add_snapshot(self, df: pd.DataFrame, action: OpHandle) -> pd.DataFrame:  # pragma: no cover
+    def add_snapshot(self, df: pd.DataFrame, action: OpHandle) -> pd.DataFrame:
         """Add a new snapshot to the history of the dataset. Returns the data
         frame for the snapshot.
 
@@ -62,22 +62,32 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         pd.DataFrame
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def checkout(self) -> pd.DataFrame:  # pragma: no cover
-        """Checkout the latest version of the dataset.
+    def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
+        """Checkout the a version of the dataset.
+
+        The optional identifier references a dataset version that is represented
+        by a operation log entry with the identifier. If no identifier is given
+        the latest dataset version will be returned.
+
+        Parameters
+        ----------
+        identifier: str, default=None
+            Identifier of the operation log entry for the dataset version that
+            is being checked out.
 
         Returns
         -------
         pd.DataFrame
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def drop(self):  # pragma: no cover
+    def drop(self):
         """Delete all resources that are associated with the dataset history."""
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def insert(
         self, names: Union[str, List[str]], pos: Optional[int] = None,
@@ -142,14 +152,14 @@ class DatasetHandle(metaclass=ABCMeta):
         return list(self._log)
 
     @abstractmethod
-    def metadata(self) -> MetadataStore:  # pragma: no cover
+    def metadata(self) -> MetadataStore:
         """Get metadata that is associated with the current dataset version.
 
         Returns
         -------
         openclean.data.metadata.base.MetadataStore
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
@@ -211,7 +221,7 @@ class DatasetHandle(metaclass=ABCMeta):
 
 class FullDataset(DatasetHandle):
     """Handle for datasets that are managed by the openclean engine and that
-    have their histor being maintained by an archive manager. All operations
+    have their history being maintained by an archive manager. All operations
     are applied directly on the full dataset in the underlying archive.
     """
     def __init__(
@@ -264,8 +274,14 @@ class FullDataset(DatasetHandle):
         self._log.add(version=self.datastore.last_version(), action=action)
         return df
 
-    def checkout(self) -> pd.DataFrame:
+    def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
         """Checkout the latest version of the dataset.
+
+        Parameters
+        ----------
+        identifier: str, default=None
+            Identifier of the operation log entry for the dataset version that
+            is being checked out.
 
         Returns
         -------
@@ -343,8 +359,14 @@ class DataSample(DatasetHandle):
         self._metadata.append(VolatileMetadataStore())
         return df
 
-    def checkout(self) -> pd.DataFrame:
+    def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
         """Checkout the latest version of the dataset.
+
+        Parameters
+        ----------
+        identifier: str, default=None
+            Identifier of the operation log entry for the dataset version that
+            is being checked out.
 
         Returns
         -------
