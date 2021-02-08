@@ -7,6 +7,8 @@
 
 """Unit tests for the HISTORE-based implementation of the data store."""
 
+import pytest
+
 from openclean.operator.transform.update import update
 
 
@@ -76,3 +78,19 @@ def test_last_dataset_version(store, dataset):
     assert store.last_version() == 1
     store.checkout(version=0)
     assert store.last_version() == 1
+
+
+def test_histore_rollback(store, dataset):
+    """Test updates to a given dataset and retrieving all dataset versions."""
+    df = store.commit(df=dataset)
+    df = store.commit(df=update(df=df, columns='B', func=1))
+    df = store.commit(df=update(df=df, columns='C', func=2))
+    store.rollback(1)
+    # Snapshot 1
+    df = store.checkout(version=1)
+    assert list(df['A']) == [1, 3]
+    assert list(df['B']) == [1, 1]
+    assert list(df['C']) == [3, 5]
+    # Snapshot 2
+    with pytest.raises(ValueError):
+        df = store.checkout(version=2)

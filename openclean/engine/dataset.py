@@ -23,7 +23,7 @@ from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.types import Columns, Scalar
-from openclean.engine.action import OpHandle, InsertOp, UpdateOp
+from openclean.engine.action import CommitOp, InsertOp, OpHandle, UpdateOp
 from openclean.engine.object.function import FunctionHandle
 from openclean.engine.log import LogEntry, OperationLog
 from openclean.operator.transform.insert import inscol
@@ -49,26 +49,6 @@ class DatasetHandle(metaclass=ABCMeta):
         self.is_sample = is_sample
         self._log = OperationLog(snapshots=store.snapshots(), auto_commit=not is_sample)
 
-    def add_snapshot(self, df: pd.DataFrame, action: OpHandle) -> pd.DataFrame:
-        """Add a new snapshot to the history of the dataset. Returns the data
-        frame for the snapshot.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data frame fr the new dataset snapshot.
-        action: openclean.engine.action.OpHandle
-            Operator that created the dataset snapshot.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        df = self.store.commit(df=df, action=action)
-        # Add the operator to the internal log.
-        self._log.add(version=self.store.last_version(), action=action)
-        return df
-
     def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
         """Checkout a dataset snapshot.
 
@@ -87,6 +67,29 @@ class DatasetHandle(metaclass=ABCMeta):
         pd.DataFrame
         """
         return self.store.checkout()
+
+    def commit(self, df: pd.DataFrame, action: Optional[OpHandle] = None) -> pd.DataFrame:
+        """Add a new snapshot to the history of the dataset.
+
+        If no action is provided a user commit action operator is used as the
+        default. Returns the data frame for the snapshot.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Data frame for the new dataset snapshot.
+        action: openclean.engine.action.OpHandle, default=None
+            Operator that created the dataset snapshot.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        action = action if action is not None else CommitOp()
+        df = self.store.commit(df=df, action=action)
+        # Add the operator to the internal log.
+        self._log.add(version=self.store.last_version(), action=action)
+        return df
 
     @abstractmethod
     def drop(self):
@@ -144,7 +147,7 @@ class DatasetHandle(metaclass=ABCMeta):
         )
         # Run the insert operation and commit the new dataset version.
         df = inscol(df=df, names=names, pos=pos, values=action.to_eval())
-        return self.add_snapshot(df=df, action=action)
+        return self.commit(df=df, action=action)
 
     def log(self) -> List[LogEntry]:
         """Get the list of log entries for all dataset snapshots.
@@ -210,7 +213,7 @@ class DatasetHandle(metaclass=ABCMeta):
         )
         # Run the update operation and commit the new dataset version.
         df = update(df=df, columns=columns, func=action.to_eval())
-        return self.add_snapshot(df=df, action=action)
+        return self.commit(df=df, action=action)
 
     def version(self) -> int:
         """Get version identifier for the last snapshot of the dataset.

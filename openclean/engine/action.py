@@ -23,6 +23,7 @@ from openclean.engine.object.function import FunctionHandle
 
 """Operator types."""
 
+OP_COMMIT = 'commit'
 OP_INSCOL = 'inscol'
 OP_LOAD = 'load'
 OP_UPDATE = 'update'
@@ -127,6 +128,23 @@ class OpHandle(ActionHandle):
         openclean.function.eval.base.EvalFunction
         """
         raise NotImplementedError()
+
+
+class CommitOp(OpHandle):
+    """Handle for a user commit operation."""
+    def __init__(self):
+        """Initialize the action type in the super class."""
+        super(CommitOp, self).__init__(optype=OP_COMMIT)
+
+    def to_eval(self) -> EvalFunction:
+        """The commit operator cannot be converted to an evaluation function.
+        If an attempt is made to do so a runtime error is raised.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        raise RuntimeError('cannot re-apply commit')
 
 
 class InsertOp(OpHandle):
