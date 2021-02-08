@@ -64,7 +64,7 @@ def test_dataset_sample_operations(engine):
     assert list(df['LNAME']) == ['jones', 'peters']
     assert list(df['C']) == [1, 1]
     # The current snapshot of the original archive has not changed.
-    df = original.datastore.checkout()
+    df = original.store.checkout()
     assert len(df.columns) == 3
     assert list(df['FNAME']) == ['alice', 'bob']
     assert list(df['LNAME']) == ['JONES', 'PETERS']
@@ -73,7 +73,7 @@ def test_dataset_sample_operations(engine):
     assert list(df['FNAME']) == ['ALICE', 'BOB']
     assert list(df['LNAME']) == ['jones', 'peters']
     assert list(df['C']) == [1, 1]
-    df = original.datastore.checkout()
+    df = original.store.checkout()
     assert list(df['FNAME']) == ['ALICE', 'BOB']
     assert list(df['LNAME']) == ['jones', 'peters']
     assert list(df['C']) == [1, 1]

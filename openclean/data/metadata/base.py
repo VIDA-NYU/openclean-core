@@ -111,7 +111,7 @@ class MetadataStore(metaclass=ABCMeta):
     @abstractmethod
     def read(
         self, column_id: Optional[int] = None, row_id: Optional[int] = None
-    ) -> Dict:  # pragma: no cover
+    ) -> Dict:
         """Read the annotation dictionary for the specified object.
 
         Parameters
@@ -127,7 +127,7 @@ class MetadataStore(metaclass=ABCMeta):
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def set_annotation(
         self, key: str, value: Any, column_id: Optional[int] = None,
@@ -156,7 +156,7 @@ class MetadataStore(metaclass=ABCMeta):
     def write(
         self, doc: Dict, column_id: Optional[int] = None,
         row_id: Optional[int] = None
-    ):  # pragma: no cover
+    ):
         """Write the annotation dictionary for the specified object.
 
         Parameters
@@ -174,10 +174,10 @@ class MetadataStore(metaclass=ABCMeta):
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
-class MetadataStoreFactory(object):  # pragma: no cover
+class MetadataStoreFactory(object):
     """Factory pattern for metadata stores. Metadata stores are created on a
     per-version basis. That is, each dataset snapshot has its own idependent
     metadata store.
@@ -196,4 +196,16 @@ class MetadataStoreFactory(object):  # pragma: no cover
         -------
         openclean.data.metadata.base.MetadataStore
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def rollback(self, version: int):
+        """Remove metadata for all dataset versions that are after the given
+        rollback version.
+
+        Parameters
+        ----------
+        version: int
+            Unique identifier of the rollback version.
+        """
+        raise NotImplementedError()  # pragma: no cover

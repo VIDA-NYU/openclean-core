@@ -12,14 +12,16 @@ operations that use functions from the command registry.
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
+from histore.archive.base import VolatileArchive
 from histore.archive.manager.base import ArchiveManager
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
 from openclean.data.archive.base import ArchiveStore
+from openclean.data.archive.cache import CachedDatastore
+from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
-from openclean.data.metadata.mem import VolatileMetadataStore
 from openclean.data.types import Columns, Scalar
 from openclean.engine.action import OpHandle, InsertOp, UpdateOp
 from openclean.engine.object.function import FunctionHandle
@@ -32,7 +34,7 @@ class DatasetHandle(metaclass=ABCMeta):
     """Handle for datasets that are managed by the openclean engine and whose
     snapshot history is maintained by an archive manager.
     """
-    def __init__(self, log: OperationLog, is_sample: bool):
+    def __init__(self, store: ArchiveStore, is_sample: bool):
         """Initialize the operation log and the flag that distinguishes dataset
         samples from full datasets.
 
@@ -43,10 +45,10 @@ class DatasetHandle(metaclass=ABCMeta):
         is_sample: bool
             Flag indicating if the dataset is a sample of a larger dataset.
         """
-        self._log = log
+        self.store = store
         self.is_sample = is_sample
+        self._log = OperationLog(snapshots=store.snapshots(), auto_commit=not is_sample)
 
-    @abstractmethod
     def add_snapshot(self, df: pd.DataFrame, action: OpHandle) -> pd.DataFrame:
         """Add a new snapshot to the history of the dataset. Returns the data
         frame for the snapshot.
@@ -62,27 +64,29 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         pd.DataFrame
         """
-        raise NotImplementedError()  # pragma: no cover
+        df = self.store.commit(df=df, action=action)
+        # Add the operator to the internal log.
+        self._log.add(version=self.store.last_version(), action=action)
+        return df
 
-    @abstractmethod
     def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
-        """Checkout the a version of the dataset.
+        """Checkout a dataset snapshot.
 
-        The optional identifier references a dataset version that is represented
-        by a operation log entry with the identifier. If no identifier is given
-        the latest dataset version will be returned.
+        The optional identifier references a dataset snapshot via an operation
+        log entry. If no identifier is given, the snapshot for the last version
+        of the dataset will be returned.
 
         Parameters
         ----------
         identifier: str, default=None
-            Identifier of the operation log entry for the dataset version that
-            is being checked out.
+            Identifier for the operation log entry that represents the the
+            dataset version that is being checked out.
 
         Returns
         -------
         pd.DataFrame
         """
-        raise NotImplementedError()  # pragma: no cover
+        return self.store.checkout()
 
     @abstractmethod
     def drop(self):
@@ -151,7 +155,6 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         return list(self._log)
 
-    @abstractmethod
     def metadata(self) -> MetadataStore:
         """Get metadata that is associated with the current dataset version.
 
@@ -159,7 +162,7 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         openclean.data.metadata.base.MetadataStore
         """
-        raise NotImplementedError()  # pragma: no cover
+        return self.store.metadata()
 
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
@@ -245,62 +248,14 @@ class FullDataset(DatasetHandle):
             information is accessed when generating a sample of the dataset
             (by the data engine).
         """
-        super(FullDataset, self).__init__(
-            log=OperationLog(snapshots=datastore.snapshots(), auto_commit=True),
-            is_sample=False
-        )
-        self.datastore = datastore
+        super(FullDataset, self).__init__(store=datastore, is_sample=False)
         self.manager = manager
         self.identifier = identifier
         self.pk = pk
 
-    def add_snapshot(self, df: pd.DataFrame, action: OpHandle) -> pd.DataFrame:
-        """Add a new snapshot to the history of the dataset. Returns the data
-        frame for the snapshot.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data frame fr the new dataset snapshot.
-        action: openclean.engine.action.OpHandle
-            Operator that created the dataset snapshot.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        df = self.datastore.commit(df=df, action=action)
-        # Add the operator to the internal log.
-        self._log.add(version=self.datastore.last_version(), action=action)
-        return df
-
-    def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
-        """Checkout the latest version of the dataset.
-
-        Parameters
-        ----------
-        identifier: str, default=None
-            Identifier of the operation log entry for the dataset version that
-            is being checked out.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        return self.datastore.checkout()
-
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
         self.manager.delete(self.identifier)
-
-    def metadata(self) -> MetadataStore:
-        """Get metadata that is associated with the current dataset version.
-
-        Returns
-        -------
-        openclean.data.metadata.base.MetadataStore
-        """
-        return self.datastore.metadata()
 
 
 class DataSample(DatasetHandle):
@@ -325,54 +280,11 @@ class DataSample(DatasetHandle):
         original: openclean.engine.dataset.DatasetHandle
             Reference to the original dataset for sampled datasets.
         """
-        super(DataSample, self).__init__(
-            log=OperationLog(snapshots=original.datastore.snapshots(), auto_commit=False),
-            is_sample=True
-        )
-        self.df = df
+        archive = VolatileArchive()
+        archive.commit(df)
+        store = CachedDatastore(datastore=HISTOREDatastore(archive))
+        super(DataSample, self).__init__(store=store, is_sample=True)
         self.original = original
-        # Reference to the current dataset version.
-        self._current_df = df
-        # List of metadata stores for all snapshots. The offset counts the
-        # number of commited snapshots for which metadata is not maintained.
-        self._metadata = [original.metadata()]
-        self._offset = len(self._log) - 1
-
-    def add_snapshot(self, df: pd.DataFrame, action: OpHandle) -> pd.DataFrame:
-        """Add a new snapshot to the history of the dataset. Replaces the current
-        snapshot with the given data frame and adds the operation handle to the
-        internal log.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data frame fr the new dataset snapshot.
-        action: openclean.engine.action.OpHandle
-            Operator that created the dataset snapshot.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        self._current_df = df
-        self._log.add(version=len(self._log), action=action)
-        self._metadata.append(VolatileMetadataStore())
-        return df
-
-    def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
-        """Checkout the latest version of the dataset.
-
-        Parameters
-        ----------
-        identifier: str, default=None
-            Identifier of the operation log entry for the dataset version that
-            is being checked out.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        return self._current_df
 
     def commit(self):
         """Apply all actions in the current log to the underlying original
@@ -383,21 +295,12 @@ class DataSample(DatasetHandle):
         return exec_operations(
             df=self.original.checkout(),
             operations=[op for op in self.log() if not op.is_committed],
-            datastore=self.original.datastore
+            datastore=self.original.store
         )
 
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
         self.original.drop()
-
-    def metadata(self) -> MetadataStore:
-        """Get metadata that is associated with the current dataset version.
-
-        Returns
-        -------
-        openclean.data.metadata.base.MetadataStore
-        """
-        return self._metadata[-1]
 
     def rollback(self, identifier: str) -> pd.DataFrame:
         """Rollback to the dataset version that was created by the log entry
@@ -427,7 +330,6 @@ class DataSample(DatasetHandle):
         pd.DataFrame
         """
         operation_log = self.log()
-        apply_ops = list()
         for i in range(len(operation_log)):
             op = operation_log[i]
             if op.identifier == identifier:
@@ -435,14 +337,8 @@ class DataSample(DatasetHandle):
                     raise ValueError('can only rollback uncommitted actions')
                 # Remove all log entries starting from the rollback position.
                 self._log.truncate(i)
-                self._metadata = self._metadata[:i - self._offset]
-                # Rollback was successful. Make the dataset snapshot at the
-                # previous version the new current snapshot.
-                self._current_df = exec_operations(df=self.df, operations=apply_ops)
-                # Return here to avoid a KeyError at the end of the method.
-                return self._current_df
-            elif not op.is_committed:
-                apply_ops.append(op)
+                self.store.rollback(version=op.version)
+                return self.checkout()
         # Raise a KeyError if no log entry with the given identifier was found.
         raise KeyError("unknown snapshot '{}'".format(identifier))
 

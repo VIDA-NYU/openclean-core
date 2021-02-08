@@ -32,3 +32,14 @@ def test_read_write_annotations():
         doc = dict({'column': column, 'row': row})
         assert store.write(doc=doc, column_id=column, row_id=row) == doc
         assert store.read(column_id=column, row_id=row) == doc
+
+
+def test_rollback_volatile_metastores():
+    """Test rolling back metadata stores for multiple versions."""
+    factory = VolatileMetadataStoreFactory()
+    for version in range(3):
+        factory.get_store(version).set_annotation(key='A', value=version)
+    factory.rollback(1)
+    for version in range(2):
+        factory.get_store(version).get_annotation(key='A') == version
+    factory.get_store(2).get_annotation(key='A') is None

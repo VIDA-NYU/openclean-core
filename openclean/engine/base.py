@@ -131,7 +131,7 @@ class OpencleanEngine(object):
                 dataset.commit()
             # Replace the sampled dataset with its original.
             self._datasets[name] = dataset.original
-        return self.dataset(name=name).datastore.checkout()
+        return self.dataset(name=name).checkout()
 
     def create(
         self, source: Datasource, name: str,

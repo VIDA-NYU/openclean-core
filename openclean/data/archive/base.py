@@ -24,7 +24,7 @@ from openclean.data.metadata.base import MetadataStore
 Datasource = Tuple[pd.DataFrame, CSVFile, str]
 
 
-class ActionHandle(metaclass=ABCMeta):  # pragma: no cover
+class ActionHandle(metaclass=ABCMeta):
     """Interface for action handles. Defines the serializatio method `to_dict`
     that is used to get a descriptor for the action that created a dataset
     snapshot.
@@ -37,10 +37,10 @@ class ActionHandle(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
-class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
+class ArchiveStore(metaclass=ABCMeta):
     """Interface for the data store that is used to maintain the different
     versions of a dataset that a user creates using the openclean (Jupyter)
     API.
@@ -67,7 +67,7 @@ class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
         ------
         ValueError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def commit(self, df: pd.DataFrame, action: Optional[ActionHandle] = None) -> pd.DataFrame:
@@ -87,7 +87,7 @@ class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
         -------
         pd.DataFrame
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def last_version(self) -> int:
@@ -101,7 +101,7 @@ class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
         ------
         ValueError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def metadata(self, version: Optional[int] = None) -> MetadataStore:
@@ -124,7 +124,26 @@ class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
         ------
         ValueError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def rollback(self, version: int) -> pd.DataFrame:
+        """Rollback the archive history to the snapshot with the given version
+        identifier.
+
+        Returns the data frame for the napshot that is now the last snapshot in
+        the modified archive.
+
+        Parameters
+        ----------
+        version: int
+            Unique identifier of the rollback version.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def snapshots(self) -> List[Snapshot]:
@@ -138,4 +157,4 @@ class ArchiveStore(metaclass=ABCMeta):  # pragma: no cover
         ------
         ValueError
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
