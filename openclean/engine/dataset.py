@@ -295,6 +295,8 @@ class DataSample(DatasetHandle):
         random_state: int or list, default=None
             Seed for random number generator.
         """
+        # Create a volatile archive for the dataset sample and commit the
+        # given data frame as the first snapshot.
         archive = VolatileArchive()
         store = CachedDatastore(datastore=HISTOREDatastore(archive))
         store.commit(df, action=SampleOp(args={'n': n, 'randomState': random_state}))
@@ -306,7 +308,7 @@ class DataSample(DatasetHandle):
         dataset.
         """
         # Apply each action that is stored in the log. Ignore the sample
-        # operation that is be the first operation in the log.
+        # operation that is the first operation in the log.
         for op in list(self.log())[1:]:
             # Execute the operation on the latest snapshot of the original
             # dataset and commit the modified snapshot to that dataset.
