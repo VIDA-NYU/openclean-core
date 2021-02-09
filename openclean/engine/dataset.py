@@ -66,7 +66,12 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         pd.DataFrame
         """
-        return self.store.checkout()
+        if identifier is None:
+            return self.store.checkout()
+        for op in self._log:
+            if op.identifier == identifier:
+                return self.store.checkout(version=op.version)
+        raise KeyError("unknown log entry '{}'".format(identifier))
 
     def commit(self, df: pd.DataFrame, action: Optional[OpHandle] = None) -> pd.DataFrame:
         """Add a new snapshot to the history of the dataset.
@@ -273,7 +278,7 @@ class DataSample(DatasetHandle):
     The class also has a reference to the handle for the full dataset.
     """
     def __init__(
-        self, df: pd.DataFrame, original: DatasetHandle, n: Optional[int] = None,
+        self, df: pd.DataFrame, original: DatasetHandle, n: int,
         random_state: Optional[Tuple[int, List]] = None
     ):
         """Initialize the reference to the data sample and the handle for the
@@ -291,8 +296,8 @@ class DataSample(DatasetHandle):
             Seed for random number generator.
         """
         archive = VolatileArchive()
-        archive.commit(df=df, action=SampleOp(args={'n': n, 'randomState': random_state}))
         store = CachedDatastore(datastore=HISTOREDatastore(archive))
+        store.commit(df, action=SampleOp(args={'n': n, 'randomState': random_state}))
         super(DataSample, self).__init__(store=store, is_sample=True)
         self.original = original
 
@@ -327,14 +332,14 @@ class DataSample(DatasetHandle):
         -------
         pd.DataFrame
         """
-        operation_log = self.log()
-        for i in range(len(operation_log)):
-            op = operation_log[i]
+        pos = 0
+        for op in self.log():
+            pos += 1
             if op.identifier == identifier:
                 if op.is_committed:
                     raise ValueError('can only rollback uncommitted actions')
                 # Remove all log entries starting from the rollback position.
-                self._log.truncate(i)
+                self._log.truncate(pos)
                 self.store.rollback(version=op.version)
                 return self.checkout()
         # Raise a KeyError if no log entry with the given identifier was found.
