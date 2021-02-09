@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from histore.archive.base import VolatileArchive
 from histore.archive.manager.base import ArchiveManager
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -23,7 +23,7 @@ from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.types import Columns, Scalar
-from openclean.engine.action import CommitOp, InsertOp, OpHandle, UpdateOp
+from openclean.engine.action import CommitOp, InsertOp, OpHandle, SampleOp, UpdateOp
 from openclean.engine.object.function import FunctionHandle
 from openclean.engine.log import LogEntry, OperationLog
 from openclean.operator.transform.insert import inscol
@@ -272,7 +272,10 @@ class DataSample(DatasetHandle):
 
     The class also has a reference to the handle for the full dataset.
     """
-    def __init__(self, df: pd.DataFrame, original: DatasetHandle):
+    def __init__(
+        self, df: pd.DataFrame, original: DatasetHandle, n: Optional[int] = None,
+        random_state: Optional[Tuple[int, List]] = None
+    ):
         """Initialize the reference to the data sample and the handle for the
         original (full) dataset.
 
@@ -282,24 +285,16 @@ class DataSample(DatasetHandle):
             Data frame for the dataset sample.
         original: openclean.engine.dataset.DatasetHandle
             Reference to the original dataset for sampled datasets.
+        n: int
+            Number of rows in the sample dataset.
+        random_state: int or list, default=None
+            Seed for random number generator.
         """
         archive = VolatileArchive()
-        archive.commit(df)
+        archive.commit(df=df, action=SampleOp(args={'n': n, 'randomState': random_state}))
         store = CachedDatastore(datastore=HISTOREDatastore(archive))
         super(DataSample, self).__init__(store=store, is_sample=True)
         self.original = original
-
-    def commit(self):
-        """Apply all actions in the current log to the underlying original
-        dataset.
-        """
-        # Apply each action that is stored in the log. Removes the operation
-        # from the log if it had been applied succssfully.
-        return exec_operations(
-            df=self.original.checkout(),
-            operations=[op for op in self.log() if not op.is_committed],
-            datastore=self.original.store
-        )
 
     def drop(self):
         """Delete all resources that are associated with the dataset history."""

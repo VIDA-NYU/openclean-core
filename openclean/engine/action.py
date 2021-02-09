@@ -26,6 +26,7 @@ from openclean.engine.object.function import FunctionHandle
 OP_COMMIT = 'commit'
 OP_INSCOL = 'inscol'
 OP_LOAD = 'load'
+OP_SAMPLE = 'sample'
 OP_UPDATE = 'update'
 
 
@@ -249,6 +250,29 @@ class LoadOp(OpHandle):
         openclean.function.eval.base.EvalFunction
         """
         raise RuntimeError('cannot re-apply load')
+
+
+class SampleOp(OpHandle):
+    """Handle for a dataset sample operation."""
+    def __init__(self, args: Optional[Dict] = None):
+        """Initialize the action type in the super class.
+
+        Parameters
+        ----------
+        args: dict, default=None
+            Arguments for the sample operation.
+        """
+        super(SampleOp, self).__init__(optype=OP_SAMPLE, args=args)
+
+    def to_eval(self) -> EvalFunction:
+        """The sample operator cannot be converted to an evaluation function.
+        If an attempt is made to do so a runtime error is raised.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        raise RuntimeError('cannot re-apply sample')
 
 
 class UpdateOp(OpHandle):
