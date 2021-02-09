@@ -128,7 +128,7 @@ class OpencleanEngine(object):
         if dataset.is_sample:
             if commit:
                 # Only need to commit anything if the dataset is a sample.
-                dataset.commit()
+                dataset.apply()
             # Replace the sampled dataset with its original.
             self._datasets[name] = dataset.original
         return self.dataset(name=name).checkout()

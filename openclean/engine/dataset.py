@@ -301,6 +301,34 @@ class DataSample(DatasetHandle):
         super(DataSample, self).__init__(store=store, is_sample=True)
         self.original = original
 
+    def apply(self):
+        """Apply all actions in the current log to the underlying original
+        dataset.
+        """
+        # Apply each action that is stored in the log. Ignore the sample
+        # operation that is be the first operation in the log.
+        for op in list(self.log())[1:]:
+            # Execute the operation on the latest snapshot of the original
+            # dataset and commit the modified snapshot to that dataset.
+            action = op.action
+            if action.is_insert:
+                self.original.insert(
+                    names=action.names,
+                    pos=action.pos,
+                    values=action.func,
+                    args=action.args,
+                    sources=action.sources
+                )
+            elif action.is_update:
+                self.original.update(
+                    columns=action.columns,
+                    func=action.func,
+                    args=action.args,
+                    sources=action.sources
+                )
+            else:
+                raise RuntimeError("cannot re-apply '{}'".format(op.optype))
+
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
         self.original.drop()
@@ -344,47 +372,3 @@ class DataSample(DatasetHandle):
                 return self.checkout()
         # Raise a KeyError if no log entry with the given identifier was found.
         raise KeyError("unknown snapshot '{}'".format(identifier))
-
-
-# -- Helper Methods -----------------------------------------------------------
-
-def exec_operations(
-    df: pd.DataFrame, operations: List[OpHandle], datastore: Optional[ArchiveStore] = None
-) -> pd.DataFrame:
-    """Re-apply a sequence of operators on a given dataframe. If the datastore
-    for the original dataset is given the changes will be commited.
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Data frame for original datataset snapshot.
-    operations: list of openclean.engine.action.OpHandle
-        List of operations that are being appiled.
-    datastore: openclean.data.archive.base.ArchiveStore, default=None
-        Optional datastore for the full dataset.
-
-    Returns
-    -------
-    pd.DataFrame
-    """
-    for op in operations:
-        # Execute the operation on the latest snapshot of the original
-        # dataset and commit the modified snapshot to that dataset.
-        action = op.action
-        if action.is_insert:
-            df = inscol(
-                df=df,
-                names=action.names,
-                pos=action.pos,
-                values=action.to_eval()
-            )
-        elif action.is_update:
-            df = update(df=df, columns=action.columns, func=action.to_eval())
-        else:
-            raise RuntimeError("cannot re-apply '{}' action".format(op.optype))
-        # Commit the dataset (only if the datastore for the full dataset is
-        # given).
-        if datastore is not None:
-            df = datastore.commit(df=df, action=action)
-            op.is_committed = True
-    return df

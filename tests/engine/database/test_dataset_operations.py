@@ -87,15 +87,17 @@ def test_dataset_sample_rollback(engine):
     ds.insert(names='C', values=1)
     ds.update(columns='LNAME', func=engine.library.functions().get_object('lower'))
     log = list(ds.log())
+    assert len(log) == 4
     # Test error cases for rollback with invalid identifiers.
     with pytest.raises(ValueError):
         ds.rollback(log[0].identifier)
     with pytest.raises(KeyError):
         ds.rollback('undefined')
-    # Rollback to the first operation.
+    # Rollback to the second operation.
     ds.rollback(log[2].identifier)
-    ds.commit()
+    assert len(ds.log()) == 3
     df = engine.checkout('DS', commit=True)
-    assert len(df.columns) == 3
+    assert len(engine.dataset('DS').log()) == 3
+    assert len(df.columns) == 4
     assert list(df['FNAME']) == ['ALICE', 'BOB']
     assert list(df['LNAME']) == ['JONES', 'PETERS']
