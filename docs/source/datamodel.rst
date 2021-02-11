@@ -1,7 +1,7 @@
 .. _concepts-ref:
 
-Major Concepts
-==============
+Data Model
+==========
 
 openclean provides useful functionality to identify bugs and anomalous values, make fixes and wrangle datasets. To help
 illustrate different operations, we use a sample of NYC open data with completed job codes at various locations in New York City.

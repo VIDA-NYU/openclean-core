@@ -20,8 +20,8 @@ The goal of openclean goal is to bring together data cleaning tools in a single 
     :caption: Contents:
 
     source/installation
-    source/concepts
     source/start
+    source/datamodel
     source/transform
     source/clean
     source/profile
