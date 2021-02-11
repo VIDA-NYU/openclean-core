@@ -28,7 +28,6 @@ Submodules
    openclean.function.value.datatype
    openclean.function.value.domain
    openclean.function.value.filter
-   openclean.function.value.geo
    openclean.function.value.mapping
    openclean.function.value.null
    openclean.function.value.phonetic
@@ -36,4 +35,5 @@ Submodules
    openclean.function.value.random
    openclean.function.value.regex
    openclean.function.value.text
+   openclean.function.value.threshold
    openclean.function.value.vote

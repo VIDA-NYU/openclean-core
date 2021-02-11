@@ -24,11 +24,10 @@ Submodules
 .. toctree::
    :maxdepth: 3
 
-   openclean.data.base
    openclean.data.groupby
    openclean.data.load
    openclean.data.mapping
-   openclean.data.masterdata
+   openclean.data.refdata
    openclean.data.schema
    openclean.data.sequence
    openclean.data.types

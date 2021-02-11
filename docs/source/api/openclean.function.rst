@@ -14,6 +14,7 @@ Subpackages
 
    openclean.function.eval
    openclean.function.matching
+   openclean.function.similarity
    openclean.function.token
    openclean.function.value
 

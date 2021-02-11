@@ -13,4 +13,6 @@ Submodules
    :maxdepth: 3
 
    openclean.cluster.base
+   openclean.cluster.index
    openclean.cluster.key
+   openclean.cluster.knn

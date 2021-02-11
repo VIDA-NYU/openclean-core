@@ -3,8 +3,6 @@
 Step by Step Guides
 ===================
 
-.. examples:
-
 We provide a number of Jupyter notebooks examples to walk through various openclean functionalities. All notebooks
 and datasets are available in the `Github repository <https://github.com/VIDA-NYU/openclean-core/tree/master/examples/notebooks>`_.
 
@@ -18,8 +16,8 @@ and datasets are available in the `Github repository <https://github.com/VIDA-NY
     examples/cities_anomaly
     examples/restaurant_profiling
     examples/restaurant_cleaning
+    examples/knn
     examples/user_function
     examples/fd_violation
-    examples/knn
     examples/token_signature
     examples/key_collision
