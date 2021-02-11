@@ -20,3 +20,6 @@ and datasets are available in the `Github repository <https://github.com/VIDA-NY
     examples/restaurant_cleaning
     examples/user_function
     examples/fd_violation
+    examples/knn
+    examples/token_signature
+    examples/key_collision
