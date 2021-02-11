@@ -10,14 +10,14 @@ and datasets are available in the `Github repository <https://github.com/VIDA-NY
     :maxdepth: 2
 
     examples/masterdata
-    examples/country_names
     examples/cities_download
-    examples/brooklyn_spellings
+    examples/country_names
     examples/cities_anomaly
+    examples/brooklyn_spellings
     examples/restaurant_profiling
     examples/restaurant_cleaning
     examples/knn
-    examples/user_function
     examples/fd_violation
     examples/token_signature
     examples/key_collision
+    examples/user_function
