@@ -28,7 +28,7 @@ from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
-from openclean.engine.action import LoadOp
+from openclean.engine.action import LoadOp, OpHandle
 from openclean.engine.dataset import DatasetHandle, FullDataset, DataSample
 from openclean.engine.library import ObjectLibrary
 from openclean.engine.registry import registry
@@ -128,10 +128,37 @@ class OpencleanEngine(object):
         if dataset.is_sample:
             if commit:
                 # Only need to commit anything if the dataset is a sample.
-                dataset.commit()
+                dataset.apply()
             # Replace the sampled dataset with its original.
             self._datasets[name] = dataset.original
-        return self.dataset(name=name).datastore.checkout()
+        return self.dataset(name=name).checkout()
+
+    def commit(
+        self, name: str, df: pd.DataFrame, action: Optional[OpHandle] = None
+    ) -> pd.DataFrame:
+        """Commit a modified data frame to the dataset archive.
+
+        The dataset is identified by its unique name. Raises a KeyError if the
+        given dataset name is unknown.
+
+        Parameters
+        ----------
+        name: string
+            Unique dataset name.
+        df: pd.DataFrame
+            Data frame for the new dataset snapshot.
+        action: openclean.engine.action.OpHandle, default=None
+            Operator that created the dataset snapshot.
+
+        Returns
+        -------
+        pd.DataFrame
+
+        Raises
+        ------
+        KeyError
+        """
+        return self.dataset(name=name).commit(df=df, action=action)
 
     def create(
         self, source: Datasource, name: str,
@@ -340,7 +367,8 @@ class OpencleanEngine(object):
         # Register the generated sample as a new dataset with a reference to
         # the original dataset to maintain the link to the source of a sampled
         # dataset.
-        self._datasets[name] = DataSample(df=df, original=handle)
+        ds = DataSample(df=df, original=handle, n=n, random_state=random_state)
+        self._datasets[name] = ds
         return df
 
 

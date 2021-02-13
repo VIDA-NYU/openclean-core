@@ -23,8 +23,10 @@ from openclean.engine.object.function import FunctionHandle
 
 """Operator types."""
 
+OP_COMMIT = 'commit'
 OP_INSCOL = 'inscol'
 OP_LOAD = 'load'
+OP_SAMPLE = 'sample'
 OP_UPDATE = 'update'
 
 
@@ -129,6 +131,23 @@ class OpHandle(ActionHandle):
         raise NotImplementedError()
 
 
+class CommitOp(OpHandle):
+    """Handle for a user commit operation."""
+    def __init__(self):
+        """Initialize the action type in the super class."""
+        super(CommitOp, self).__init__(optype=OP_COMMIT)
+
+    def to_eval(self) -> EvalFunction:
+        """The commit operator cannot be converted to an evaluation function.
+        If an attempt is made to do so a runtime error is raised.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        raise RuntimeError('cannot re-apply commit')
+
+
 class InsertOp(OpHandle):
     """Handle for an insert operation."""
     def __init__(
@@ -231,6 +250,29 @@ class LoadOp(OpHandle):
         openclean.function.eval.base.EvalFunction
         """
         raise RuntimeError('cannot re-apply load')
+
+
+class SampleOp(OpHandle):
+    """Handle for a dataset sample operation."""
+    def __init__(self, args: Optional[Dict] = None):
+        """Initialize the action type in the super class.
+
+        Parameters
+        ----------
+        args: dict, default=None
+            Arguments for the sample operation.
+        """
+        super(SampleOp, self).__init__(optype=OP_SAMPLE, args=args)
+
+    def to_eval(self) -> EvalFunction:
+        """The sample operator cannot be converted to an evaluation function.
+        If an attempt is made to do so a runtime error is raised.
+
+        Returns
+        -------
+        openclean.function.eval.base.EvalFunction
+        """
+        raise RuntimeError('cannot re-apply sample')
 
 
 class UpdateOp(OpHandle):

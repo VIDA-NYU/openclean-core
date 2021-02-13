@@ -96,6 +96,17 @@ class VolatileMetadataStoreFactory(MetadataStoreFactory):
             self.stores[version] = VolatileMetadataStore()
         return self.stores[version]
 
+    def rollback(self, version: int):
+        """Remove metadata for all dataset versions that are after the given
+        rollback version.
+
+        Parameters
+        ----------
+        version: int
+            Unique identifier of the rollback version.
+        """
+        self.stores = {v: s for v, s in self.stores.items() if v <= version}
+
 
 # -- Helper functions ---------------------------------------------------------
 

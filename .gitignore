@@ -114,6 +114,7 @@ resources/config/localdev
 # Example data files
 
 examples/notebooks/city-names/ic3t-wcy2.tsv.gz
+examples/notebooks/engine/archive/
 examples/notebooks/parking-violations/jt7v-77mi.tsv.gz
 examples/notebooks/parking-violations/refdata_tmp/
 examples/notebooks/data/

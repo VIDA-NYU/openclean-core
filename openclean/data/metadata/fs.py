@@ -11,10 +11,11 @@ Metadata for each snapshot is maintained in a separate directory with different
 json files for each identifiable object.
 """
 
+from typing import Callable, Dict, Optional
+
 import json
 import os
-
-from typing import Callable, Dict, Optional
+import shutil
 
 from histore.archive.store.fs.reader import default_decoder
 from histore.archive.store.fs.writer import DefaultEncoder
@@ -26,8 +27,9 @@ import histore.util as util
 class FileSystemMetadataStore(MetadataStore):
     """Metadata store that maintains annotations for a dataset snapshot in JSON
     files with a given base directory. The files that maintain annotations
-    are named using the rFileSystemMetadataStoreFactoryesource identifier. The following are the file names
-    of metadata files for different types of resources:
+    are named using the FileSystemMetadataStoreFactory resource identifier.
+    The following are the file names of metadata files for different types of
+    resources:
 
     - ds.json: Dataset annotations
     - col_{column_id}.json: Column annotations
@@ -153,6 +155,21 @@ class FileSystemMetadataStoreFactory(MetadataStoreFactory):
             encoder=self.encoder,
             decoder=self.decoder
         )
+
+    def rollback(self, version: int):
+        """Remove metadata for all dataset versions that are after the given
+        rollback version.
+
+        Parameters
+        ----------
+        version: int
+            Unique identifier of the rollback version.
+        """
+        metadir = os.path.join(self.basedir, str(version))
+        while os.path.isdir(metadir):
+            shutil.rmtree(metadir)
+            version += 1
+            metadir = os.path.join(self.basedir, str(version))
 
 
 # -- Helper functions ---------------------------------------------------------
