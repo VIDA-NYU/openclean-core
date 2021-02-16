@@ -284,7 +284,7 @@ def is_float(value: Scalar, typecast: Optional[bool] = True) -> bool:
     -------
     bool
     """
-    if isinstance(value, float) or isinstance(value, np.float):
+    if isinstance(value, float):
         return True
     elif not typecast or not isinstance(value, str):
         return False
@@ -370,7 +370,7 @@ def is_numeric(
         return False
     if isinstance(value, int) or isinstance(value, np.integer):
         return True
-    elif isinstance(value, float) or isinstance(value, np.float):
+    elif isinstance(value, float):
         return True
     elif not typecast or not isinstance(value, str):
         return False
