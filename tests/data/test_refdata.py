@@ -14,6 +14,9 @@ import os
 import pytest
 import requests
 
+from openclean.version import __version__
+
+import openclean as oc
 import openclean.data.refdata as refdata
 
 
@@ -94,6 +97,8 @@ def test_reference_file_lifecycle(mock_response, tmpdir):
     assert len(refdata.list()) == 1
     fh = refdata.load(key='test')
     assert fh.identifier == 'test'
+    assert fh.package_name == oc.__name__.split('.')[0]
+    assert fh.package_version == __version__
     with refdata.open(key='test') as f:
         linecount = 0
         for line in f:
