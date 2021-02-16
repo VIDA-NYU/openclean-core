@@ -9,11 +9,61 @@
 a reference data repository to the local file system.
 """
 
-from typing import List, Optional, Set, Union
+from typing import IO, List, Optional, Set, Union
 
 from refdata.base import DatasetDescriptor
-from refdata.store import LocalStore as RefStore  # noqa: F401
-from refdata.store.dataset import DatasetHandle
+from refdata.dataset.base import DatasetHandle
+from refdata.repo.loader import RepositoryIndexLoader
+from refdata.store.base import LocalStore as LocalStore  # noqa: F401
+
+from openclean.version import __version__
+
+
+# -- Reference data store for openclean ---------------------------------------
+
+class RefStore(LocalStore):
+    """Default local store for the openclean package. Uses the module name and
+    package version to set the respective properties of the created local store
+    instance.
+    """
+    def __init__(
+        self, basedir: Optional[str] = None, loader: Optional[RepositoryIndexLoader] = None,
+        auto_download: Optional[bool] = None, connect_url: Optional[str] = None
+    ):
+        """Initialize the store properties.
+
+        Parameters
+        ----------
+        basedir: string, default=None
+            Path to the directory for downloaded datasets. By default, the
+            directory that is specified in the environment variable REFDATA_BASEDIR
+            is used. If the environment variable is not set an directory under
+            the OS-specific users cache data directory is used.
+        loader: refdata.repo.loader.RepositoryIndexLoader, default=None
+            Loader for a dataset repository index. the loaded index is used to
+            create an instance of the repository manager that is associated with
+            the local data store for downloading datasets.
+        auto_download: bool, default=None
+            If auto download is enabled (True) datasets are downloaded automatically
+            when they are first accessed via `.open()`. If this option is not
+            enabled and an attempt is made to open a datasets that has not yet
+            been downloaded to the local file syste, an error is raised. If this
+            argument is not given the value from the environment variable
+            REFDATA_AUTODOWNLOAD is used or False if the variable is not set.
+        connect_url: string, default=None
+            SQLAlchemy database connect Url string. If a value is given it is
+            assumed that the database exists and has been initialized. If no
+            value is given the default SQLite database is used. If the respective
+            database file does not exist a new database will be created.
+        """
+        super(RefStore, self).__init__(
+            package_name=__name__.split('.')[0],
+            package_version=__version__,
+            basedir=basedir,
+            loader=loader,
+            auto_download=auto_download,
+            connect_url=connect_url
+        )
 
 
 # -- Shortcuts to maintain and access reference data files --------------------
@@ -41,10 +91,40 @@ def list() -> List[DatasetDescriptor]:
     return store().list()
 
 
-def open(key: str, auto_download: Optional[bool] = None) -> DatasetHandle:
+def load(key: str, auto_download: Optional[bool] = None) -> DatasetHandle:
     """Get a handle for the dataset with the given unique identifier.
 
-    If the dataset hads not been downloaded to the local store yet,  it will be
+    If the dataset has not been downloaded to the local store yet, it will be
+    downloaded if the `auto_download` flag is True or if the environment
+    variable `REFDATA_AUTODOWNLOAD` is set to True. The `auto_download`
+    parameter for this function will override the value in the environment
+    variable when loading the dataset.
+
+    If the dataset is not available in the local store (and is not downloaded
+    automatically) an error is raised.
+
+    Parameters
+    ----------
+    key: string
+        External unique dataset identifier.
+    auto_download: bool, default=None
+        Override the class global auto download flag.
+
+    Returns
+    -------
+    refdata.dataset.DatasetHandle
+
+    Raises
+    ------
+    refdata.error.NotDownloadedError
+    """
+    return store().load(key=key, auto_download=auto_download)
+
+
+def open(key: str, auto_download: Optional[bool] = None) -> IO:
+    """Open the data file for the dataset with the given unique identifier.
+
+    If the dataset has not been downloaded to the local store yet, it will be
     downloaded if the `auto_download` flag is True or if the environment
     variable `REFDATA_AUTODOWNLOAD` is set to True. The `auto_download`
     parameter for this function will override the value in the environment
@@ -62,7 +142,7 @@ def open(key: str, auto_download: Optional[bool] = None) -> DatasetHandle:
 
     Returns
     -------
-    refdata.dataset.DatasetHandle
+    file-like object
 
     Raises
     ------

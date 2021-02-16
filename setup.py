@@ -25,8 +25,8 @@ install_requires = [
     'histore==0.3.0',
     'flowserv-core==0.6.0',
     'jellyfish',
-    'scipy',
-    'refdata'
+    'refdata>=0.2.0',
+    'scipy'
 ]
 
 

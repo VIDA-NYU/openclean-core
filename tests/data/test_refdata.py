@@ -92,8 +92,13 @@ def test_reference_file_lifecycle(mock_response, tmpdir):
     assert not refdata.list()
     refdata.download(key='test')
     assert len(refdata.list()) == 1
-    fh = refdata.open(key='test')
+    fh = refdata.load(key='test')
     assert fh.identifier == 'test'
+    with refdata.open(key='test') as f:
+        linecount = 0
+        for line in f:
+            linecount += 1
+    assert linecount == 2
     refdata.remove(key='test')
     assert not refdata.list()
     # -- Cleanup --------------------------------------------------------------
