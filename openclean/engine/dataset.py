@@ -68,9 +68,10 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         if identifier is None:
             return self.store.checkout()
-        for op in self._log:
+        for i, op in enumerate(self._log):
             if op.identifier == identifier:
-                return self.store.checkout(version=op.version)
+                # use versions for samples (uncommitted datasets) and operation sequence for full datasets (committed)
+                return self.store.checkout(version=op.version) if not op.is_committed else self.store.checkout(version=i)
         raise KeyError("unknown log entry '{}'".format(identifier))
 
     def commit(self, df: pd.DataFrame, action: Optional[OpHandle] = None) -> pd.DataFrame:
