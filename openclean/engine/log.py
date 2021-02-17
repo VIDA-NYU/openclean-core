@@ -29,41 +29,11 @@ class LogEntry:
     """
     # Descriptor for the operation that created a snapshot (used for display).
     descriptor: Dict
-    # Unique identifier.
-    identifier: str = field(default_factory=util.unique_identifier)
     # Action that created the snapshot (only set for uncommitted operations).
     action: Optional[OpHandle] = None
     # Version identifier for snapshot in a dataset sample (not given for
     # committed snapshots).
     version: Optional[int] = None
-
-    @property
-    def is_committed(self) -> bool:
-        """True, if the snapshot has been committed with the datastore that manages
-        the full dataset. False, if the snapshot has only be committed with the
-        datastore that manages the data sample. Only uncommitted snapshots have
-        the operation handle associated with it. This information is used by the
-        `is_committed` property.
-
-        Returns
-        -------
-        bool
-        """
-        return self.action is None
-
-    @is_committed.setter
-    def is_committed(self, value: bool):
-        """Set the committed flag. It is only possible to set the flag to True.
-        An attempt to set the flag to False will raise a ValueError.
-
-        Raises
-        ------
-        ValueError
-        """
-        if not value and self.action is None:
-            raise ValueError('cannot undo operation commit')
-        elif value:
-            self.action = None
 
 
 class OperationLog(object):
@@ -73,20 +43,15 @@ class OperationLog(object):
     or uncommitted, i.e., committed only with the datastore for a dataset sample but
     not the full dataset.
     """
-    def __init__(self, snapshots: List[Snapshot], auto_commit: bool):
+    def __init__(self, snapshots: List[Snapshot]):
         """Initialize the list of committed snapshots.
 
         Parameters
         ----------
         snapshots: list of histore.archive.snapshot.Snapshot
             List of committe snapshots from a dataset.
-        auto_commit: bool
-            Flag indicating whether the dataset handle with which this log is
-            associated operates on the full dataset (auto_commit=True) or on a
-            dataset sample (auto_commit=False).
         """
-        self.entries = [LogEntry(descriptor=s.action) for s in snapshots]
-        self.auto_commit = auto_commit
+        self.entries = [LogEntry(descriptor=s.action, version=s.version) for s in snapshots]
 
     def __iter__(self):
         """Return an iterator over entries in the log."""
@@ -111,13 +76,7 @@ class OperationLog(object):
         action: openclean.engine.log.OpHandle
             Handle for the operation that created the dataset snapshot.
         """
-        if self.auto_commit:
-            # Add only the action descriptor for snaphsots that have been
-            # committed.
-            entry = LogEntry(descriptor=action.to_dict())
-        else:
-            # Include the action and version identifier for uncommitted snapshots.
-            entry = LogEntry(
+        entry = LogEntry(
                 action=action,
                 descriptor=action.to_dict(),
                 version=version
