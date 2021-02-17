@@ -29,3 +29,23 @@ def test_recreate_engine(cached, dataset, tmpdir):
     assert df.shape == (2, 3)
     df = engine.checkout(name='More Data')
     assert df.shape == (1, 3)
+
+
+def test_full_df_checkout(dataset, tmpdir):
+    """Test if a full dataset checkout is possible"""
+    db = DB(basedir=str(tmpdir), create=True)
+    # Create two datasets with a single snapshot.
+    df = db.create(source=dataset, name='test')
+    assert df.shape == (2, 3)
+
+    df1 = df.copy(deep=True)
+    df1['A'] = df1['A'] + 1
+    db.commit(name='test', df=df1)
+    snapshots = db.dataset('test').log()
+
+    df = db.dataset('test').checkout(version=snapshots[1].version)
+    assert list(df['A']) == list(df1['A'])
+
+    df = db.dataset('test').checkout(version=snapshots[0].version)
+    assert list(df['A']) == list(dataset['A'])
+
