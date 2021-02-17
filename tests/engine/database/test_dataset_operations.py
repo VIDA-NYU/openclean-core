@@ -45,8 +45,6 @@ def test_full_dataset_operations(engine):
     df = ds.update(columns='LNAME', func=engine.library.functions().get_object('lower'))
     log = ds.log()
     assert len(log) == 3
-    for op in log:
-        assert op.is_committed
     assert list(df['FNAME']) == ['ALICE', 'BOB']
     assert list(df['LNAME']) == ['jones', 'peters']
 
@@ -81,6 +79,7 @@ def test_dataset_sample_operations(engine):
 
 def test_dataset_sample_rollback(engine):
     """Test rollback operations on a sample of the dataset."""
+    ds_full = engine.dataset('DS')
     engine.sample('DS', n=2)
     ds = engine.dataset('DS')
     ds.update(columns='FNAME', func=engine.library.functions().get_object('upper'))
@@ -88,13 +87,14 @@ def test_dataset_sample_rollback(engine):
     ds.update(columns='LNAME', func=engine.library.functions().get_object('lower'))
     log = list(ds.log())
     assert len(log) == 4
-    # Test error cases for rollback with invalid identifiers.
+    # Test error cases for rollback with full datasets.
     with pytest.raises(ValueError):
-        ds.rollback(log[0].identifier)
+        ds_full.rollback(log[0].version)
+    # Test error cases for rollback with invalid versions.
     with pytest.raises(KeyError):
         ds.rollback('undefined')
     # Rollback to the second operation.
-    ds.rollback(log[2].identifier)
+    ds.rollback(log[2].version)
     assert len(ds.log()) == 3
     df = engine.checkout('DS', commit=True)
     assert len(engine.dataset('DS').log()) == 3

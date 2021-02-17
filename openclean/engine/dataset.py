@@ -47,9 +47,9 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         self.store = store
         self.is_sample = is_sample
-        self._log = OperationLog(snapshots=store.snapshots(), auto_commit=not is_sample)
+        self._log = OperationLog(snapshots=store.snapshots())
 
-    def checkout(self, identifier: Optional[str] = None) -> pd.DataFrame:
+    def checkout(self, version: Optional[str] = None) -> pd.DataFrame:
         """Checkout a dataset snapshot.
 
         The optional identifier references a dataset snapshot via an operation
@@ -58,7 +58,7 @@ class DatasetHandle(metaclass=ABCMeta):
 
         Parameters
         ----------
-        identifier: str, default=None
+        version: str, default=None
             Identifier for the operation log entry that represents the the
             dataset version that is being checked out.
 
@@ -66,13 +66,12 @@ class DatasetHandle(metaclass=ABCMeta):
         -------
         pd.DataFrame
         """
-        if identifier is None:
+        if version is None:
             return self.store.checkout()
         for i, op in enumerate(self._log):
-            if op.identifier == identifier:
-                # use versions for samples (uncommitted datasets) and operation sequence for full datasets (committed)
-                return self.store.checkout(version=op.version) if not op.is_committed else self.store.checkout(version=i)
-        raise KeyError("unknown log entry '{}'".format(identifier))
+            if op.version == version:
+                return self.store.checkout(version=op.version)
+        raise KeyError("unknown log entry '{}'".format(version))
 
     def commit(self, df: pd.DataFrame, action: Optional[OpHandle] = None) -> pd.DataFrame:
         """Add a new snapshot to the history of the dataset.
@@ -230,6 +229,47 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         return self._log.last_version()
 
+    def rollback(self, version: str) -> pd.DataFrame:
+        """Rollback to the dataset version that was created by the log entry
+        before the entry with the given identifier. That is, we rollback all
+        changes that occurred by the identified operation and all following
+        ones. This will make the respective snapshot of the previous entry in
+        the operation log the new current (head) snapshot for the dataset
+        history.
+
+        Rollback is only supported for uncommitted changes. Removes all log
+        entries starting from the rollback version.
+
+        Returns the dataframe for the dataset snapshot that is at the new head
+        of the dataset history.
+
+        Raises a KeyError if the given log entry identifier is unknown. Raises
+        a ValueError if the log entry references a snapshot that has already
+        been committed.
+
+        Parameters
+        ----------
+        version: string
+            Unique log entry version.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        pos = 0
+        for op in self.log():
+            pos += 1
+            if op.version == version:
+                if not self.is_sample:
+                    raise ValueError('can only rollback uncommitted actions on samples')
+                # Remove all log entries starting from the rollback position.
+                self._log.truncate(pos)
+                self.store.rollback(version=op.version)
+                return self.checkout()
+        # Raise a KeyError if no log entry with the given identifier was found.
+        raise KeyError("unknown snapshot '{}'".format(version))
+
+
 
 class FullDataset(DatasetHandle):
     """Handle for datasets that are managed by the openclean engine and that
@@ -335,43 +375,3 @@ class DataSample(DatasetHandle):
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
         self.original.drop()
-
-    def rollback(self, identifier: str) -> pd.DataFrame:
-        """Rollback to the dataset version that was created by the log entry
-        before the entry with the given identifier. That is, we rollback all
-        changes that occurred by the identified operation and all following
-        ones. This will make the respective snapshot of the previous entry in
-        the operation log the new current (head) snapshot for the dataset
-        history.
-
-        Rollback is only supported for uncommitted changes. Removes all log
-        entries starting from the rollback version.
-
-        Returns the dataframe for the dataset snapshot that is at the new head
-        of the dataset history.
-
-        Raises a KeyError if the given log entry identifier is unknown. Raises
-        a ValueError if the log entry references a snapshot that has already
-        been committed.
-
-        Parameters
-        ----------
-        identifier: string
-            Unique log entry identifier.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        pos = 0
-        for op in self.log():
-            pos += 1
-            if op.identifier == identifier:
-                if op.is_committed:
-                    raise ValueError('can only rollback uncommitted actions')
-                # Remove all log entries starting from the rollback position.
-                self._log.truncate(pos)
-                self.store.rollback(version=op.version)
-                return self.checkout()
-        # Raise a KeyError if no log entry with the given identifier was found.
-        raise KeyError("unknown snapshot '{}'".format(identifier))

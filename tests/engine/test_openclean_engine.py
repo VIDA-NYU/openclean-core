@@ -32,7 +32,7 @@ def test_recreate_engine(cached, dataset, tmpdir):
 
 
 def test_full_df_checkout(dataset, tmpdir):
-    """Test if a full dataset rollback is possible"""
+    """Test if a full dataset checkout is possible"""
     db = DB(basedir=str(tmpdir), create=True)
     # Create two datasets with a single snapshot.
     df = db.create(source=dataset, name='test')
@@ -43,9 +43,9 @@ def test_full_df_checkout(dataset, tmpdir):
     db.commit(name='test', df=df1)
     snapshots = db.dataset('test').log()
 
-    df = db.dataset('test').checkout(identifier=snapshots[1].identifier)
+    df = db.dataset('test').checkout(version=snapshots[1].version)
     assert list(df['A']) == list(df1['A'])
 
-    df = db.dataset('test').checkout(identifier=snapshots[0].identifier)
+    df = db.dataset('test').checkout(version=snapshots[0].version)
     assert list(df['A']) == list(dataset['A'])
 
