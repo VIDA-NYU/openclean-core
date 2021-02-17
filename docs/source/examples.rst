@@ -21,3 +21,4 @@ and datasets are available in the `Github repository <https://github.com/VIDA-NY
     examples/token_signature
     examples/key_collision
     examples/user_function
+    examples/datastore

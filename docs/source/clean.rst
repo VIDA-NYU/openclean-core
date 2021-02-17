@@ -233,6 +233,7 @@ We then count for each value, the number of operators that classified the value 
 Statistically classified as anomalies, these neighborhoods can be those with fewer job requests or misspellings. Something a user
 with domain knowledge can verify.
 
+.. _custom-func-ref:
 
 Custom functions
 ----------------
