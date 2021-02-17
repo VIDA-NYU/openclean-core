@@ -133,6 +133,24 @@ class CachedDatastore(ArchiveStore):
         """
         return self.datastore.metadata(version=version)
 
+    def rollback(self, version: int) -> pd.DataFrame:
+        """Rollback the archive history to the snapshot with the given version
+        identifier.
+
+        Returns the data frame for the napshot that is now the last snapshot in
+        the modified archive.
+
+        Parameters
+        ----------
+        version: int
+            Unique identifier of the rollback version.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        return self.datastore.rollback(version=version)
+
     def snapshots(self) -> List[Snapshot]:
         """Get list of handles for all versions of a given dataset.
 

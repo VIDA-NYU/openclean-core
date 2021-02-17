@@ -46,6 +46,17 @@ def test_delete_annotations(tmpdir):
     assert store.get_annotation(key='A') is None
 
 
+def test_rollback_fs_metastores(tmpdir):
+    """Test rolling back metadata stores for multiple versions."""
+    factory = FileSystemMetadataStoreFactory(basedir=str(tmpdir))
+    for version in range(3):
+        factory.get_store(version).set_annotation(key='A', value=version)
+    factory.rollback(1)
+    for version in range(2):
+        factory.get_store(version).get_annotation(key='A') == version
+    factory.get_store(2).get_annotation(key='A') is None
+
+
 def test_update_annotations(tmpdir):
     """Test creating and updating annotations."""
     # -- Setup ----------------------------------------------------------------

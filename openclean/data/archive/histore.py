@@ -117,6 +117,26 @@ class HISTOREDatastore(ArchiveStore):
             version = self.last_version()
         return self.metastore.get_store(version=version)
 
+    def rollback(self, version: int) -> pd.DataFrame:
+        """Rollback the archive history to the snapshot with the given version
+        identifier.
+
+        Returns the data frame for the napshot that is now the last snapshot in
+        the modified archive.
+
+        Parameters
+        ----------
+        version: int
+            Unique identifier of the rollback version.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        self.archive.rollback(version=version)
+        self.metastore.rollback(version=version)
+        self._last_snapshot = self.archive.snapshots().last_snapshot()
+
     def snapshots(self) -> List[Snapshot]:
         """Get list of handles for all versions of a given dataset.
 
