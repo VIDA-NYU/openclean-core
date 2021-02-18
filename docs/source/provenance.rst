@@ -87,7 +87,7 @@ Users can checkout a previous version of a dataset to see what it looked like.
 
 Register
 --------
-Additionally, the functionality is complemented by a GUI provided by openclean-notebook that allows users to register
+Additionally, the functionality is complemented by a GUI provided by :ref:`notebook-extension` that allows users to register
 custom functions and apply it across datasets and versions seemlessly. A visual example of what this looks like
 is present in the :ref:`custom-func-ref` section.
 
