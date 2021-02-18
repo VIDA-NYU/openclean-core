@@ -18,4 +18,4 @@ jupyter-sphinx
 git+https://github.com/spatialaudio/nbsphinx.git@master
 nbsphinx-link
 pooch==1.3.0
-refdata==0.1.1
+refdata>=0.2.0
