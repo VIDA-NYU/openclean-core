@@ -13,3 +13,4 @@ Submodules
    :maxdepth: 3
 
    openclean.profiling.pattern.base
+   openclean.profiling.pattern.token_signature

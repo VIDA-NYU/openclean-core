@@ -161,6 +161,24 @@ Fixing is easy, we can use the update operation with the Lookup eval function (t
 
     print(fixed['Borough'].unique())
 
+* KNN Clustering
+    openclean lets users use KNN clustering to identify values in a dataset that are potential variations of one another, and suggests a replacement for each. For e.g. those with missing or extra punctuation. A well-put example demonstrating this can be found `here <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/nyc-restaurant-inspections/NYC%20Restaurant%20Inspections%20-%20kNN%20Clusters%20for%20Business%20Name.ipynb>`_.
+
+
+Data Standardization
+--------------------
+Many a times, users will be faced with situations where the dataset contains variations of spellings (with extra / missing punctuations) for example, a Business or a street name. openclean provides multiple ways to enforce consistency across datasets:
+
+* Token Signature Outliers
+    When values in the dataset are expected to have a signature token present, this functionality helps identify anomalies. For e.g. an address column often requires values to contain `street suffixes <https://pe.usps.com/text/pub28/28apc_002.htm>`_. The Token Signature class will ensure any values that don't have one are highlighted. `Here <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/parking-violations/Parking%20Violations%20-%20Token%20Signature%20Outliers%20for%20Street%20Names.ipynb>`_ is a notebook demonstrating this.
+
+* KNN Clustering
+    As mentioned in the previous section, KNN Clustering can be used to identify sets of similar values. openclean takes it up a notch by recommending a suggested value for each identified cluster.
+
+These two tools become even more powerful when synergized with each other as demonstrated `in this notebook <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/parking-violations/Parking%20Violations%20-%20Key%20Collision%20Clustering%20for%20Street%20Names.ipynb>`_ where
+we use first replace different token signature representations with a standard one and then use KNN Clustering to fix the possible
+value variations in a street name column.
+
 
 Statistical Outliers
 --------------------
@@ -215,6 +233,7 @@ We then count for each value, the number of operators that classified the value 
 Statistically classified as anomalies, these neighborhoods can be those with fewer job requests or misspellings. Something a user
 with domain knowledge can verify.
 
+.. _custom-func-ref:
 
 Custom functions
 ----------------
