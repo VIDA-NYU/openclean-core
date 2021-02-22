@@ -100,4 +100,4 @@ class Apply(DataFrameTransformer):
             for f, colidx in functions:
                 values[colidx] = f(values[colidx])
             data.append(values)
-        return pd.DataFrame(data=data, index=df.index, columns=df.columns)
+        return pd.DataFrame(data=data, index=df.index, columns=df.columns, dtype=object)

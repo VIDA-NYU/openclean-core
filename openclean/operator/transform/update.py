@@ -195,8 +195,7 @@ class Update(StreamProcessor, DataFrameTransformer):
 
         data = df.to_numpy(copy=True)
         data[:, colidxs] = updates
-
-        return pd.DataFrame(data=data, index=df.index, columns=df.columns)
+        return pd.DataFrame(data=data, index=df.index, columns=df.columns, dtype=object)
 
 
 # -- Helper functions ---------------------------------------------------------
