@@ -22,7 +22,7 @@ install_requires = [
     'pandas>=1.0.0',
     'scikit-learn',
     'jsonschema>=3.2.0',
-    'histore==0.3.0',
+    'histore==0.3.1',
     'flowserv-core==0.6.0',
     'jellyfish',
     'refdata>=0.2.0',

@@ -230,15 +230,12 @@ class DatasetHandle(metaclass=ABCMeta):
         return self._log.last_version()
 
     def rollback(self, version: str) -> pd.DataFrame:
-        """Rollback to the dataset version that was created by the log entry
-        before the entry with the given identifier. That is, we rollback all
-        changes that occurred by the identified operation and all following
-        ones. This will make the respective snapshot of the previous entry in
-        the operation log the new current (head) snapshot for the dataset
-        history.
+        """Rollback all changes including the given dataset version.
 
-        Rollback is only supported for uncommitted changes. Removes all log
-        entries starting from the rollback version.
+        That is, we rollback all changes that occurred at and after the
+        identified snapshot. This will make the respective snapshot of the
+        previous version the new current (head) snapshot for the dataset
+        history.
 
         Returns the dataframe for the dataset snapshot that is at the new head
         of the dataset history.
@@ -260,15 +257,12 @@ class DatasetHandle(metaclass=ABCMeta):
         for op in self.log():
             pos += 1
             if op.version == version:
-                if not self.is_sample:
-                    raise ValueError('can only rollback uncommitted actions on samples')
                 # Remove all log entries starting from the rollback position.
                 self._log.truncate(pos)
                 self.store.rollback(version=op.version)
                 return self.checkout()
         # Raise a KeyError if no log entry with the given identifier was found.
         raise KeyError("unknown snapshot '{}'".format(version))
-
 
 
 class FullDataset(DatasetHandle):

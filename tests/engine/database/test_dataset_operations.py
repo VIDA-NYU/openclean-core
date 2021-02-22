@@ -79,7 +79,6 @@ def test_dataset_sample_operations(engine):
 
 def test_dataset_sample_rollback(engine):
     """Test rollback operations on a sample of the dataset."""
-    ds_full = engine.dataset('DS')
     engine.sample('DS', n=2)
     ds = engine.dataset('DS')
     ds.update(columns='FNAME', func=engine.library.functions().get_object('upper'))
@@ -87,9 +86,6 @@ def test_dataset_sample_rollback(engine):
     ds.update(columns='LNAME', func=engine.library.functions().get_object('lower'))
     log = list(ds.log())
     assert len(log) == 4
-    # Test error cases for rollback with full datasets.
-    with pytest.raises(ValueError):
-        ds_full.rollback(log[0].version)
     # Test error cases for rollback with invalid versions.
     with pytest.raises(KeyError):
         ds.rollback('undefined')
