@@ -88,14 +88,14 @@ in the :ref:`transform-ref` section.
     misspelled_data['messy_borough'].unique()
 
 
-Downloading and Preparing Masterdata
-------------------------------------
+Downloading and Preparing Master data
+-------------------------------------
 With openclean, a user can easily incorporate other datasets to enrich the data cleaning process. For e.g., let's download an official
 list of borough names from the `Borough Population projections dataset <https://dev.socrata.com/foundry/data.cityofnewyork.us/xywu-7bv9>`_
 using Socrata to help us with the wrangling. We shall use this as the ground truth for correct spellings.
 You can read more about master datasets in the :ref:`enrich-ref` section.
 
-After downloading the masterdata, we preprocess it a bit to match the case with our input dataset. We use the update
+After downloading the master data, we preprocess it a bit to match the case with our input dataset. We use the update
 transformation from :ref:`clean-ref` to achieve this which can accept both: a dictionary or a function as the second argument.
 
 .. jupyter-execute::
@@ -103,7 +103,7 @@ transformation from :ref:`clean-ref` to achieve this which can accept both: a di
     from openclean.data.source.socrata import Socrata
     from openclean.operator.transform.update import update
 
-    # download the masterdata and select the relevant column
+    # download the master data and select the relevant column
     nyc_boroughs = Socrata().dataset('xywu-7bv9').load()
     nyc_boroughs = select(nyc_boroughs, columns=['Borough'])
 
@@ -120,7 +120,7 @@ We are now familiar with the mistakes in the data and have a master dataset with
 provides cleaning operators and repair strategies to let users fix their datasets with the minimum amount of coding
 involved. A list of various cleaning operators available can be accessed in the :ref:`clean-ref` section.
 
-Here, we calculate Fuzzy String Similarity between `messy_borough` and Masterdata to create a mapping of misspellings
+Here, we calculate Fuzzy String Similarity between `messy_borough` and Master data to create a mapping of misspellings
 to the possible fixes.
 
 .. jupyter-execute::

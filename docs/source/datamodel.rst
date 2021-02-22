@@ -24,7 +24,7 @@ It can be created from any source data type accepted by pandas. Compressed Gzip 
 
     ds.head()
 
-for larger datasets, instead of loading the entire dataset into memory as above, openclean provides a streaming operator:
+For larger datasets, instead of loading the entire dataset into memory as above, openclean provides a streaming operator:
 
 .. jupyter-execute::
 
@@ -39,7 +39,7 @@ a `jupyter notebook <https://github.com/VIDA-NYU/openclean-core/blob/master/exam
 
 Eval Functions
 --------------
-Evaluation functions are used to compute results over rows in a dataframe
+Evaluation functions are used to compute results over rows in a dataset
 or a data stream. Conceptually, evaluation functions are evaluated
 over one or more columns for each row in the input data. For each row, the
 function is expected to generate one (or more) (transformed) value(s) for
@@ -136,7 +136,7 @@ And is an important logical Evaluation function that validates whether the outpu
 
 Or
 ^^
-Or validates that atleast one of the outputs of the input functions is true and creates a list of predicates.
+Or validates that at least one of the outputs of the input functions is true and creates a list of predicates.
 
 .. jupyter-execute::
 
