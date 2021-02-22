@@ -40,3 +40,9 @@ You can edit any `.rst` file, and then use the following (in the docs/ directory
 
 Finally, open the generated HTML file using your web browser. The entry page of
 the documentation can be found at: ``_build/html/index.html``.
+
+To detect spelling errors, run the spell checker by adding `spelling` as the builder argument to `sphinx-build` instead of `html`.
+
+    sphinx-build -b spelling . build/
+         
+The misspellings will be printed to the console and written to `build/` as ``*.spelling`` files. More information on running the spell checker is available at ```sphinxcortrib.spelling```'s [documentation](<https://sphinxcontrib-spelling.readthedocs.io/en/latest/index.html>).
