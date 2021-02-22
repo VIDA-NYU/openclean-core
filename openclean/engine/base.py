@@ -324,6 +324,33 @@ class OpencleanEngine(object):
         """
         return self.library
 
+    def rollback(self, name: str, version: str) -> pd.DataFrame:
+        """Rollback all changes including the given dataset version.
+
+        That is, we rollback all changes that occurred at and after the
+        identified snapshot. This will make the respective snapshot of the
+        previous version the new current (head) snapshot for the dataset
+        history.
+
+        Returns the dataframe for the dataset snapshot that is at the new head
+        of the dataset history.
+
+        Raises a KeyError if the dataset or the given version identifier are
+        unknown.
+
+        Parameters
+        ----------
+        name: string
+            Unique dataset name.
+        version: string
+            Unique log entry version.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        return self.dataset(name=name).rollback(version=version)
+
     def sample(
         self, name: str, n: Optional[int] = None,
         random_state: Optional[Tuple[int, List]] = None

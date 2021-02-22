@@ -49,3 +49,18 @@ def test_full_df_checkout(dataset, tmpdir):
     df = db.dataset('test').checkout(version=snapshots[0].version)
     assert list(df['A']) == list(dataset['A'])
 
+
+def test_full_df_rollback(dataset, tmpdir):
+    """Test rollback of a full dataset."""
+    db = DB(basedir=str(tmpdir), create=True)
+    # Create dataset with two snapshot.
+    df = db.create(source=dataset, name='test')
+    df1 = df.copy(deep=True)
+    df1['A'] = df1['A'] + 1
+    db.commit(name='test', df=df1)
+    snapshots = db.dataset('test').log()
+    df = db.dataset('test').checkout(version=snapshots[1].version)
+    assert list(df['A']) == list(df1['A'])
+    # Remove last snapshot by rollback to version 0.
+    df = db.rollback('test', version=snapshots[0].version)
+    assert list(df['A']) == list(dataset['A'])
