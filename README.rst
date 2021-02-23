@@ -43,6 +43,10 @@ Data Enrichment
 ---------------
 openclean seamlessly integrates with `Socrata <https://dev.socrata.com/data/>`_ and `Reference Data Repository <https://github.com/VIDA-NYU/reference-data-repository>`_ to provide it's users master datasets which can be incorporated in the data cleaning process.
 
+Data Provenance
+---------------
+openclean comes with a mini-version control engine that allows users to maintain versions of their datasets and at any point commit, checkout or rollback changes. Not only this, users can register custom functions inside the openclean engine and apply them effortlessly across different datasets/notebooks.
+
 
 Installation
 ============
