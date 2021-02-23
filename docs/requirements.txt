@@ -1,14 +1,16 @@
 future
+appdirs>=1.4.4
 python-dateutil
 requests
 dill
 pandas>=1.0.0
 scikit-learn
 jsonschema>=3.2.0
-Shapely>=1.7.0
-histore==0.2.2
+histore==0.3.1
 flowserv-core==0.6.0
 jellyfish
+refdata>=0.2.0
+pooch==1.3.0
 scipy
 sphinx
 sphinx-rtd-theme
@@ -17,5 +19,3 @@ jupyter-sphinx
 git+https://github.com/spatialaudio/nbsphinx.git@master
 nbsphinx-link
 sphinxcontrib-spelling
-pooch==1.3.0
-refdata>=0.2.0

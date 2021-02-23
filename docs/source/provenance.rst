@@ -22,7 +22,6 @@ We use a sample of NYC open data with completed job codes at various locations i
     ds.head()
 
 
-
 Initialize
 ----------
 To be able to maintain provenance in openclean, a persistent instance of the openclean engine needs to be created. All versions of the
@@ -83,6 +82,16 @@ Users can checkout a previous version of a dataset to see what it looked like.
 
     db.dataset('jobs').checkout(logs[0].version)
 
+
+Rollback
+--------
+If the user is not happy with the changes, they can be rolled back to get the previous version of the dataset:
+
+.. jupyter-execute::
+
+    df = db.rollback('jobs', version=logs[0].version)
+
+    df.head()
 
 
 Register
