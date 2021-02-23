@@ -68,7 +68,7 @@ A complete list of repair strategies can be accessed in the `API Reference <inde
 
 Missing Values
 --------------
-Depending on the usecase, missing values can be handled by the filter transformation (removing them) or by the update
+Depending on the use case, missing values can be handled by the filter transformation (removing them) or by the update
 transformation (new values). They are both explained in :ref:`transform-ref`. We demonstrate both again here.
 
 .. jupyter-execute::
@@ -121,7 +121,7 @@ detect anomalous values using:
     * Metaphone
 
 * Fuzzy Matching
-    Implementation of fuzzy string matching using ngram overlaps and levenshtein or cosine distance.
+    Implementation of fuzzy string matching using n-gram overlaps and levenshtein or cosine distance.
 
 StringMatcher objects ingest a vocabulary, and a matching algorithm that is used to identify dataset values that are misspelled. These can optionally be stored into
 an openclean mapping to be reused later with other datasets as translation tables.
@@ -145,7 +145,7 @@ an openclean mapping to be reused later with other datasets as translation table
 
     print(map)
 
-The map shows all misspellings matched atleast one value from the vocabulary so the map can be used to fix the `Borough` column.
+The map shows all misspellings matched at least one value from the vocabulary so the map can be used to fix the `Borough` column.
 The user will have to manually intervene and update the map if for a query value there were zero or more than one matches from the vocabulary.
 
 Fixing is easy, we can use the update operation with the Lookup eval function (to provide default values if key not found in the map).

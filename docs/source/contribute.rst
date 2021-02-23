@@ -16,7 +16,7 @@ When you start working on an issue, it’s a good idea to assign the issue to yo
 duplicates the work on it. However, GitHub restricts assigning issues to maintainers of the project only.
 Therefore, contributors are requested to add a comment letting others know they are working on an issue.
 
-If for whatever reason you are not able to continue working with the issue, please try to unassign it (or comment there),
+If for whatever reason you are not able to continue working with the issue, please try to un-assign it (or comment there),
 so other people know it’s available again. If you want to work on one that is assigned, feel free to kindly ask the
 current assignee if you can take it (please allow at least a week of inactivity before considering work in the issue
 discontinued).

@@ -33,7 +33,7 @@ author = 'New York University'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinxcontrib.apidoc',
-              'jupyter_sphinx.execute', 'nbsphinx', 'sphinx.ext.mathjax', 'nbsphinx_link']
+              'jupyter_sphinx.execute', 'nbsphinx', 'sphinx.ext.mathjax', 'nbsphinx_link', 'sphinxcontrib.spelling']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
