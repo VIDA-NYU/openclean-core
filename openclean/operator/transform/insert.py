@@ -254,7 +254,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
         # Insert the column names into the data frame schema.
         columns = list(df.columns)
         columns = columns[:inspos] + self.names + columns[inspos:]
-        return pd.DataFrame(data=data, index=df.index, columns=columns)
+        return pd.DataFrame(data=data, index=df.index, columns=columns, dtype=object)
 
 
 class InsRow(DataFrameTransformer):
@@ -350,4 +350,4 @@ class InsRow(DataFrameTransformer):
         for i in range(inspos, len(df.index)):
             data.append(list(df.iloc[i]))
             index.append(df.index[i])
-        return pd.DataFrame(data=data, index=index, columns=df.columns)
+        return pd.DataFrame(data=data, index=index, columns=df.columns, dtype=object)

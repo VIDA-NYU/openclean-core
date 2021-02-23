@@ -91,6 +91,7 @@ class DataFrame(StreamConsumer, StreamProcessor):
         self.columns = columns
         self.data = list()
         self.index = list()
+        self.dtypes = object
 
     def close(self) -> pd.DataFrame:
         """Closing the consumer yields the data frame with the collected rows.
@@ -102,7 +103,8 @@ class DataFrame(StreamConsumer, StreamProcessor):
         return pd.DataFrame(
             data=self.data,
             columns=self.columns,
-            index=self.index
+            index=self.index,
+            dtype=self.dtypes
         )
 
     def consume(self, rowid: int, row: List):

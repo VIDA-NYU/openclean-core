@@ -72,4 +72,4 @@ def dataset(
                 row = [typecast.cast(v) for v in row]
             data.append(row)
             index.append(rowid)
-        return pd.DataFrame(data=data, columns=file.columns, index=index)
+        return pd.DataFrame(data=data, columns=file.columns, index=index, dtype=object)
