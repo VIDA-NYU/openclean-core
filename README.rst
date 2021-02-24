@@ -78,4 +78,4 @@ Contributing
 ============
 We welcome all contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas.
 
-A detailed overview on how to contribute can be found in the `documentation <https://openclean.readthedocs.io/source/contribute.html>`_.
+A detailed overview on how to contribute can be found `here <https://openclean.readthedocs.io/source/contribute.html>`_.
