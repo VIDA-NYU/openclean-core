@@ -10,7 +10,7 @@ are maintained in environment variables.
 """
 
 from appdirs import user_cache_dir
-from flowserv.controller.serial.worker.factory import WorkerFactory, convert_config
+from flowserv.controller.worker.factory import WorkerFactory, convert_config
 from typing import List, Optional
 
 import json
