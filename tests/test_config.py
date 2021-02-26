@@ -27,15 +27,6 @@ def test_config_datadir():
     del os.environ[config.ENV_DATA_DIR]
 
 
-def test_config_masterdatadir():
-    """Test getting the default master data directory from the configuration
-    settings in the environment.
-    """
-    os.environ[config.ENV_MASTERDATA_DIR] = '/my/masterdir'
-    assert config.MASTERDATADIR() == '/my/masterdir'
-    del os.environ[config.ENV_MASTERDATA_DIR]
-
-
 @pytest.mark.parametrize(
     'value,result',
     [('a', 1), ('-34.5', 1), ('0', 1), ('1', 1), ('4', 4)]

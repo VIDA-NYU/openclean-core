@@ -9,8 +9,9 @@
 managing archives of datasets.
 """
 
-
 from typing import List, Optional
+
+import os
 
 from histore import PersistentArchiveManager
 from histore.archive.base import Archive
@@ -113,4 +114,4 @@ def manager() -> PersistentArchiveManager:
     -------
     histore.archive.manager.base.ArchiveManager
     """
-    return PersistentArchiveManager(basedir=config.MASTERDATADIR())
+    return PersistentArchiveManager(basedir=os.path.join(config.DATADIR(), 'archives'))

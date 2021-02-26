@@ -20,9 +20,7 @@ import yaml
 
 """Environment variables that maintain configuration parameters."""
 # Directory for raw data files.
-ENV_DATA_DIR = 'OPENCLEAN_DATA_DIR'
-# Download directory
-ENV_MASTERDATA_DIR = 'OPENCLEAN_MASTERDATA_DIR'
+ENV_DATA_DIR = 'OPENCLEAN_DATADIR'
 # Number of parallel threads to use.
 ENV_THREADS = 'OPENCLEAN_THREADS'
 # Configuration file containing the configuration for flowServ workers.
@@ -38,17 +36,6 @@ def DATADIR() -> str:
     """
     default_value = os.path.join(user_cache_dir(appname=__name__.split('.')[0]), 'data')
     return os.environ.get(ENV_DATA_DIR, default_value)
-
-
-def MASTERDATADIR() -> str:
-    """Get directory where master data repositories are maintained.
-
-    Returns
-    -------
-    string
-    """
-    default_value = os.path.join(user_cache_dir(appname=__name__.split('.')[0]), 'masterdata')
-    return os.environ.get(ENV_MASTERDATA_DIR, default_value)
 
 
 def THREADS() -> int:
