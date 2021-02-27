@@ -55,7 +55,11 @@ def test_config_workers():
     assert factory.config['test1']['worker'] == 'docker'
     assert factory.config['test2']['worker'] == 'docker'
     # By default the factory configuration is empty.
+    env = dict(os.environ)
     del os.environ[config.ENV_WORKERS]
     del os.environ['OPENCLEAN_WORKERS_TEST']
+    factory = config.WORKERS(var='OPENCLEAN_WORKERS_TEST', env=env)
+    assert factory.config['test1']['worker'] == 'docker'
+    assert factory.config['test2']['worker'] == 'docker'
     factory = config.WORKERS()
     assert factory.config == dict()

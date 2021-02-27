@@ -11,7 +11,7 @@ are maintained in environment variables.
 
 from appdirs import user_cache_dir
 from flowserv.controller.worker.factory import WorkerFactory, convert_config
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import json
 import os
@@ -55,7 +55,7 @@ def THREADS() -> int:
     return 1 if threads < 1 else threads
 
 
-def WORKERS(var: Optional[str] = None) -> WorkerFactory:
+def WORKERS(var: Optional[str] = None, env: Optional[Dict] = None) -> WorkerFactory:
     """Create a worker factory for serial workflow execution from a configuration
     file.
 
@@ -70,14 +70,20 @@ def WORKERS(var: Optional[str] = None) -> WorkerFactory:
         Optional name for an environment variable that references a file with
         flowServ worker configurations that will override the values in the
         default configuration.
+    env: dict, default=None
+        Optional environment variables that override the system-wide
+        settings., defualt=None
 
     Returns
     -------
     flowserv.controller.serial.worker.factory.WorkerFactory
     """
-    worker_conf = convert_config(read_list(os.environ.get(ENV_WORKERS)))
+    vars = dict(os.environ)
+    if env:
+        vars.update(env)
+    worker_conf = convert_config(read_list(vars.get(ENV_WORKERS)))
     if var:
-        worker_conf.update(convert_config(read_list(os.environ.get(var))))
+        worker_conf.update(convert_config(read_list(vars.get(var))))
     return WorkerFactory(config=worker_conf)
 
 
