@@ -12,7 +12,7 @@ from abc import ABCMeta, abstractmethod
 from openclean.profiling.base import DistinctSetProfiler
 
 
-class Pattern(metaclass=ABCMeta):  # pragma: no cover
+class Pattern(metaclass=ABCMeta):
     """Interface for objects representing patterns, e.g., a regular expression,
     that was discovered by a pattern finder. Implementations maintain a
     representation of the pattern itself as well as any additional metadata
@@ -46,7 +46,7 @@ class Pattern(metaclass=ABCMeta):  # pragma: no cover
         -------
         openclean.function.value.base.ValueFunction
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def metadata(self):
@@ -64,7 +64,7 @@ class Pattern(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def pattern(self):
@@ -86,7 +86,7 @@ class Pattern(metaclass=ABCMeta):  # pragma: no cover
         -------
         dict
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
 
 class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
@@ -95,7 +95,6 @@ class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
     data frame) as their input. The result is a (list of) string(s) that each
     represent a regular expression.
     """
-
     def exec(self, values):
         """This method is executed when the pattern finder is used as part of a
         data profiler. It returns a list with dictionary serializations for the
@@ -130,4 +129,4 @@ class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
         -------
         list(openclean.profiling.pattern.base.Pattern)
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover

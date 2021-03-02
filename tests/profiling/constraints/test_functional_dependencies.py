@@ -20,3 +20,4 @@ def test_init_functional_dependency():
     assert fd.rhs == ['C', 'D']
     assert fd.lhs == fd.determinant
     assert fd.rhs == fd.dependant
+    assert str(fd) == '[{}] -> [{}]'.format(','.join(fd.lhs), ','.join(fd.rhs))
