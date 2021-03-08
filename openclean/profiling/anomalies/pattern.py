@@ -73,8 +73,7 @@ class RegExOutliers(ConditionalOutliers):
         """
         super(RegExOutliers, self).__init__()
         # Ensure that patterns is a list.
-        if not isinstance(patterns, list):
-            patterns = [patterns]
+        patterns = patterns if isinstance(patterns, list) else [patterns]
         # Set the predicate that is used to identify outliers. Distinguish
         # based on number of elements in the pattern list.
         if len(patterns) == 0:

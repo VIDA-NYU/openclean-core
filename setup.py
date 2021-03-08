@@ -23,7 +23,7 @@ install_requires = [
     'scikit-learn',
     'jsonschema>=3.2.0',
     'histore==0.3.1',
-    'flowserv-core==0.6.0',
+    'flowserv-core>=0.8.0',
     'jellyfish',
     'refdata>=0.2.0',
     'scipy'

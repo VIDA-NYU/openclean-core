@@ -1,0 +1,4 @@
+- image: test1
+  worker: docker
+- image: test2
+  worker: subprocess

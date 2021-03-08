@@ -22,7 +22,7 @@ DF_2 = pd.DataFrame(data=[[1, 2], [5, 6]], columns=['A', 'B'])
 def test_archive_manager(tmpdir):
     """Test master data manager functionality."""
     # -- Setup ----------------------------------------------------------------
-    os.environ[config.ENV_MASTERDATA_DIR] = str(tmpdir)
+    os.environ[config.ENV_DATA_DIR] = str(tmpdir)
     # Create two new archive for a given dataset.
     masterdata.create('First', primary_key=['A'])
     masterdata.create('Second', primary_key=['A'])
@@ -50,4 +50,4 @@ def test_archive_manager(tmpdir):
     with pytest.raises(ValueError):
         masterdata.get('First')
     # -- Cleanup --------------------------------------------------------------
-    del os.environ[config.ENV_MASTERDATA_DIR]
+    del os.environ[config.ENV_DATA_DIR]
