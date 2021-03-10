@@ -16,6 +16,7 @@ and datasets are available in the `Github repository <https://github.com/VIDA-NY
     examples/brooklyn_spellings
     examples/restaurant_profiling
     examples/restaurant_cleaning
+    examples/ethiopian_standardization
     examples/knn
     examples/fd_violation
     examples/token_signature
