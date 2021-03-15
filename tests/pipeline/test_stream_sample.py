@@ -13,4 +13,4 @@ import pytest
 @pytest.mark.parametrize('size', [0, 3, 5, 7, 10, 20])
 def test_sample_rows_in_stream(size, ds):
     """Test counting the number of rows in a stream sample."""
-    assert ds.sample(size=size).count() == min(size, 10)
+    assert ds.sample(n=size).count() == min(size, 10)
