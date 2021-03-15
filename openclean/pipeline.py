@@ -444,17 +444,17 @@ class DataPipeline(object):
                     break
         return consumer.close()
 
-    def sample(self, size: int, seed: Optional[int] = None) -> DataPipeline:
+    def sample(self, n: int, random_state: Optional[int] = None) -> DataPipeline:
         """Add operator for a random sample generator to the data stream.
 
         ----------
-        size: int
+        n: int
             Size of the collected random sample.
-        seed: int, default=None
+        random_state: int, default=None
             Seed value for the random number generator (for reproducibility
             purposes).
         """
-        return self.append(Sample(size=size, seed=seed))
+        return self.append(Sample(n=n, random_state=random_state))
 
     def select(
         self, columns: Optional[Columns] = None, names: Optional[Schema] = None
