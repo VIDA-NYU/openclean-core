@@ -10,3 +10,9 @@
 * Bump `flowserv-core` dependency to version `0.8.0` for better support of running applications that are not implemented in Python.
 * Introduce environment variable *OPENCLEAN_WORKERS* to configure workers for `flowserv-core`.
 * Replace environment variables *OPENCLEAN_METADATA_DIR* with *OPENCLEAN_DATADIR*.
+
+
+### 0.1.2 - 2021-03-17
+
+* Standardize parameter names for sample methods (\#115)
+* Bug fix for `openclean-notebook`
