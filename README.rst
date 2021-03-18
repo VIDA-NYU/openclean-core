@@ -14,8 +14,8 @@ openclean - Data Cleaning for Python
 .. image:: https://github.com/VIDA-NYU/openclean-core/workflows/build/badge.svg
     :target: https://github.com/VIDA-NYU/openclean-core/actions?query=workflow%3A%22build%22
 
-.. image:: https://readthedocs.org/projects/openclean-core/badge/?version=latest
-    :target: https://openclean-core.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/openclean/badge/?version=latest
+    :target: https://openclean.readthedocs.io/?badge=latest
     :alt: Documentation Status
 
 .. image:: https://codecov.io/gh/VIDA-NYU/openclean-core/branch/master/graph/badge.svg?token=5TG0P12FO5
@@ -65,7 +65,7 @@ Install **openclean** from GitHub using ``pip`` with:
 
 .. code-block:: bash
 
-    pip install git+git://github.com/VIDA-NYU/openclean-core.git
+    pip install openclean-core
 
 
 Usage
