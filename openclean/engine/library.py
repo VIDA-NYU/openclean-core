@@ -116,7 +116,7 @@ class ObjectLibrary(object):
                 namespace=namespace,
                 name=name,
                 label=label,
-                description=help,
+                description=description,
                 columns=columns,
                 outputs=outputs,
                 parameters=parameters

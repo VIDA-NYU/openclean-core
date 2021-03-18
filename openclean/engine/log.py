@@ -7,13 +7,11 @@
 
 """Log of actions that defines the history of a dataset."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from histore.archive.snapshot import Snapshot
 from typing import Dict, List, Optional
 
 from openclean.engine.action import OpHandle
-
-import openclean.util.core as util
 
 
 @dataclass
@@ -77,10 +75,10 @@ class OperationLog(object):
             Handle for the operation that created the dataset snapshot.
         """
         entry = LogEntry(
-                action=action,
-                descriptor=action.to_dict(),
-                version=version
-            )
+            action=action,
+            descriptor=action.to_dict(),
+            version=version
+        )
         self.entries.append(entry)
 
     def last_version(self) -> int:

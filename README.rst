@@ -2,11 +2,21 @@
 openclean - Data Cleaning for Python
 ====================================
 
+.. image:: https://img.shields.io/pypi/pyversions/openclean-core.svg
+    :target: https://pypi.org/pypi/openclean-core
+
+.. image:: https://badge.fury.io/py/openclean-core.svg
+    :target: https://badge.fury.io/py/openclean-core
+
 .. image:: https://img.shields.io/badge/License-BSD-green.svg
     :target: https://github.com/VIDA-NYU/openclean-core/blob/master/LICENSE
 
 .. image:: https://github.com/VIDA-NYU/openclean-core/workflows/build/badge.svg
     :target: https://github.com/VIDA-NYU/openclean-core/actions?query=workflow%3A%22build%22
+
+.. image:: https://readthedocs.org/projects/openclean-core/badge/?version=latest
+    :target: https://openclean-core.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. image:: https://codecov.io/gh/VIDA-NYU/openclean-core/branch/master/graph/badge.svg?token=5TG0P12FO5
     :target: https://codecov.io/gh/VIDA-NYU/openclean-core

@@ -21,19 +21,19 @@ from openclean.operator.stream.processor import StreamProcessor
 class Sample(StreamProcessor):
     """Processor that defines a random sampling operator in a data stream.
     """
-    def __init__(self, size: int, seed: Optional[int] = None):
+    def __init__(self, n: int, random_state: Optional[int] = None):
         """Initialize the sample size and the optional seed for the random
         number generator.
 
         ----------
-        size: int
+        n: int
             Size of the collected random sample.
-        seed: int, default=None
+        random_state: int, default=None
             Seed value for the random number generator (for reproducibility
             purposes).
         """
-        self.size = size
-        self.seed = seed
+        self.n = n
+        self.random_state = random_state
 
     def open(self, schema: Schema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
@@ -48,7 +48,7 @@ class Sample(StreamProcessor):
         -------
         openclean.operator.stream.consumer.StreamConsumer
         """
-        return SampleCollector(columns=schema, size=self.size, seed=self.seed)
+        return SampleCollector(columns=schema, n=self.n, random_state=self.random_state)
 
 
 class SampleCollector(ProducingConsumer):
@@ -73,7 +73,7 @@ class SampleCollector(ProducingConsumer):
     downstream consumer at the end of the stream.
     """
     def __init__(
-        self, columns: Schema, size: int, seed: Optional[int] = None,
+        self, columns: Schema, n: int, random_state: Optional[int] = None,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the row schema, sample size and the internal row buffer.
@@ -81,9 +81,9 @@ class SampleCollector(ProducingConsumer):
         reproducibility.
 
         ----------
-        size: int
+        n: int
             Size of the collected random sample.
-        seed: int, default=None
+        random_state: int, default=None
             Seed value for the random number generator (for reproducibility
             purposes).
         columns: list of string
@@ -92,11 +92,11 @@ class SampleCollector(ProducingConsumer):
             Downstream consumer for processed rows.
         """
         super(SampleCollector, self).__init__(columns=columns, consumer=consumer)
-        self.size = size
+        self.size = n
         # Initialize the random number generator.
         self.rand = Random()
-        if seed is not None:
-            self.rand.seed(seed)
+        if random_state is not None:
+            self.rand.seed(random_state)
         # Initialize the row buffer for the selected rows, (row-id, row)-pairs.
         self.rows = list()
         # conter for the total number of rows received.

@@ -16,7 +16,7 @@ from openclean.operator.stream.sample import SampleCollector
 @pytest.mark.parametrize('rows,size', [(0, 0), (5, 10), (10, 10), (100, 10)])
 def test_random_sample_generator(rows, size):
     """Test counting the number of rows in a generated sample."""
-    consumer = SampleCollector(columns=[], size=size, consumer=RowCount())
+    consumer = SampleCollector(columns=[], n=size, consumer=RowCount())
     for i in range(rows):
         consumer.consume(i, [])
     assert consumer.close() == min(rows, size)
