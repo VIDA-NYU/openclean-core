@@ -40,7 +40,7 @@ class OpencleanEngine(object):
     """The idea of the engine is to provide a namespace that manages a set of
     datasets that are identified by unique names. The engine is associated with
     an object repository that provides additional functionality to register
-    objects like funtions, lookup tables, etc..
+    objects like functions, lookup tables, etc..
 
     Datasets that are created from files of data frames are maintained by an
     archive manager.
