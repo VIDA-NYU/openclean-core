@@ -11,15 +11,25 @@ import pytest
 
 from openclean.function.token.split import ChartypeSplit, Split
 
+import openclean.function.token.base as TT
 
-def test_homogeneous_split():
+
+@pytest.mark.parametrize(
+    'value,result_tokens,result_types',
+    [
+        ('W35ST', ['W', '35', 'ST'], ['A', 'D', 'A']),
+        ('W35ST/', ['W', '35', 'ST', '/'], ['A', 'D', 'A', TT.ANY]),
+        ('W35ST/8AVE', ['W', '35', 'ST', '/', '8', 'AVE'], ['A', 'D', 'A', TT.ANY, 'D', 'A']),
+        (1234, ['1234'], ['D']),
+        (12.34, ['12', '.', '34'], ['D', TT.ANY, 'D'])
+    ]
+)
+def test_homogeneous_split(value, result_tokens, result_types):
     """Test tokenizer that splits on character types."""
-    f = ChartypeSplit(chartypes=[str.isalpha, str.isdigit])
-    assert f.tokens('W35ST') == ['W', '35', 'ST']
-    assert f.tokens('W35ST/') == ['W', '35', 'ST', '/']
-    assert f.tokens('W35ST/8AVE') == ['W', '35', 'ST', '/', '8', 'AVE']
-    assert f.tokens(1234) == ['1234']
-    assert f.tokens(12.34) == ['12', '.', '34']
+    f = ChartypeSplit(chartypes=[(str.isalpha, 'A'), (str.isdigit, 'D')])
+    tokens = f.tokens(value)
+    assert tokens == result_tokens
+    assert [t.type() for t in tokens] == result_types
 
 
 def test_split_numeric_value():

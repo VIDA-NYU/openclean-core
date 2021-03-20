@@ -9,7 +9,7 @@
 
 from typing import List
 
-from openclean.function.token.base import SortTokens, TokenTransformer, TokenTransformerPipeline
+from openclean.function.token.base import SortTokens, Token, TokenTransformer, TokenTransformerPipeline
 from openclean.function.value.base import ValueFunction
 
 
@@ -18,18 +18,18 @@ class FirstLastFilter(TokenTransformer):
     list.
     """
 
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Return a list that contains the first and last element from the input
         list. If the input is empty the result is empty as well.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         return [tokens[0], tokens[-1]] if tokens else tokens
 
@@ -58,18 +58,18 @@ class TokenFilter(TokenTransformer):
         """
         self.predicate = predicate
 
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns a list that contains only those tokens that satisfy the
         filter condition defined by the associated predicate.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         # Prepare the predicate if necessary.
         if not self.predicate.is_prepared():

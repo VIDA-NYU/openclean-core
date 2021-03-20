@@ -387,7 +387,7 @@ class USStreetNameKey(Tokens):
     def __init__(self):
         """Initialize the tokenizer and token transformer in the super class."""
         super(USStreetNameKey, self).__init__(
-            tokenizer=ChartypeSplit(chartypes=[str.isalpha, str.isdigit]),
+            tokenizer=ChartypeSplit(),
             transformer=[
                 TokenFilter(AlphaNumeric()),
                 UpperTokens(),

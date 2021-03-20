@@ -15,15 +15,78 @@ from openclean.function.value.base import CallableWrapper, PreparedFunction, Val
 from openclean.function.value.mapping import Standardize
 
 
+# Definition of default raw token data types.
+ALPHA = 'ALPHA'
+ALPHANUM = 'ALPHANUM'
+ANY = 'ANY'
+DIGIT = DIGIT_REP = 'NUMERIC'
+PUNCTUATION = 'PUNC'
+
+
+class Token(str):
+    """Tokens are strings that have an optional (semantic) type label.
+
+    The values for type labels are not constraint. It is good practice, to use
+    all upper case values for token types. The default token type is 'ANY'.
+
+    This implementation is based on:
+    https://bytes.com/topic/python/answers/32098-my-experiences-subclassing-string
+
+    The order of creation is that the __new__ method is called which returns
+    the object then __init__ is called.
+    """
+    def __new__(cls, value: str, token_type: Optional[str] = None):
+        """Initialize the String object with the given value.
+
+        the token type is ignored.
+
+        Parameters
+        ----------
+        value: string
+            Token value.
+        token_type: string, default=None
+            Unique token type identifier.
+        """
+        return str.__new__(cls, value)
+
+    def __init__(self, value: str, token_type: Optional[str] = None):
+        """Initialize the token type identifier.
+
+        The token value has already been initialized by the __new__ method that
+        is called prior to the __init__ method.
+
+        Parameters
+        ----------
+        value: string
+            Token value.
+        token_type: string, default=None
+            Unique token type identifier.
+        """
+        self.token_type = token_type
+
+    def type(self) -> str:
+        """Get token type value.
+
+        This is a wrapper around the ``token_type`` property. Returns the
+        default token type 'ANY' if no type was given when the object was
+        created.
+
+        Returns
+        -------
+        string
+        """
+        return self.token_type if self.token_type is not None else ANY
+
+
 # -- Mixin classes ------------------------------------------------------------
 
 class StringTokenizer(metaclass=ABCMeta):
     """Interface for string tokenizer. A string tokenizer should be able to
     handle any scalar value (e.g., by first transforming numeric values into
-    a string representation). The tokenizer returns a list of string values.
+    a string representation). The tokenizer returns a list of token objects.
     """
     @abstractmethod
-    def tokens(self, value: Scalar) -> List[str]:
+    def tokens(self, value: Scalar) -> List[Token]:
         """Convert a given scalar values into a list of string tokens. If a
         given value cannot be converted into tokens None should be returned.
 
@@ -37,7 +100,7 @@ class StringTokenizer(metaclass=ABCMeta):
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -49,18 +112,18 @@ class TokenTransformer(metaclass=ABCMeta):
     a list of strings as input and returns a (modified) list of strings.
     """
     @abstractmethod
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Transform a list of string tokens. Returns a modified copy of the
         input list of tokens.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -142,7 +205,7 @@ class Tokens(PreparedFunction, StringTokenizer):
         """
         return self.delim.join(self.tokens(value))
 
-    def tokens(self, value: Scalar) -> List[str]:
+    def tokens(self, value: Scalar) -> List[Token]:
         """Tokenize the given value using the associated tokenizer. Then modify
         the tokens with the optional token transformer.
 
@@ -153,7 +216,7 @@ class Tokens(PreparedFunction, StringTokenizer):
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         tokens = self.tokenizer.tokens(value)
         if self.transformer is not None:
@@ -165,17 +228,17 @@ class Tokens(PreparedFunction, StringTokenizer):
 
 class ReverseTokens(TokenTransformer):
     """Reverse a given list of string tokens."""
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Return a reversed copy of the token list.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         return tokens[::-1]
 
@@ -196,17 +259,17 @@ class SortTokens(TokenTransformer):
         self.sortkey = key
         self.reverse = reverse
 
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns a sorted copy of the tken list.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         return sorted(tokens, key=self.sortkey, reverse=self.reverse)
 
@@ -226,7 +289,7 @@ class TokenPrefix(TokenTransformer):
         """
         self.length = length
 
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Return a list that contains the first N elements of the input list,
         where N is the length parameter defined during initialization. If the
         input list does not have more than N elements the input is returned as
@@ -234,12 +297,12 @@ class TokenPrefix(TokenTransformer):
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         return tokens[:self.length] if len(tokens) > self.length else tokens
 
@@ -259,7 +322,7 @@ class TokenTransformerPipeline(TokenTransformer):
         """
         self.transformers = transformers
 
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Transform a list of string tokens. Applies the transformers in the
         pipeline sequentially on the output of the respective successor in the
         pipeline.
@@ -267,11 +330,11 @@ class TokenTransformerPipeline(TokenTransformer):
         Patameters
         ----------
         tokens: list of string
-            List of string tokens.
+            List of string openclean.function.token.base.Token.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         for transformer in self.transformers:
             tokens = transformer.transform(tokens)
@@ -280,17 +343,17 @@ class TokenTransformerPipeline(TokenTransformer):
 
 class UniqueTokens(TokenTransformer):
     """Remove duplicate tokens to return a list of unique tokens."""
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns a list of unique tokens from the input list.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         return list(set(tokens))
 
@@ -308,18 +371,18 @@ class UpdateTokens(TokenTransformer):
         # Ensure that the function is a value function.
         self.func = CallableWrapper(func) if not isinstance(func, ValueFunction) else func
 
-    def transform(self, tokens: List[str]) -> List[str]:
+    def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns the list of tokens that results from applying the associated
         value function of each of the tokens in the input list.
 
         Patameters
         ----------
-        tokens: list of string
+        tokens: list of openclean.function.token.base.Token
             List of string tokens.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         # Prepare function if necessary.
         f = self.func if self.func.is_prepared() else self.func.prepare(tokens)

@@ -259,6 +259,7 @@ def knn_collision_clusters(
     group_clusters = knn_clusters(
         values=groups_map.keys(),
         sim=sim,
+        tokenizer=tokenizer,
         minsize=1,
         remove_duplicates=remove_duplicates
     )
