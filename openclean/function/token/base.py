@@ -19,8 +19,9 @@ from openclean.function.value.mapping import Standardize
 ALPHA = 'ALPHA'
 ALPHANUM = 'ALPHANUM'
 ANY = 'ANY'
-DIGIT = DIGIT_REP = 'NUMERIC'
+DIGIT = 'NUMERIC'
 PUNCTUATION = 'PUNC'
+SPACE = 'SPACE'
 
 
 class Token(str):
@@ -386,10 +387,15 @@ class UpdateTokens(TokenTransformer):
         """
         # Prepare function if necessary.
         f = self.func if self.func.is_prepared() else self.func.prepare(tokens)
-        return f.apply(tokens)
+        return [Token(f(t), token_type=t.type()) for t in tokens]
 
 
-# -- Shortcuts for common update functions ------------------------------------
+class CapitalizeTokens(UpdateTokens):
+    """Capitalize all tokens in a given list."""
+    def __init__(self):
+        """Initialize the update function."""
+        super(CapitalizeTokens, self).__init__(func=CallableWrapper(func=str.capitalize))
+
 
 class LowerTokens(UpdateTokens):
     """Convert all tokens in a given list to lower case."""
