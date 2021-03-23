@@ -19,6 +19,7 @@ from openclean.data.stream.base import DataReader
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, Schema
+from openclean.cluster.base import Cluster, Clusterer
 from openclean.function.eval.base import EvalFunction
 from openclean.function.matching.base import StringMatcher
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
@@ -99,6 +100,24 @@ class DataPipeline(object):
             columns=columns if columns is not None else self.columns,
             pipeline=self.pipeline + [op]
         )
+
+    def cluster(self, clusterer: Clusterer) -> List[Cluster]:
+        """Cluster values in a data stream.
+
+        This operator will create a distinct set of values in the data stream
+        rows. The collected values are then passed on to the given cluster
+        algorithm.
+
+        Parameters
+        ----------
+        clusterer: openclean.cluster.base.Clusterer
+            Cluster algorithm for distinct values in the data stream.
+
+        Returns
+        -------
+        list of openclean.cluster.base.Cluster
+        """
+        return self.stream(clusterer)
 
     def count(self) -> int:
         """Count the number of rows in a data stream.

@@ -91,7 +91,7 @@ class StreamConsumer(metaclass=ABCMeta):
 
 class ProducingConsumer(StreamConsumer):
     """A producing consumer passes the processed row on to a downstream
-    consumer. This consumer therefore acts a s a consumer and a producer.
+    consumer. This consumer therefore acts as a consumer and a producer.
     """
     def __init__(self, columns: Schema, consumer: Optional[StreamConsumer]):
         """Initialize the row schema and the optional downstream consumer. Note
