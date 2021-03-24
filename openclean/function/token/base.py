@@ -81,7 +81,7 @@ class Token(str):
 
 # -- Mixin classes ------------------------------------------------------------
 
-class StringTokenizer(metaclass=ABCMeta):
+class Tokenizer(metaclass=ABCMeta):
     """Interface for string tokenizer. A string tokenizer should be able to
     handle any scalar value (e.g., by first transforming numeric values into
     a string representation). The tokenizer returns a list of token objects.
@@ -131,7 +131,7 @@ class TokenTransformer(metaclass=ABCMeta):
 
 # -- Default tokenizer --------------------------------------------------------
 
-class Tokens(PreparedFunction, StringTokenizer):
+class Tokens(PreparedFunction, Tokenizer):
     """The default tokenizer is a simple wrapper around a given tokenizer and
     an (optional) token transformer that is applied on the output of the given
     tokenizer.
@@ -143,7 +143,7 @@ class Tokens(PreparedFunction, StringTokenizer):
     functionality to concatenate the generated token list to a token key string.
     """
     def __init__(
-        self, tokenizer: StringTokenizer,
+        self, tokenizer: Tokenizer,
         transformer: Optional[Union[List[TokenTransformer], TokenTransformer]] = None,
         delim: Optional[str] = '', sort: Optional[bool] = False,
         reverse: Optional[bool] = False, unique: Optional[bool] = False
@@ -153,7 +153,7 @@ class Tokens(PreparedFunction, StringTokenizer):
 
         Parameters
         ----------
-        tokenizer: openclean.function.token.base.StringTokenizer
+        tokenizer: openclean.function.token.base.Tokenizer
             Tokenizer that is used to generate initial token list for given
             values.
         transformer: list or single object of openclean.function.token.base.TokenTransformer,

@@ -12,7 +12,7 @@ from typing import Callable, List, Optional, Tuple
 import re
 
 from openclean.data.types import Scalar
-from openclean.function.token.base import StringTokenizer, Token
+from openclean.function.token.base import Tokenizer, Token
 
 import openclean.function.token.base as TT
 
@@ -20,7 +20,7 @@ import openclean.function.token.base as TT
 DEFAULT_CLASSIFIER = [(str.isalpha, TT.ALPHA), (str.isdigit, TT.DIGIT)]
 
 
-class ChartypeSplit(StringTokenizer):
+class ChartypeSplit(Tokenizer):
     """Split values basesd of a list of character type functions. That is, a
     value that contains characters of different types, e.g., W35ST, will be
     split into tokens with homogeneous character type, e.g., ['W', '35', 'ST'].
@@ -106,7 +106,7 @@ class ChartypeSplit(StringTokenizer):
         return tokens
 
 
-class Split(StringTokenizer):
+class Split(Tokenizer):
     """String tokenizer that is a wrapper around the regular expression split
     method. Defines a extra parameters to (a) pre-process a given value and
     (b) modify the generated token lists.
@@ -117,7 +117,7 @@ class Split(StringTokenizer):
     def __init__(
         self, pattern: str, sort: Optional[bool] = False,
         reverse: Optional[bool] = False, unique: Optional[bool] = False,
-        preproc: Optional[Callable] = None, subtokens: Optional[StringTokenizer] = None
+        preproc: Optional[Callable] = None, subtokens: Optional[Tokenizer] = None
     ):
         """Initialize the tokenizer parameters.
 
@@ -135,7 +135,7 @@ class Split(StringTokenizer):
         preproc: callable, default=None
             Optional pre-processor that is evaluated on each value before
             tokenization.
-        subtokens: openclean.function.token.base.StringTokenizer, default=None
+        subtokens: openclean.function.token.base.Tokenizer, default=None
             Tokenizer that is used to split generated tokens into sub-tokens.
         """
         self.pattern = pattern

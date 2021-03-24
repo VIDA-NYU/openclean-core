@@ -12,10 +12,10 @@ substring of length n.
 from typing import List, Optional
 
 from openclean.data.types import Scalar
-from openclean.function.token.base import StringTokenizer, Token
+from openclean.function.token.base import Tokenizer, Token
 
 
-class NGrams(StringTokenizer):
+class NGrams(Tokenizer):
     """Split values into lists of n-grams. n-grams are substrings of length n.
     Provides the option to pad stings with special characters to the left and
     right before computing n-grams. That is, if a left (right) padding character
