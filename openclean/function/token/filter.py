@@ -7,6 +7,7 @@
 
 """Collection of functions to filter (remove) tokens from given token lists."""
 
+from collections.abc import Container
 from typing import List, Optional, Set
 
 from openclean.function.token.base import SortTokens, Token, TokenTransformer, TokenTransformerPipeline
@@ -44,6 +45,33 @@ class MinMaxFilter(TokenTransformerPipeline):
         super(MinMaxFilter, self).__init__(
             transformers=[SortTokens(), FirstLastFilter()]
         )
+
+
+class RepeatedTokenFilter(TokenTransformer):
+    """Remove consecutive identical tokens in a given sequence."""
+    def transform(self, tokens: List[Token]) -> List[Token]:
+        """Returns a list where no two consecutive tokens are identical.
+
+        Patameters
+        ----------
+        tokens: list of openclean.function.token.base.Token
+            List of string tokens.
+
+        Returns
+        -------
+        list of openclean.function.token.base.Token
+        """
+        if len(tokens) < 2:
+            return tokens
+        # Create initial list containing the first token.
+        prev = tokens[0]
+        result = [prev]
+        for i in range(1, len(tokens)):
+            token = tokens[i]
+            if token != prev:
+                result.append(token)
+            prev = token
+        return result
 
 
 class TokenFilter(TokenTransformer):
