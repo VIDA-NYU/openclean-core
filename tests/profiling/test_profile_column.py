@@ -8,8 +8,17 @@
 """Unit tests for the column profiler."""
 
 from openclean.profiling.column import (
-    DefaultColumnProfiler, DefaultStreamProfiler
+    DefaultColumnProfiler, DefaultStreamProfiler, DistinctValueProfiler
 )
+
+
+def test_profile_distinct_values(schools):
+    """Test profiling a single data frame column using the distinct value
+    profiler that maintains a full list of distinct values.
+    """
+    # -- Use default labels for result ----------------------------------------
+    metadata = DistinctValueProfiler().run(schools, 'school_code')
+    assert len(metadata.distinct()) == 96
 
 
 def test_profile_single_column(schools):
@@ -51,4 +60,4 @@ def test_profile_single_column_stream(schools):
     }
     assert metadata['totalValueCount'] == 100
     assert metadata['emptyValueCount'] == 0
-    assert metadata['datatypes'] == {'int':  30, 'float': 6, 'str': 64}
+    assert metadata['datatypes'] == {'int': 30, 'float': 6, 'str': 64}
