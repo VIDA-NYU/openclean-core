@@ -395,7 +395,7 @@ class DataPipeline(object):
         ----------
         profilers: int, string, tuple, or list of tuples of column reference
                 and openclean.profiling.base.DataProfiler, default=None
-            Specify he list of columns that are profiled and the profiling
+            Specify the list of columns that are profiled and the profiling
             function. If only a column reference is given (not a tuple) the
             default stream profiler is used for profiling the column.
         default_profiler: class, default=None
