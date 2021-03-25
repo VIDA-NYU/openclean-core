@@ -40,6 +40,20 @@ UPD_COL_C = [4, 4, 4, 3, 3, 9, 9, 9]
 CONFIG = [({'B': Min()}, COL_C), ({'B': Min(), 2: Max()}, UPD_COL_C)]
 
 
+def test_fd_violation_conflicts():
+    """Test getting set of conflicting values for rows in a FD violation group."""
+    groups = fd_violations(DATASET, lhs='A', rhs=['B', 'C'])
+    conflicts = groups.conflicts(key=2, columns=['B', 'C'])
+    assert len(conflicts) == 3
+    assert (1, 2) in conflicts
+    assert (1, 4) in conflicts
+    assert (3, 1) in conflicts
+    conflicts = groups.conflicts(key=2, columns=['B'])
+    assert len(conflicts) == 2
+    assert 1 in conflicts
+    assert 3 in conflicts
+
+
 @pytest.mark.parametrize('strategy,col_c', CONFIG)
 def test_fd_violation_repair_in_order(strategy, col_c):
     """Test repair for FD A -> BC. Use Min to resolve conflicts in attribute B
