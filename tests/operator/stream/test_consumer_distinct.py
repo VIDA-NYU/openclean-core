@@ -12,7 +12,7 @@ from openclean.operator.stream.collector import Distinct
 
 def test_distinct_consumer_ternary():
     """Test frequency counts for ternary rows."""
-    consumer = Distinct().open([])
+    consumer = Distinct().open(['A', 'B'])
     consumer.consume(1, ['A', 1])
     consumer.consume(2, ['A', 2])
     consumer.consume(3, ['B', 1])
@@ -26,7 +26,7 @@ def test_distinct_consumer_ternary():
 
 def test_distinct_consumer_unary():
     """Test frequency counts for distinct values for unary rows."""
-    consumer = Distinct().open([])
+    consumer = Distinct().open(['A'])
     consumer.consume(1, [3])
     consumer.consume(2, [4])
     consumer.consume(3, [3])
