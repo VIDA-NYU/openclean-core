@@ -117,7 +117,7 @@ class DatasetProfile(list):
         """
         profile = DatasetProfile()
         for col, stats in self.profiles():
-            if len(stats['datatypes']) > 1:
+            if len(stats['datatypes']['total']) > 1:
                 profile.add(name=col, stats=stats)
         return profile
 
@@ -189,19 +189,17 @@ class DatasetProfile(list):
         # Make a pass over the profiling results to get a list of all data
         # types that are present.
         for obj in self:
-            types.update(obj['stats']['datatypes'].keys())
+            types.update(obj['stats']['datatypes']['total'].keys())
         # Convert types to a sorted list of types.
         types = sorted(types)
         # Create a data frame with the type results. Datatype labels are used
         # as column names in the returned data frame.
         data = list()
         for obj in self:
-            datatypes = obj['stats']['datatypes']
+            dt = obj['stats']['datatypes']
             row = list()
             for t in types:
-                count = datatypes.get(t, 0)
-                if isinstance(count, dict):
-                    count = count['distinct'] if distinct else count['total']
+                count = dt.get('distinct', dt.get('total', {})).get(t, 0)
                 row.append(count)
             data.append(row)
         return pd.DataFrame(data=data, index=self.columns, columns=types)

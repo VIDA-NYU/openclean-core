@@ -13,7 +13,7 @@ profiler is able to collect additiona information (e.g., top-k values) that
 the stream profiler cannot collect.
 """
 
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import Optional
 
 from openclean.data.types import Scalar
@@ -41,7 +41,7 @@ class ColumnProfile(dict):
         # Initialize the internal statistic.
         self['totalValueCount'] = 0
         self['emptyValueCount'] = 0
-        self['datatypes'] = Counter()
+        self['datatypes'] = defaultdict(Counter)
         self['minmaxValues'] = dict()
         # Consume the list of values if given.
         non_empty_values = Counter()
@@ -92,19 +92,12 @@ class ColumnProfile(dict):
         datatypes = self['datatypes']
         minmax = self['minmaxValues']
         val, type_label = self.converter.convert(value)
-        if type_label in minmax:
-            minmax[type_label].consume(val)
-            if distinct:
-                datatypes[type_label]['total'] += count
-                datatypes[type_label]['distinct'] += 1
-            else:
-                datatypes[type_label] += count
-        else:
+        if type_label not in minmax:
             minmax[type_label] = MinMaxCollector(first_value=val)
-            if distinct:
-                datatypes[type_label] = {'total': count, 'distinct': 1}
-            else:
-                datatypes[type_label] += count
+        minmax[type_label].consume(val)
+        datatypes['total'][type_label] += count
+        if distinct:
+            datatypes['distinct'][type_label] += 1
         return value
 
     def distinct(self, top_k: Optional[int] = None) -> Counter:
