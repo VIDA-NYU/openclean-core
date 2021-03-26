@@ -74,7 +74,7 @@ class Pattern(metaclass=ABCMeta):
         -------
         string
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
     def to_dict(self):
