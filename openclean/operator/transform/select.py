@@ -102,12 +102,18 @@ class Select(StreamProcessor, DataFrameTransformer):
         """
         # Get the names and index positions for the selected columns.
         colnames, colidxs = select_clause(schema=schema, columns=self.columns)
+        # Adjust column indices.
+        columns = list()
+        for colidx in range(len(colnames)):
+            col = colnames[colidx]
+            colid = col.colid if isinstance(col, Column) else colidx
+            columns.append(Column(colid=colid, name=col, colidx=colidx))
 
         def streamfunc(row: DataRow) -> DataRow:
             """Include only columns in the select clause."""
             return [row[i] for i in colidxs]
 
-        return StreamFunctionHandler(columns=colnames, func=streamfunc)
+        return StreamFunctionHandler(columns=columns, func=streamfunc)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Return a data frame that contains all rows but only those columns
