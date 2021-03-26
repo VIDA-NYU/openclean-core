@@ -9,9 +9,13 @@
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Dict, List
+from collections import Counter
+from typing import Callable, Dict, List, Optional, Union
 
 from openclean.data.types import Value
+from openclean.engine.parallel import process_list
+
+import openclean.config as config
 
 
 # -- Abstract base class for value functions ----------------------------------
@@ -34,25 +38,47 @@ class ValueFunction(metaclass=ABCMeta):
         """
         return self.eval(value)
 
-    def apply(self, values: List[Value]) -> List[Value]:
-        """Apply the function to each value in a given set. Returns a list of
+    def apply(
+        self, values: Union[List[Value], Counter], threads: Optional[int] = None
+    ) -> Union[List[Value], Counter]:
+        """Apply the function to each value in a given set.
+
+        Depending on the type of the input, the result is either a list of
         values that are the result of the eval method for the respective input
-        values.
+        values or a new counter object where keys are the modified values.
 
         Calls the prepare method before executing the eval method on each
         individual value in the given list.
+
+        Allows for multi-threaded execution of the apply function (only if the
+        input is a list). For ``collection.Counter`` inputs, processing will
+        always use a single thread only.
 
         Parameters
         ----------
         values: list
             List of scalar values or tuples of scalar values.
+        threads: int, default=None
+            Number of parallel threads to use for key generation. If None the
+            value from the environment variable 'OPENCLEAN_THREADS' is used as
+            the default.
 
         Returns
         -------
         list
         """
         f = self.prepare(values)
-        return [f.eval(v) for v in values]
+        threads = threads if threads is not None else config.THREADS()
+        if isinstance(values, Counter):
+            result = Counter()
+            for val, count in values.items():
+                result[f.eval(val)] += count
+            return result
+        else:
+            if threads > 1:
+                return process_list(func=f, values=values, processes=threads)
+            else:
+                return [f.eval(v) for v in values]
 
     @abstractmethod
     def eval(self, value: Value) -> Value:
