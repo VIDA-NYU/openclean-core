@@ -50,16 +50,12 @@ class ValueFunction(metaclass=ABCMeta):
         Calls the prepare method before executing the eval method on each
         individual value in the given list.
 
-        Allows for multi-threaded execution of the apply function (only if the
-        input is a list). For ``collection.Counter`` inputs, processing will
-        always use a single thread only.
-
         Parameters
         ----------
         values: list
             List of scalar values or tuples of scalar values.
         threads: int, default=None
-            Number of parallel threads to use for key generation. If None the
+            Number of parallel threads to use for processing. If None the
             value from the environment variable 'OPENCLEAN_THREADS' is used as
             the default.
 
@@ -70,9 +66,16 @@ class ValueFunction(metaclass=ABCMeta):
         f = self.prepare(values)
         threads = threads if threads is not None else config.THREADS()
         if isinstance(values, Counter):
+            in_values = values.items() if isinstance(values, Counter) else values
+            f = CounterConverter(func=f)
+            if threads > 1:
+                proc_values = process_list(func=f, values=in_values, processes=threads)
+            else:
+                proc_values = [f.eval(v) for v in in_values]
+
             result = Counter()
-            for val, count in values.items():
-                result[f.eval(val)] += count
+            for val, count in proc_values:
+                result[val] += count
             return result
         else:
             if threads > 1:
@@ -217,6 +220,49 @@ class CallableWrapper(PreparedFunction):
         scalar or tuple
         """
         return self.func(value)
+
+
+class CounterConverter(PreparedFunction):
+    """Wrapper for callable functions that are appied on items of a value
+    counter.
+    """
+    def __init__(self, func: Callable):
+        """Initialize the wrapped callable function. Raises a ValueError if the
+        function is not a callable.
+
+        Parameters
+        ----------
+        func: callable
+            Function that is wrapped as a value finction.
+
+        Raises
+        ------
+        TypeError
+        """
+        # Ensure that the given function is actually a callable.
+        if not callable(func):
+            raise TypeError('not a callable function')
+        self.func = func
+
+    def eval(self, value: Value) -> Value:
+        """Evaluate the wrapped function on a given value.
+
+        The value is expected to be a tuple (item from a ``collection.Counter``
+        object) that contains a value and its count. The wrapped callable is
+        applied on the value and a tuple with the modified value and the
+        original count is returned.
+
+        Parameters
+        ----------
+        value: scalar or tuple
+            Value from the list that was used to prepare the function.
+
+        Returns
+        -------
+        scalar or tuple
+        """
+        val, count = value
+        return (self.func.eval(val), count)
 
 
 class ConstantValue(PreparedFunction):
