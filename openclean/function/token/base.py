@@ -8,7 +8,7 @@
 """Interfaces for string tokenizer and token set transformers."""
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from openclean.data.types import Scalar, Value
 from openclean.function.value.base import CallableWrapper, PreparedFunction, ValueFunction
@@ -36,7 +36,10 @@ class Token(str):
     The order of creation is that the __new__ method is called which returns
     the object then __init__ is called.
     """
-    def __new__(cls, value: str, token_type: Optional[str] = None):
+    def __new__(
+        cls, value: str, token_type: Optional[str] = None,
+        rowidx: Optional[int] = None
+    ):
         """Initialize the String object with the given value.
 
         the token type is ignored.
@@ -50,7 +53,10 @@ class Token(str):
         """
         return str.__new__(cls, value)
 
-    def __init__(self, value: str, token_type: Optional[str] = None):
+    def __init__(
+        self, value: str, token_type: Optional[str] = None,
+        rowidx: Optional[int] = None
+    ):
         """Initialize the token type identifier.
 
         The token value has already been initialized by the __new__ method that
@@ -62,8 +68,52 @@ class Token(str):
             Token value.
         token_type: string, default=None
             Unique token type identifier.
+        rowidx: int, default=None
+            Optional identifier for the row that contained the value that this
+            token was generated from.
         """
         self.token_type = token_type
+        self.rowidx = rowidx
+
+    @property
+    def regex_type(self) -> str:
+        """Synonym for getting the token type.
+
+        Returns
+        -------
+        str
+        """
+        return self.type()
+
+    @regex_type.setter
+    def regex_type(self, token_type) -> str:
+        """Set the token type.
+
+        Parameters
+        ----------
+        token_type: string, default=None
+            Unique token type identifier.
+        """
+        self.token_type = token_type
+
+    @property
+    def size(self) -> int:
+        """Synonym to get the length of the token.
+
+        Returns
+        -------
+        int
+        """
+        return len(self)
+
+    def to_tuple(self) -> Tuple[str, str, int]:
+        """Returns a tuple of the string, type and value size.
+
+        Returns
+        -------
+        tuple of string, string, int
+        """
+        return tuple([self, self.token_type, len(self)])
 
     def type(self) -> str:
         """Get token type value.
@@ -78,6 +128,16 @@ class Token(str):
         """
         return self.token_type if self.token_type is not None else ANY
 
+    @property
+    def value(self) -> str:
+        """Get  the value for this token.
+
+        Returns
+        -------
+        str
+        """
+        return str(self)
+
 
 # -- Mixin classes ------------------------------------------------------------
 
@@ -86,8 +146,26 @@ class Tokenizer(metaclass=ABCMeta):
     handle any scalar value (e.g., by first transforming numeric values into
     a string representation). The tokenizer returns a list of token objects.
     """
+    def encode(self, values: List[Value]) -> List[List[Token]]:
+        """Encodes all values in a given column (i.e., list of values) into
+        their type representations and tokenizes each value.
+
+        Parameters
+        ----------
+        values: list of scalar
+            List of column values
+
+        Returns
+        -------
+        list of list of openclean.function.token.base.Token
+        """
+        encoded = list()
+        for rowidx, value in enumerate(values):
+            encoded.append(self.tokens(rowidx=rowidx, value=value))
+        return encoded
+
     @abstractmethod
-    def tokens(self, value: Scalar) -> List[Token]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of string tokens. If a
         given value cannot be converted into tokens None should be returned.
 
@@ -98,6 +176,8 @@ class Tokenizer(metaclass=ABCMeta):
         ----------
         value: scalar
             Value that is converted into a list of tokens.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
