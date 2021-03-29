@@ -7,15 +7,20 @@
 
 """String tokenizer that is a wrapper around the string split method."""
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import re
 
 from openclean.data.types import Scalar
-from openclean.function.token.base import StringTokenizer
+from openclean.function.token.base import Tokenizer, Token
+
+import openclean.function.token.base as TT
+
+# Default token classifier.
+DEFAULT_CLASSIFIER = [(str.isalpha, TT.ALPHA), (str.isdigit, TT.DIGIT)]
 
 
-class ChartypeSplit(StringTokenizer):
+class ChartypeSplit(Tokenizer):
     """Split values basesd of a list of character type functions. That is, a
     value that contains characters of different types, e.g., W35ST, will be
     split into tokens with homogeneous character type, e.g., ['W', '35', 'ST'].
@@ -23,25 +28,30 @@ class ChartypeSplit(StringTokenizer):
     The type of a character is determined by a classifier that is given as a
     list of Boolean predicates, i.e., callables that accept a single character
     and that return True if the charcter belongs to the type that the function
-    represents or False otherwise.
+    represents or False otherwise. With each classifier a token type label is
+    associated that is assigned to the generated token. If a token does not
+    match any of the given classifier the default token type is returned.
     """
-    def __init__(self, chartypes: Optional[List[Callable]] = None):
+    def __init__(self, chartypes: Optional[List[Tuple[Callable, str]]] = None):
         """Initialize the character type classifier.
 
         Parameters
         ----------
-        chartypes: list of callable, default=None
+        chartypes: list of tuple of callable and string, default=None
             List of functions that are used to determine the type of a character.
             The functions are applied in the given order. The first function that
             returns True for given character defines the character type. By
-            default, we only distinguish between letters and digits.
+            default, we only distinguish between letters and digits. With each
+            funciton a token type label is associated that will be assigned to
+            the generated tokens.
         """
-        self.chartypes = chartypes if chartypes is not None else [str.isalpha, str.isdigit]
+        self.chartypes = chartypes if chartypes is not None else DEFAULT_CLASSIFIER
 
-    def get_type(self, c: str) -> int:
-        """The type of a character is the index position of the first type
-        predicate that returns True. If no predicate evaluates to True for a
-        given value the length of the predicate list is returned.
+    def get_type(self, c: str) -> str:
+        """The type of a character is the label that is associated with the
+        first type predicate that returns True.
+
+        If no predicate evaluates to True for a given value None is returned.
 
         Parameters
         ----------
@@ -52,14 +62,12 @@ class ChartypeSplit(StringTokenizer):
         -------
         int
         """
-        index = 0
-        for f in self.chartypes:
+        for f, label in self.chartypes:
             if f(c):
-                return index
-            index += 1
-        return index
+                return label
+        return None
 
-    def tokens(self, value: Scalar) -> List[str]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of string tokens. If a
         given value cannot be converted into tokens None should be returned.
 
@@ -70,10 +78,12 @@ class ChartypeSplit(StringTokenizer):
         ----------
         value: scalar
             Value that is converted into a list of tokens.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         # Ensure that the value is a string.
         value = str(value) if not isinstance(value, str) else value
@@ -89,16 +99,15 @@ class ChartypeSplit(StringTokenizer):
             next_type = self.get_type(value[i])
             if prev_type != next_type:
                 # Add homogeneous token from start to previous postion.
-                tokens.append(value[start:i])
+                tokens.append(Token(value[start:i], token_type=prev_type, rowidx=rowidx))
                 start = i
                 prev_type = next_type
         # Ensure to add the homogenous suffix if necessary.
-        if start < len(value):
-            tokens.append(value[start:])
+        tokens.append(Token(value[start:], token_type=prev_type, rowidx=rowidx))
         return tokens
 
 
-class Split(StringTokenizer):
+class Split(Tokenizer):
     """String tokenizer that is a wrapper around the regular expression split
     method. Defines a extra parameters to (a) pre-process a given value and
     (b) modify the generated token lists.
@@ -109,7 +118,7 @@ class Split(StringTokenizer):
     def __init__(
         self, pattern: str, sort: Optional[bool] = False,
         reverse: Optional[bool] = False, unique: Optional[bool] = False,
-        preproc: Optional[Callable] = None, subtokens: Optional[StringTokenizer] = None
+        preproc: Optional[Callable] = None, subtokens: Optional[Tokenizer] = None
     ):
         """Initialize the tokenizer parameters.
 
@@ -127,7 +136,7 @@ class Split(StringTokenizer):
         preproc: callable, default=None
             Optional pre-processor that is evaluated on each value before
             tokenization.
-        subtokens: openclean.function.token.base.StringTokenizer, default=None
+        subtokens: openclean.function.token.base.Tokenizer, default=None
             Tokenizer that is used to split generated tokens into sub-tokens.
         """
         self.pattern = pattern
@@ -137,7 +146,7 @@ class Split(StringTokenizer):
         self.preproc = preproc
         self.subtokens = subtokens
 
-    def tokens(self, value: Scalar) -> List[str]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of string tokens. If a
         given value cannot be converted into tokens None should be returned.
 
@@ -148,10 +157,12 @@ class Split(StringTokenizer):
         ----------
         value: scalar
             Value that is converted into a list of tokens.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         # Convert value to string if necessary
         if not isinstance(value, str):
@@ -160,7 +171,7 @@ class Split(StringTokenizer):
         if self.preproc is not None:
             value = self.preproc(value)
         # Use split and the defined pattern to generate initial token list.
-        tokens = list(filter(None, re.split(self.pattern, value)))
+        tokens = [Token(value=t, rowidx=rowidx) for t in filter(None, re.split(self.pattern, value))]
         # Remove duplicates if the unique flag is True.
         if self.unique:
             tokens = list(set(tokens))

@@ -16,7 +16,7 @@ from typing import Callable, Optional
 
 from openclean.data.types import Value
 
-from openclean.function.token.base import StringTokenizer
+from openclean.function.token.base import Tokenizer
 from openclean.function.token.ngram import NGrams
 from openclean.function.token.split import Split
 from openclean.function.value.base import PreparedFunction
@@ -41,7 +41,7 @@ class Fingerprint(PreparedFunction):
     5) Concatenate remaining (sorted) tokens using a single space character as
        the delimiter.
     """
-    def __init__(self, tokenizer: Optional[StringTokenizer] = None, normalizer: Optional[Callable] = None):
+    def __init__(self, tokenizer: Optional[Tokenizer] = None, normalizer: Optional[Callable] = None):
         """Initialize the tokenizer that is used by the fingerprint function
         and the optional normalizer. By default, a tokenizer is used that splits
         on whitespaces. the default normalizer is the openclean text normalizer.
@@ -52,7 +52,7 @@ class Fingerprint(PreparedFunction):
 
         Patameters
         ----------
-        tokenizer: openclean.function.token.base.StringTokenizer, default=None
+        tokenizer: openclean.function.token.base.Tokenizer, default=None
             Tokenizer that is used during fingerprint generation.
         normalizer: callable, default=None
             Callable that is used to normalize values before token generation.

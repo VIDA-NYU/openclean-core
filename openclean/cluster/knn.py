@@ -27,7 +27,7 @@ from openclean.cluster.base import Cluster, Clusterer, ONE
 from openclean.cluster.index import ClusterIndex
 from openclean.cluster.key import key_collision
 from openclean.function.value.base import ValueFunction
-from openclean.function.token.base import StringTokenizer
+from openclean.function.token.base import Tokenizer
 from openclean.function.token.ngram import NGrams
 from openclean.function.similarity.base import SimilarityConstraint
 
@@ -43,7 +43,7 @@ class kNNClusterer(Clusterer):
     """
     def __init__(
         self, sim: SimilarityConstraint,
-        tokenizer: Optional[StringTokenizer] = None, minsize: Optional[int] = 2,
+        tokenizer: Optional[Tokenizer] = None, minsize: Optional[int] = 2,
         remove_duplicates: Optional[bool] = True
     ):
         """Initialize the string tokenizer, the similarity constraint, and the
@@ -54,7 +54,7 @@ class kNNClusterer(Clusterer):
         sim: openclean.function.similarity.base.SimilarityConstraint
             String similarity constraint for grouping strings in the generated
             blocks.
-        tokenizer: openclean.function.token.base.StringTokenizer, default=None
+        tokenizer: openclean.function.token.base.Tokenizer, default=None
             Generator for tokens that are used to group string values in the
             first step of the algorithm. By default, n-grams of length 6 are
             used as blocking tokens.
@@ -173,7 +173,7 @@ class kNNClusterer(Clusterer):
 
 def knn_clusters(
     values: Union[Iterable[Value], Counter], sim: SimilarityConstraint,
-    tokenizer: Optional[StringTokenizer] = None, minsize: Optional[int] = 2,
+    tokenizer: Optional[Tokenizer] = None, minsize: Optional[int] = 2,
     remove_duplicates: Optional[bool] = True
 ) -> List[Cluster]:
     """Run kNN clustering for a given list of values.
@@ -186,7 +186,7 @@ def knn_clusters(
     sim: openclean.function.similarity.base.SimilarityConstraint
         String similarity constraint for grouping strings in the generated
         blocks.
-    tokenizer: openclean.function.token.base.StringTokenizer, default=None
+    tokenizer: openclean.function.token.base.Tokenizer, default=None
         Generator for tokens that are used to group string values in the
         first step of the algorithm. By default, n-grams of length 6 are
         used as blocking tokens.
@@ -211,7 +211,7 @@ def knn_clusters(
 def knn_collision_clusters(
     values: Union[Iterable[Value], Counter], sim: SimilarityConstraint,
     keys: Optional[Union[Callable, ValueFunction]] = None,
-    tokenizer: Optional[StringTokenizer] = None, minsize: Optional[int] = 2,
+    tokenizer: Optional[Tokenizer] = None, minsize: Optional[int] = 2,
     remove_duplicates: Optional[bool] = True, threads: Optional[int] = None
 ) -> List[Cluster]:
     """Run kNN clustering on a set of values that have been grouped using
@@ -232,7 +232,7 @@ def knn_collision_clusters(
     keys: callable or ValueFunction, default=None
         Function that is used to generate keys for values. By default the
         token fingerprint generator is used.
-    tokenizer: openclean.function.token.base.StringTokenizer, default=None
+    tokenizer: openclean.function.token.base.Tokenizer, default=None
         Generator for tokens that are used to group string values in the
         first step of the algorithm. By default, n-grams of length 6 are
         used as blocking tokens.
@@ -259,6 +259,7 @@ def knn_collision_clusters(
     group_clusters = knn_clusters(
         values=groups_map.keys(),
         sim=sim,
+        tokenizer=tokenizer,
         minsize=1,
         remove_duplicates=remove_duplicates
     )

@@ -12,10 +12,10 @@ substring of length n.
 from typing import List, Optional
 
 from openclean.data.types import Scalar
-from openclean.function.token.base import StringTokenizer
+from openclean.function.token.base import Tokenizer, Token
 
 
-class NGrams(StringTokenizer):
+class NGrams(Tokenizer):
     """Split values into lists of n-grams. n-grams are substrings of length n.
     Provides the option to pad stings with special characters to the left and
     right before computing n-grams. That is, if a left (right) padding character
@@ -45,7 +45,7 @@ class NGrams(StringTokenizer):
         self.pleft = pleft
         self.pright = pright
 
-    def tokens(self, value: Scalar) -> List[str]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of n-grams. If the value
         length is not greater than n and no padding was specified, the returned
         list will only contain the given value.
@@ -54,10 +54,12 @@ class NGrams(StringTokenizer):
         ----------
         value: scalar
             Value that is converted into a list of n-grams.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
-        list of string
+        list of openclean.function.token.base.Token
         """
         # Add left and right padding if specified.
         if self.pleft:
@@ -70,5 +72,5 @@ class NGrams(StringTokenizer):
         # Split value into n-grams.
         result = list()
         for i in range(len(value) - (self.n - 1)):
-            result.append(value[i: i + self.n])
+            result.append(Token(value=value[i: i + self.n], rowidx=rowidx))
         return result

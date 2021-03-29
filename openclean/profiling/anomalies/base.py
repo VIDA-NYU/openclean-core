@@ -20,7 +20,7 @@ class AnomalyDetector(DistinctSetProfiler):
     frame or a metadata object) as input and return a list of values that were
     identified as outliers.
     """
-    def find(self, values: Iterable[Value]) -> List[Union[Dict, Value]]:
+    def find(self, values: Union[Iterable[Value], Counter]) -> List[Union[Dict, Value]]:
         """Identify values in a given set of values that are classified as
         outliers or anomalities. Returns a list of identified values.
 
@@ -33,4 +33,4 @@ class AnomalyDetector(DistinctSetProfiler):
         -------
         list
         """
-        return self.process(Counter(values))
+        return self.process(values) if isinstance(values, Counter) else self.process(Counter(values))

@@ -18,7 +18,8 @@ from openclean.data.schema import as_list, select_clause
 from openclean.data.stream.base import DataReader
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import Columns, Scalar, Schema
+from openclean.data.types import Columns, Scalar, Schema, Value
+from openclean.cluster.base import Cluster, Clusterer
 from openclean.function.eval.base import EvalFunction
 from openclean.function.matching.base import StringMatcher
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
@@ -100,6 +101,24 @@ class DataPipeline(object):
             pipeline=self.pipeline + [op]
         )
 
+    def cluster(self, clusterer: Clusterer) -> List[Cluster]:
+        """Cluster values in a data stream.
+
+        This operator will create a distinct set of values in the data stream
+        rows. The collected values are then passed on to the given cluster
+        algorithm.
+
+        Parameters
+        ----------
+        clusterer: openclean.cluster.base.Clusterer
+            Cluster algorithm for distinct values in the data stream.
+
+        Returns
+        -------
+        list of openclean.cluster.base.Cluster
+        """
+        return self.stream(clusterer)
+
     def count(self) -> int:
         """Count the number of rows in a data stream.
 
@@ -125,30 +144,39 @@ class DataPipeline(object):
         # to the pipeline to remove rows from the stream.
         return self.append(Filter(predicate=predicate, negated=True))
 
-    def distinct(
-        self, columns: Optional[Columns] = None, names: Optional[Schema] = None
-    ) -> Counter:
+    def distinct(self, columns: Optional[Columns] = None) -> Counter:
         """Get counts for all distinct values over all columns in the
-        associated data stream. Allows the user to specify te list of columns
+        associated data stream. Allows the user to specify the list of columns
         for which they want to count values.
 
         Parameters
         ----------
         columns: int, str, or list of int or string, default=None
             References to the column(s) for which unique values are counted.
-        names: int, str, or list of int or string, default=None
-            Optional renaming for selected columns.
 
         Returns
         -------
         collections.Counter
         """
-        op = Distinct()
-        # If optional list of columns is given append a select operation first
-        # to filter on those columns before running the data stream.
-        if columns is not None:
-            return self.select(columns=columns, names=names).stream(op)
-        return self.stream(op)
+        return self.stream(Distinct(columns=columns))
+
+    def distinct_values(self, columns: Optional[Columns] = None) -> List[Value]:
+        """Get list all distinct values over all columns in the associated data
+        stream.
+
+        Provides the option to the user to specify the list of columns for
+        which they want to count values.
+
+        Parameters
+        ----------
+        columns: int, str, or list of int or string, default=None
+            References to the column(s) for which unique values are counted.
+
+        Returns
+        -------
+        collections.Counter
+        """
+        return list(self.distinct(columns=columns).keys())
 
     def filter(
         self, predicate: EvalFunction, limit: Optional[int] = None
@@ -376,7 +404,7 @@ class DataPipeline(object):
         ----------
         profilers: int, string, tuple, or list of tuples of column reference
                 and openclean.profiling.base.DataProfiler, default=None
-            Specify he list of columns that are profiled and the profiling
+            Specify the list of columns that are profiled and the profiling
             function. If only a column reference is given (not a tuple) the
             default stream profiler is used for profiling the column.
         default_profiler: class, default=None

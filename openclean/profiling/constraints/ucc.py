@@ -17,7 +17,7 @@ import pandas as pd
 from openclean.data.types import Columns
 
 
-class UniqueColumnCombinationFinder(metaclass=ABCMeta):
+class UniqueColumnCombinationFinder(metaclass=ABCMeta):  # pragma: no cover
     """Interface for operators that discover combinations of unique columns in
     a given data frame.
     """
@@ -36,4 +36,4 @@ class UniqueColumnCombinationFinder(metaclass=ABCMeta):
         -------
         list
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()

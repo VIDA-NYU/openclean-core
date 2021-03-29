@@ -15,3 +15,10 @@ def test_count_distinct_rows(ds):
     assert len(ds.distinct()) == 10
     count_a = ds.distinct('A')
     assert count_a == Counter({'A': 10})
+
+
+def test_count_distinct_values(ds):
+    """Test distinct count over a stream of rows."""
+    values = ds.distinct_values(columns='A')
+    assert len(values) == 1
+    assert 'A' in values

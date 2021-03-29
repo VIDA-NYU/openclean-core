@@ -8,8 +8,17 @@
 """Unit tests for the column profiler."""
 
 from openclean.profiling.column import (
-    DefaultColumnProfiler, DefaultStreamProfiler
+    DefaultColumnProfiler, DefaultStreamProfiler, DistinctValueProfiler
 )
+
+
+def test_profile_distinct_values(schools):
+    """Test profiling a single data frame column using the distinct value
+    profiler that maintains a full list of distinct values.
+    """
+    # -- Use default labels for result ----------------------------------------
+    metadata = DistinctValueProfiler().run(schools, 'school_code')
+    assert len(metadata.distinct()) == 96
 
 
 def test_profile_single_column(schools):
@@ -25,11 +34,8 @@ def test_profile_single_column(schools):
     assert metadata['totalValueCount'] == 100
     assert metadata['emptyValueCount'] == 0
     assert metadata['distinctValueCount'] == 13
-    assert metadata['datatypes'] == {
-        'int': {'distinct': 8, 'total': 30},
-        'float': {'distinct': 1, 'total': 6},
-        'str': {'distinct': 4, 'total': 64}
-    }
+    assert metadata['datatypes']['total'] == {'int': 30, 'float': 6, 'str': 64}
+    assert metadata['datatypes']['distinct'] == {'int': 8, 'float': 1, 'str': 4}
     assert metadata['topValues'] == [
         ("09-12", 38),
         ("MS Core", 21),
@@ -51,4 +57,4 @@ def test_profile_single_column_stream(schools):
     }
     assert metadata['totalValueCount'] == 100
     assert metadata['emptyValueCount'] == 0
-    assert metadata['datatypes'] == {'int':  30, 'float': 6, 'str': 64}
+    assert metadata['datatypes']['total'] == {'int': 30, 'float': 6, 'str': 64}

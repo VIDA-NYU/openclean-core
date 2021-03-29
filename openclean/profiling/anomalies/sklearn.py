@@ -71,6 +71,74 @@ class SklearnOutliers(AnomalyDetector):
         return result
 
 
+class DBSCANOutliers(SklearnOutliers):
+    """Perform outlier detection using DBSCAN clustering."""
+    def __init__(
+        self, features=None, eps=0.5, min_samples=5, metric='minkowski',
+        metric_params=None, algorithm='auto', leaf_size=30, p=2, n_jobs=None
+    ):
+        """Initialize the feature generator and all parameters of the DBSCAN
+        implementation in scikit-learn (documentation copied below).
+
+        Parameters
+        ----------
+        features: openclean.profiling.embedding.base.ValueEmbedder, optional
+            Generator for feature vectors that computes a vector of numeric values
+            for a given scalar value (or tuple).
+        eps : float, default=0.5
+            The maximum distance between two samples for one to be considered
+            as in the neighborhood of the other. This is not a maximum bound
+            on the distances of points within a cluster. This is the most
+            important DBSCAN parameter to choose appropriately for your data set
+            and distance function.
+        min_samples : int, default=5
+            The number of samples (or total weight) in a neighborhood for a point
+            to be considered as a core point. This includes the point itself.
+        metric : string, or callable
+            The metric to use when calculating distance between instances in a
+            feature array. If metric is a string or callable, it must be one of
+            the options allowed by :func:`sklearn.metrics.pairwise_distances` for
+            its metric parameter.
+            If metric is "precomputed", X is assumed to be a distance matrix and
+            must be square during fit.
+            X may be a :term:`sparse graph <sparse graph>`,
+            in which case only "nonzero" elements may be considered neighbors.
+        metric_params : dict, default=None
+            Additional keyword arguments for the metric function.
+        algorithm : {'auto', 'ball_tree', 'kd_tree', 'brute'}, default='auto'
+            The algorithm to be used by the NearestNeighbors module
+            to compute pointwise distances and find nearest neighbors.
+            See NearestNeighbors module documentation for details.
+        leaf_size : int, default=30
+            Leaf size passed to BallTree or cKDTree. This can affect the speed
+            of the construction and query, as well as the memory required
+            to store the tree. The optimal value depends
+            on the nature of the problem.
+        p : float, default=2
+            The power of the Minkowski metric to be used to calculate distance
+            between points.
+        n_jobs : int, default=None
+            The number of parallel jobs to run for neighbors search. ``None`` means
+            1 unless in a :obj:`joblib.parallel_backend` context. ``-1`` means
+            using all processors. See :term:`Glossary <n_jobs>` for more details.
+            If precomputed distance are used, parallel execution is not available
+            and thus n_jobs will have no effect.
+        """
+        # Initialize the DBSCAN estimator
+        from sklearn.cluster import DBSCAN
+        algo = DBSCAN(
+            eps=eps,
+            min_samples=min_samples,
+            metric=metric,
+            metric_params=metric_params,
+            algorithm=algorithm,
+            leaf_size=leaf_size,
+            p=p,
+            n_jobs=n_jobs
+        )
+        super(DBSCANOutliers, self).__init__(algorithm=algo, features=features)
+
+
 # -- Functions for specific scikit-learn outlier detectors --------------------
 
 def dbscan(
@@ -135,9 +203,10 @@ def dbscan(
     -------
     list
     """
-    # Initialize the DBSCAN estimator
-    from sklearn.cluster import DBSCAN
-    algo = DBSCAN(
+    # Run the scikit-learn outlier detection algoritm with DBSCAN as the
+    # estimator.
+    op = DBSCANOutliers(
+        features=features,
         eps=eps,
         min_samples=min_samples,
         metric=metric,
@@ -147,9 +216,6 @@ def dbscan(
         p=p,
         n_jobs=n_jobs
     )
-    # Run the scikit-learn outlier detection algoritm with DBSCAN as the
-    # estimator.
-    op = SklearnOutliers(algorithm=algo, features=features)
     return op.run(df=df, columns=columns)
 
 

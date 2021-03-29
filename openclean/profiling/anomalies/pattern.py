@@ -16,7 +16,7 @@ import pandas as pd
 
 from openclean.data.types import Value
 from openclean.function.eval.base import InputColumn
-from openclean.function.token.base import StringTokenizer
+from openclean.function.token.base import Tokenizer
 from openclean.function.token.split import Split
 from openclean.function.value.normalize.text import TextNormalizer
 from openclean.function.value.regex import IsMatch, IsNotMatch
@@ -112,7 +112,7 @@ class RegExOutliers(ConditionalOutliers):
 
 # -- Token signatures ---------------------------------------------------------
 
-def DefaultTokenizer() -> StringTokenizer:
+def DefaultTokenizer() -> Tokenizer:
     """Create an instance of the default tokenizer."""
     return Split('\\s+', unique=True, preproc=TextNormalizer())
 
@@ -127,7 +127,7 @@ class TokenSignatureOutliers(ConditionalOutliers):
     tokens for that entry.
     """
     def __init__(
-        self, signature: TokenSignature, tokenizer: Optional[StringTokenizer] = None,
+        self, signature: TokenSignature, tokenizer: Optional[Tokenizer] = None,
         exactly_one: Optional[bool] = False
     ):
         """Initialize the token signature and the string tokenizer.
@@ -138,7 +138,7 @@ class TokenSignatureOutliers(ConditionalOutliers):
 
         signature: openclean.profiling.pattern.token_signature.TokenSignature
             Token signature.
-        tokenizer: openclean.function.token.base.StringTokenizer, default=None
+        tokenizer: openclean.function.token.base.Tokenizer, default=None
             Tokenizer that is used to generate tokens for input values.
         exactly_one: bool, default=False
             If the exactly one flag is set a value that matches multiple entries

@@ -18,7 +18,8 @@ from typing import List, Optional
 
 import pandas as pd
 
-from openclean.data.types import Schema
+from openclean.data.schema import as_list, select_clause
+from openclean.data.types import Columns, Schema
 from openclean.data.stream.csv import CSVFile, CSVWriter
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
@@ -141,11 +142,12 @@ class Distinct(StreamConsumer, StreamProcessor):
     """Consumer that popuates a counter with the frequency counts for distinct
     values (or value combinations) in the processed rows for the data stream.
     """
-    def __init__(self):
+    def __init__(self, columns: Optional[Columns] = None):
         """Initialize the counter that maintains the frequency counts for each
         distinct row in the data stream.
         """
         self.counter = Counter()
+        self.columns = columns
 
     def close(self) -> Counter:
         """Closing the consumer returns the populated Counter object.
@@ -172,10 +174,10 @@ class Distinct(StreamConsumer, StreamProcessor):
         row: list
             List of values in the row.
         """
-        if len(row) == 1:
-            self.counter[row[0]] += 1
+        if len(self.columns) == 1:
+            self.counter[row[self.columns[0]]] += 1
         else:
-            self.counter[tuple(row)] += 1
+            self.counter[tuple([row[i] for i in self.columns])] += 1
 
     def open(self, schema: Schema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
@@ -190,7 +192,9 @@ class Distinct(StreamConsumer, StreamProcessor):
         -------
         openclean.operator.stream.consumer.StreamConsumer
         """
-        return Distinct()
+        columns = self.columns if self.columns else schema
+        _, colidx = select_clause(schema, columns=as_list(columns))
+        return Distinct(columns=colidx)
 
 
 class RowCount(StreamConsumer, StreamProcessor):

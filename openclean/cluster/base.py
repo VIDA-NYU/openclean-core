@@ -17,7 +17,9 @@ from abc import ABCMeta, abstractmethod
 from collections import Counter
 from typing import Dict, Iterable, List, Optional, Union
 
-from openclean.data.types import Value
+from openclean.data.types import Schema, Value
+from openclean.operator.stream.consumer import StreamConsumer
+from openclean.operator.stream.processor import StreamProcessor
 
 
 class Cluster(Counter):
@@ -78,7 +80,7 @@ class Cluster(Counter):
         return {key: target for key in self.keys() if key != target}
 
 
-class Clusterer(metaclass=ABCMeta):
+class Clusterer(StreamProcessor, metaclass=ABCMeta):
     """The value clusterer mixin class defines a single method `clusters()` to
     cluster a given list of values.
     """
@@ -100,6 +102,71 @@ class Clusterer(metaclass=ABCMeta):
         list of openclean.cluster.base.Cluster
         """
         raise NotImplementedError()  # pragma: no cover
+
+    def open(self, schema: Schema) -> StreamConsumer:
+        """Factory pattern for stream consumer.
+
+        Returns an instance of the stream clusterer that will collect the
+        distinct values in the stream and then call the cluster method of
+        this clusterer.
+
+        Parameters
+        ----------
+        schema: list of string
+            List of column names in the data stream schema.
+
+        Returns
+        -------
+        openclean.cluster.base.StreamClusterer
+        """
+        return StreamClusterer(clusterer=self)
+
+
+class StreamClusterer(StreamConsumer):
+    """Cluster values in a stream. This implementation will create a set of
+    distinct values in the stream together with their frequency counts. It will
+    then apply a given cluster algorithm on the created value set.
+    """
+    def __init__(self, clusterer: Clusterer):
+        """Initialize the cluster algorithm and the internal value counter.
+
+        Parameters
+        ----------
+        clusterer: openclean.cluster.base.Clusterer
+            Cluster algorithm that is applied on the set of distinct values
+            that is generated from the data stream.
+        """
+        self.clusterer = clusterer
+        self.counter = Counter()
+
+    def close(self) -> List[Cluster]:
+        """Closing the consumer returns the result of applying the associated
+        clusterer on the collected set of distinct values.
+
+        Returns
+        -------
+        list of openclean.cluster.base.Cluster
+        """
+        return self.clusterer.clusters(self.counter)
+
+    def consume(self, rowid: int, row: List):
+        """Add the values in a given row to the internal counter.
+
+        If the row only has one value this value will be used as the key for
+        the counter. For rows with multiple values the values in the row will
+        be concatenated (separated by a blank space) to a single string value.
+
+        Parameters
+        -----------
+        rowid: int
+            Unique row identifier
+        row: list
+            List of values in the row.
+        """
+        if len(row) == 1:
+            self.counter[row[0]] += 1
+        else:
+            self.counter[' '.join([str(v) for v in row])] += 1
 
 
 # -- Helper Classes -----------------------------------------------------------
