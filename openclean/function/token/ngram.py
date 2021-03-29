@@ -45,7 +45,7 @@ class NGrams(Tokenizer):
         self.pleft = pleft
         self.pright = pright
 
-    def tokens(self, value: Scalar) -> List[Token]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of n-grams. If the value
         length is not greater than n and no padding was specified, the returned
         list will only contain the given value.
@@ -54,6 +54,8 @@ class NGrams(Tokenizer):
         ----------
         value: scalar
             Value that is converted into a list of n-grams.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
@@ -70,5 +72,5 @@ class NGrams(Tokenizer):
         # Split value into n-grams.
         result = list()
         for i in range(len(value) - (self.n - 1)):
-            result.append(Token(value[i: i + self.n]))
+            result.append(Token(value=value[i: i + self.n], rowidx=rowidx))
         return result

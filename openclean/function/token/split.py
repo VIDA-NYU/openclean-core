@@ -67,7 +67,7 @@ class ChartypeSplit(Tokenizer):
                 return label
         return None
 
-    def tokens(self, value: Scalar) -> List[Token]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of string tokens. If a
         given value cannot be converted into tokens None should be returned.
 
@@ -78,6 +78,8 @@ class ChartypeSplit(Tokenizer):
         ----------
         value: scalar
             Value that is converted into a list of tokens.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
@@ -97,12 +99,11 @@ class ChartypeSplit(Tokenizer):
             next_type = self.get_type(value[i])
             if prev_type != next_type:
                 # Add homogeneous token from start to previous postion.
-                tokens.append(Token(value[start:i], token_type=prev_type))
+                tokens.append(Token(value[start:i], token_type=prev_type, rowidx=rowidx))
                 start = i
                 prev_type = next_type
         # Ensure to add the homogenous suffix if necessary.
-        if start < len(value):
-            tokens.append(Token(value[start:], token_type=prev_type))
+        tokens.append(Token(value[start:], token_type=prev_type, rowidx=rowidx))
         return tokens
 
 
@@ -145,7 +146,7 @@ class Split(Tokenizer):
         self.preproc = preproc
         self.subtokens = subtokens
 
-    def tokens(self, value: Scalar) -> List[Token]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Convert a given scalar values into a list of string tokens. If a
         given value cannot be converted into tokens None should be returned.
 
@@ -156,6 +157,8 @@ class Split(Tokenizer):
         ----------
         value: scalar
             Value that is converted into a list of tokens.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
@@ -168,7 +171,7 @@ class Split(Tokenizer):
         if self.preproc is not None:
             value = self.preproc(value)
         # Use split and the defined pattern to generate initial token list.
-        tokens = [Token(t) for t in filter(None, re.split(self.pattern, value))]
+        tokens = [Token(value=t, rowidx=rowidx) for t in filter(None, re.split(self.pattern, value))]
         # Remove duplicates if the unique flag is True.
         if self.unique:
             tokens = list(set(tokens))

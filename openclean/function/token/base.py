@@ -286,7 +286,7 @@ class Tokens(PreparedFunction, Tokenizer):
         """
         return self.delim.join(self.tokens(value))
 
-    def tokens(self, value: Scalar) -> List[Token]:
+    def tokens(self, value: Scalar, rowidx: Optional[int] = None) -> List[Token]:
         """Tokenize the given value using the associated tokenizer. Then modify
         the tokens with the optional token transformer.
 
@@ -294,12 +294,14 @@ class Tokens(PreparedFunction, Tokenizer):
         ----------
         value: scalar
             Value that is converted into a list of tokens.
+        rowidx: int, default=None
+            Optional index of the dataset row that the value originates from.
 
         Returns
         -------
         list of openclean.function.token.base.Token
         """
-        tokens = self.tokenizer.tokens(value)
+        tokens = self.tokenizer.tokens(value=value, rowidx=rowidx)
         if self.transformer is not None:
             tokens = self.transformer.transform(tokens)
         return tokens
