@@ -16,3 +16,15 @@
 
 * Standardize parameter names for sample methods (\#115)
 * Bug fix for `openclean-notebook`
+
+
+### 0.3.0 - 2021-03-29
+
+* Add `openclean.function.token.base.Token` as separate class.
+* Rename `openclean.function.token.base.StringTokenizer` to `Tokenizer`
+* Adjust token transformer and tokenizer for new Token class.
+* Change structure of datatype count in column profiler.
+* Option to get set of conflicting values from `DataFrameGrouping` groups.
+* Multi-threading for `ValueFunction.apply()`.
+* Separate DBSCAN outlier class.
+* Move us-street name functions to `openclean-geo`.
