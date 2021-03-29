@@ -25,7 +25,7 @@ def test_token_to_tuple():
 def test_token_type():
     """Test token type values."""
     t = Token(value='a', token_type='b')
-    assert t == 'a'
+    assert t.value == 'a'
     assert t.type() == 'b'
     assert t.regex_type == 'b'
     t.regex_type = 'c'
