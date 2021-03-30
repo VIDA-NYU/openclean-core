@@ -28,3 +28,8 @@
 * Multi-threading for `ValueFunction.apply()`.
 * Separate DBSCAN outlier class.
 * Move us-street name functions to `openclean-geo`.
+
+
+### 0.3.1 - 2021-03-30
+
+* Add optional version parameter when requesting metadata for a dataset version in `openclean.engine.dataset.DatasetHandle`.
