@@ -49,7 +49,7 @@ class DatasetHandle(metaclass=ABCMeta):
         self.is_sample = is_sample
         self._log = OperationLog(snapshots=store.snapshots())
 
-    def checkout(self, version: Optional[str] = None) -> pd.DataFrame:
+    def checkout(self, version: Optional[int] = None) -> pd.DataFrame:
         """Checkout a dataset snapshot.
 
         The optional identifier references a dataset snapshot via an operation
@@ -58,7 +58,7 @@ class DatasetHandle(metaclass=ABCMeta):
 
         Parameters
         ----------
-        version: str, default=None
+        version: int, default=None
             Identifier for the operation log entry that represents the the
             dataset version that is being checked out.
 
@@ -163,14 +163,20 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         return list(self._log)
 
-    def metadata(self) -> MetadataStore:
+    def metadata(self, version: Optional[int] = None) -> MetadataStore:
         """Get metadata that is associated with the current dataset version.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Identifier for the dataset version for which the metadata is
+            being fetched.
 
         Returns
         -------
         openclean.data.metadata.base.MetadataStore
         """
-        return self.store.metadata()
+        return self.store.metadata(version=version)
 
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
@@ -229,7 +235,7 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         return self._log.last_version()
 
-    def rollback(self, version: str) -> pd.DataFrame:
+    def rollback(self, version: int) -> pd.DataFrame:
         """Rollback all changes including the given dataset version.
 
         That is, we rollback all changes that occurred at and after the
@@ -246,7 +252,7 @@ class DatasetHandle(metaclass=ABCMeta):
 
         Parameters
         ----------
-        version: string
+        version: int
             Unique log entry version.
 
         Returns

@@ -115,7 +115,7 @@ class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
         return result
 
     @abstractmethod
-    def find(self, values):  # pragma: no cover
+    def find(self, values):
         """Discover patterns like regular expressions in a given sequence of
         (distinct) values. Returns a list of objects representing the
         discovered patterns.
