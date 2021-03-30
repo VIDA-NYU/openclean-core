@@ -26,7 +26,7 @@ takes at least the following arguments:
 """
 
 from flowserv.model.parameter.factory import ParameterDeserializer
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import dill
 
@@ -55,8 +55,8 @@ class FunctionHandle(ObjectHandle):
     def __init__(
         self, func: Callable, name: Optional[str] = None, namespace: Optional[str] = None,
         label: Optional[str] = None, description: Optional[str] = None,
-        columns: Optional[int] = None, outputs: Optional[int] = None,
-        parameters: Optional[List[Parameter]] = None
+        columns: Optional[int] = None, collabels: Optional[Union[str, List[str]]] = None,
+        outputs: Optional[int] = None, parameters: Optional[List[Parameter]] = None
     ):
         """Initialize the object properties.
 
@@ -80,6 +80,9 @@ class FunctionHandle(ObjectHandle):
             each column plus arguments for any additional parameter. The
             column values will be the first arguments that are passed to the
             registered function.
+        collabels: string or list of string, default=None
+            Display labels for the nput columns. If given the number of values
+            has to match the ``columns`` value.
         outputs: int, default=None
             Defines the number of scalar output values that the registered
             function returns. By default it is assumed that the function will
@@ -99,6 +102,15 @@ class FunctionHandle(ObjectHandle):
         self.columns = columns if columns is not None else 1
         self.outputs = outputs if outputs is not None else 1
         self.parameters = parameters if parameters is not None else list()
+        # Get the column labels from the function code descriptor (if possible).
+        if not collabels:
+            try:
+                collabels = list(func.__code__.co_varnames)[:self.columns]
+            except AttributeError:
+                pass
+        elif len(collabels) != self.columns:
+            raise ValueError('expected {} column labels'.format(self.columns))
+        self.collabels = collabels
         # The function handle can be used as a substitue for the registered
         # function. Use the function name as the name for the handle.
         self.__name__ = func.__name__
@@ -134,6 +146,7 @@ class FunctionFactory(ObjectFactory):
             label=descriptor.get('label'),
             description=descriptor.get('description'),
             columns=descriptor['columns'],
+            collabels=descriptor['columnLabels'],
             outputs=descriptor['outputs'],
             parameters=[
                 ParameterDeserializer.from_dict(obj) for obj in descriptor['parameters']
@@ -156,6 +169,7 @@ class FunctionFactory(ObjectFactory):
         """
         descriptor = object.to_dict()
         descriptor['columns'] = object.columns
+        descriptor['columnLabels'] = object.collabels
         descriptor['outputs'] = object.outputs
         descriptor['parameters'] = [p.to_dict() for p in object.parameters]
         data = dill.dumps(object.func).decode(encoding=DEFAULT_ENCODING)

@@ -7,6 +7,8 @@
 
 """Unit tests for (de-)serialization of function handles."""
 
+import pytest
+
 from openclean.engine.object.function import FunctionHandle, FunctionFactory
 from openclean.engine.object.function import Int
 
@@ -27,6 +29,7 @@ def test_serialize_function():
     assert f.label is None
     assert f.description is None
     assert f.columns == 1
+    assert f.collabels == ['n']
     assert f.outputs == 1
     assert f.parameters == []
     f.func(0.1)
@@ -38,6 +41,7 @@ def test_serialize_function():
         label='My Name',
         description='Just a test',
         columns=2,
+        collabels=['a', 'b'],
         outputs=3,
         parameters=[Int('sleep')]
     )
@@ -48,7 +52,21 @@ def test_serialize_function():
     assert f.label == 'My Name'
     assert f.description == 'Just a test'
     assert f.columns == 2
+    assert f.collabels == ['a', 'b']
     assert f.outputs == 3
     assert len(f.parameters) == 1
     assert f.parameters[0].is_int()
     f.func(0.1)
+    # Error case
+    with pytest.raises(ValueError):
+        FunctionHandle(
+            func=my_func,
+            name='myname',
+            namespace='mynamespace',
+            label='My Name',
+            description='Just a test',
+            columns=2,
+            collabels=['a'],
+            outputs=3,
+            parameters=[Int('sleep')]
+        )
