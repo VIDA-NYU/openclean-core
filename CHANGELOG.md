@@ -33,3 +33,9 @@
 ### 0.3.1 - 2021-03-30
 
 * Add optional version parameter when requesting metadata for a dataset version in `openclean.engine.dataset.DatasetHandle`.
+
+
+### 0.3.2 - 2021-04-06
+
+* Make checking out a committed dataset in the `openclean.data.archive.base.ArchiveStore` optional.
+* Enable cache refresh for cached datasets in `openclean.data.archive.cache.CachedDatastore`.

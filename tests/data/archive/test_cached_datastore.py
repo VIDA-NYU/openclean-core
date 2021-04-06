@@ -24,24 +24,30 @@ def test_cache_dataframe(dataset, store):
     """Test maintaining the last dataset in the cache."""
     cached_store = CachedDatastore(datastore=store)
     # -- First snapshot -------------------------------------------------------
-    df = cached_store.commit(df=dataset)
-    assert df.shape == (2, 3)
+    df_1 = cached_store.commit(df=dataset)
+    assert df_1.shape == (2, 3)
     assert cached_store._cache is not None
     assert cached_store._cache.df.shape == (2, 3)
     assert cached_store._cache.version == 0
     assert cached_store.last_version() == 0
-    df = cached_store.checkout()
-    assert df.shape == (2, 3)
-    df = df[df['A'] == 1]
+    df_1 = cached_store.checkout()
+    assert df_1.shape == (2, 3)
+    df_2 = df_1[df_1['A'] == 1]
     # -- Second snapshot ------------------------------------------------------
-    df = cached_store.commit(df=df)
-    assert df.shape == (1, 3)
+    df_2 = cached_store.commit(df=df_2)
+    assert df_2.shape == (1, 3)
     assert cached_store._cache.df.shape == (1, 3)
     assert cached_store._cache.version == 1
     assert len(cached_store.snapshots()) == 2
     # -- Checkout first snapshot ----------------------------------------------
-    df = cached_store.checkout(version=0)
-    assert df.shape == (2, 3)
+    df_1 = cached_store.checkout(version=0)
+    assert df_1.shape == (2, 3)
+    assert cached_store._cache.df.shape == (2, 3)
+    assert cached_store._cache.version == 0
+    # -- Refresh cache --------------------------------------------------------
+    cached_store._cache.df = df_2
+    df_1 = cached_store.checkout(version=0, no_cache=True)
+    assert df_1.shape == (2, 3)
     assert cached_store._cache.df.shape == (2, 3)
     assert cached_store._cache.version == 0
 

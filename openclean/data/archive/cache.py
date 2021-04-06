@@ -45,7 +45,9 @@ class CachedDatastore(ArchiveStore):
         self.datastore = datastore
         self._cache = None
 
-    def checkout(self, version: Optional[int] = None) -> pd.DataFrame:
+    def checkout(
+        self, version: Optional[int] = None, no_cache: Optional[bool] = False
+    ) -> pd.DataFrame:
         """Get a specific version of a dataset. The dataset snapshot is
         identified by the unique version identifier.
 
@@ -55,6 +57,9 @@ class CachedDatastore(ArchiveStore):
         ----------
         version: int
             Unique dataset version identifier.
+        no_cache: bool, default=None
+            If True, ignore cached dataset version and checkout the dataset
+            from the associated data store.
 
         Returns
         -------
@@ -68,7 +73,7 @@ class CachedDatastore(ArchiveStore):
         if version is None:
             version = self.datastore.last_version()
         # Serve dataset from cache if present.
-        if self._cache is not None:
+        if self._cache is not None and not no_cache:
             # If the requested version matches the cached version return the
             # cached data frame.
             if version == self._cache.version:
@@ -79,9 +84,13 @@ class CachedDatastore(ArchiveStore):
         self._cache = CacheEntry(df=df, version=version)
         return df
 
-    def commit(self, df: pd.DataFrame, action: Optional[ActionHandle] = None) -> pd.DataFrame:
-        """Insert a new version for a dataset. Returns the inserted data frame
-        (after potentially modifying the row indexes).
+    def commit(
+        self, df: pd.DataFrame, action: Optional[ActionHandle] = None,
+        checkout: Optional[bool] = False
+    ) -> pd.DataFrame:
+        """Insert a new version for a dataset.
+
+        Returns the inserted data frame with potentially modified row indexes.
 
         Parameters
         ----------
@@ -89,6 +98,12 @@ class CachedDatastore(ArchiveStore):
             Data frame containing the new dataset version that is being stored.
         action: openclean.data.archive.base.ActionHandle, default=None
             Optional handle of the action that created the new dataset version.
+        checkout: bool, default=False
+            Checkout the commited snapshot and return the result. This option
+            is required only if the row index of the given data frame has been
+            modified by the commit operation, i.e., if the index of the given
+            data frame contained non-integers, negative values, or duplicate
+            values.
 
         Returns
         -------
