@@ -70,11 +70,13 @@ class ArchiveStore(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
-    def commit(self, df: pd.DataFrame, action: Optional[ActionHandle] = None) -> pd.DataFrame:
+    def commit(
+        self, df: pd.DataFrame, action: Optional[ActionHandle] = None,
+        checkout: Optional[bool] = False
+    ) -> pd.DataFrame:
         """Insert a new dataset snapshot.
 
-        Returns the inserted data frame (after potentially modifying the row
-        indexes) and the version identifier for the commited version.
+        Returns the inserted data frame with potentially modified row indexes.
 
         Parameters
         ----------
@@ -82,6 +84,12 @@ class ArchiveStore(metaclass=ABCMeta):
             Data frame containing the new dataset version that is being stored.
         action: openclean.data.archive.base.ActionHandle, default=None
             Optional handle of the action that created the new dataset version.
+        checkout: bool, default=False
+            Checkout the commited snapshot and return the result. This option
+            is required only if the row index of the given data frame has been
+            modified by the commit operation, i.e., if the index of the given
+            data frame contained non-integers, negative values, or duplicate
+            values.
 
         Returns
         -------

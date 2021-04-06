@@ -18,7 +18,7 @@ dedicated methods to access the object stores for different types.
 """
 
 from __future__ import annotations
-from typing import Callable, Iterable, List, Optional
+from typing import Callable, Iterable, List, Optional, Union
 
 from openclean.data.mapping import Mapping
 from openclean.data.store.mem import VolatileDataStore
@@ -69,8 +69,8 @@ class ObjectLibrary(object):
     def eval(
         self, name: Optional[str] = None, namespace: Optional[str] = None,
         label: Optional[str] = None, description: Optional[str] = None,
-        columns: Optional[int] = None, outputs: Optional[int] = None,
-        parameters: Optional[List[Parameter]] = None
+        columns: Optional[int] = None, collabels: Optional[Union[str, List[str]]] = None,
+        outputs: Optional[int] = None, parameters: Optional[List[Parameter]] = None
     ) -> Callable:
         """Decorator that adds a new function to the registered set of data
         frame transformers.
@@ -93,6 +93,9 @@ class ObjectLibrary(object):
             each column plus arguments for any additional parameter. The
             column values will be the first arguments that are passed to the
             registered function.
+        collabels: string or list of string, default=None
+            Display labels for the nput columns. If given the number of values
+            has to match the ``columns`` value.
         outputs: int, default=None
             Defines the number of scalar output values that the registered
             function returns. By default it is assumed that the function will
@@ -118,6 +121,7 @@ class ObjectLibrary(object):
                 label=label,
                 description=description,
                 columns=columns,
+                collabels=collabels,
                 outputs=outputs,
                 parameters=parameters
             )
