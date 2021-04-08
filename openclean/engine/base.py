@@ -17,6 +17,7 @@ lookup tables, etc..
 from histore.archive.manager.base import ArchiveManager
 from histore.archive.manager.mem import VolatileArchiveManager
 from histore.archive.manager.persist import PersistentArchiveManager
+from histore.archive.serialize.base import COMPACT
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
@@ -197,7 +198,11 @@ class OpencleanEngine(object):
         if name in self._datasets:
             raise ValueError("dataset '{}' exists".format(name))
         # Create a new dataset archive with the associated manager.
-        descriptor = self.manager.create(name=name, primary_key=primary_key)
+        descriptor = self.manager.create(
+            name=name,
+            primary_key=primary_key,
+            serializer=COMPACT
+        )
         archive_id = descriptor.identifier()
         archive = self.manager.get(archive_id)
         # Commit the given dataset to the archive. TODO: We should add a LoadOp
