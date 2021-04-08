@@ -39,3 +39,8 @@
 
 * Make checking out a committed dataset in the `openclean.data.archive.base.ArchiveStore` optional.
 * Enable cache refresh for cached datasets in `openclean.data.archive.cache.CachedDatastore`.
+
+
+### 0.3.3 - 2021-04-08
+
+* Use compact serialization for HISTORE archives.
