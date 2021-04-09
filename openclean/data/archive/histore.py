@@ -11,6 +11,7 @@ storage of dataset metadata.
 """
 
 from typing import List, Optional
+from histore.archive.reader import SnapshotReader
 from histore.archive.snapshot import Snapshot
 
 import pandas as pd
@@ -157,3 +158,17 @@ class HISTOREDatastore(ArchiveStore):
         list of histore.archive.snapshot.Snapshot
         """
         return list(self.archive.snapshots())
+
+    def stream(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        histore.archive.reader.SnapshotReader
+        """
+        return self.archive.stream(version=version)

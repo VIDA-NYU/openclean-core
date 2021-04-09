@@ -33,6 +33,7 @@ from openclean.engine.action import LoadOp, OpHandle
 from openclean.engine.dataset import DatasetHandle, FullDataset, DataSample
 from openclean.engine.library import ObjectLibrary
 from openclean.engine.registry import registry
+from openclean.pipeline import DataPipeline
 
 import openclean.util.core as util
 
@@ -165,7 +166,7 @@ class OpencleanEngine(object):
         self, source: Datasource, name: str,
         primary_key: Optional[Union[List[str], str]] = None,
         cached: Optional[bool] = True
-    ) -> pd.DataFrame:
+    ) -> DatasetHandle:
         """Create an initial dataset archive that is idetified by the given
         name. The given data represents the first snapshot in the created
         archive.
@@ -188,7 +189,7 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.engine.dataset.DatasetHandle
 
         Raises
         ------
@@ -225,8 +226,8 @@ class OpencleanEngine(object):
             identifier=archive_id,
             pk=primary_key
         )
-        # Checkout and return the data frame for the loaded datasets snapshot.
-        return datastore.checkout()
+        # Return handle for the created dataset.
+        return self._datasets[name]
 
     def dataset(self, name: str) -> DatasetHandle:
         """Get handle for a dataset. Depending on the type of the dataset this
@@ -265,7 +266,7 @@ class OpencleanEngine(object):
         self, source: Datasource, name: str,
         primary_key: Optional[Union[List[str], str]] = None,
         cached: Optional[bool] = True
-    ) -> pd.DataFrame:
+    ) -> DatasetHandle:
         """Create an initial dataset archive that is idetified by the given
         name. The given data frame represents the first snapshot in the created
         archive.
@@ -290,7 +291,7 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.engine.dataset.DatasetHandle
 
         Raises
         ------
@@ -391,11 +392,11 @@ class OpencleanEngine(object):
         # Get the handle for the referenced dataset and checkout the latest
         # dataset snapshot.
         handle = self.dataset(name)
-        df = self.checkout(name=name)
-        # Create a random sample from the dataset. This is only necessary if
-        # the dataset contains more rows than the sample size.
-        if n < df.shape[0]:
-            df = df.sample(n=n, random_state=random_state)
+        # Create a random sample from the dataset.
+        reader = handle.stream()
+        df = DataPipeline(reader=reader)\
+            .sample(n=n, random_state=random_state)\
+            .to_df()
         # Register the generated sample as a new dataset with a reference to
         # the original dataset to maintain the link to the source of a sampled
         # dataset.

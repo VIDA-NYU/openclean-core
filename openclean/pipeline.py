@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from collections import Counter
+from histore.document.stream import DocumentConsumer, InputStream
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
@@ -18,10 +19,11 @@ from openclean.data.schema import as_list, select_clause
 from openclean.data.stream.base import DataReader
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import Columns, Scalar, Schema, Value
+from openclean.data.types import Column, Columns, Scalar, Schema, Value
 from openclean.cluster.base import Cluster, Clusterer
 from openclean.function.eval.base import EvalFunction
 from openclean.function.matching.base import StringMatcher
+from openclean.operator.stream.archive import ArchiveLoader
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.matching import BestMatches
@@ -39,7 +41,7 @@ from openclean.profiling.datatype.convert import DatatypeConverter
 from openclean.profiling.datatype.operator import Typecast
 
 
-class DataPipeline(object):
+class DataPipeline(InputStream):
     """The data pipeline allows to iterate over the rows that are the result of
     streaming an input data set through a pipeline of stream operators.
 
@@ -64,8 +66,10 @@ class DataPipeline(object):
             List of operators in the pipeline fpr this stream processor.
 
         """
+        super(DataPipeline, self).__init__(
+            columns=columns if columns is not None else reader.columns
+        )
         self.reader = reader
-        self.columns = columns if columns is not None else reader.columns
         self.pipeline = pipeline if pipeline is not None else list()
 
     def __enter__(self):
@@ -338,8 +342,10 @@ class DataPipeline(object):
         return self
 
     def _open_pipeline(self) -> StreamConsumer:
-        """Create stream consumer for all pipeline operators. Connect them an
-        return a reference to the consumer for the first operator.
+        """Create stream consumer for all pipeline operators.
+
+        Connect the created operators to ensure that rows are passed through the
+        pipeline. Returns a reference to the consumer for the first operator.
 
         Returns
         -------
@@ -462,7 +468,7 @@ class DataPipeline(object):
         # Create a stream consumer for the first operator in the pipeline. This
         # consumer is the one that will receive all dataset rows first.
         consumer = self._open_pipeline()
-        # Stream all rows to the pipeline consumer. THe returned result is the
+        # Stream all rows to the pipeline consumer. The returned result is the
         # result that is returned when the consumer is closed by the reader.
         with self.reader.open() as stream:
             for rowid, row in stream:
@@ -539,6 +545,24 @@ class DataPipeline(object):
         any
         """
         return self.append(op).run()
+
+    def stream_to_archive(self, schema: List[Column], version: int, consumer: DocumentConsumer):
+        """Write rows in a stream to an archive consumer.
+
+        This method is used to create an initial dataset archive snapshot from
+        the results of evaluating the data pipieline.
+
+        Parameters
+        ----------
+        schema: list of openclean.data.types.Column
+            List of columns (with unique identifier). The order of entries in
+            this list corresponds to the order of columns in the stream schema.
+        version: int
+            Unique identifier for the new snapshot version.
+        consumer: histore.document.stream.DocumentConsumer
+            Consumer for rows in the stream.
+        """
+        self.stream(ArchiveLoader(schema=schema, version=version, consumer=consumer))
 
     def to_df(self) -> pd.DataFrame:
         """Collect all rows in the stream that are yielded by the associated

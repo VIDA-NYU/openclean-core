@@ -19,9 +19,9 @@ def test_recreate_engine(cached, dataset, tmpdir):
     """
     engine = DB(basedir=str(tmpdir), create=True)
     # Create two datasets with a single snapshot.
-    df = engine.create(source=dataset, name='My Data')
+    df = engine.create(source=dataset, name='My Data').checkout()
     assert df.shape == (2, 3)
-    df = engine.create(source=df[df['A'] == 1], name='More Data')
+    df = engine.create(source=df[df['A'] == 1], name='More Data').checkout()
     assert df.shape == (1, 3)
     # Re-create the engine and access the snapshots.
     engine = DB(basedir=str(tmpdir), create=False, cached=cached)
@@ -35,7 +35,7 @@ def test_full_df_checkout(dataset, tmpdir):
     """Test if a full dataset checkout is possible"""
     db = DB(basedir=str(tmpdir), create=True)
     # Create two datasets with a single snapshot.
-    df = db.create(source=dataset, name='test')
+    df = db.create(source=dataset, name='test').checkout()
     assert df.shape == (2, 3)
 
     df1 = df.copy(deep=True)
@@ -54,7 +54,7 @@ def test_full_df_rollback(dataset, tmpdir):
     """Test rollback of a full dataset."""
     db = DB(basedir=str(tmpdir), create=True)
     # Create dataset with two snapshot.
-    df = db.create(source=dataset, name='test')
+    df = db.create(source=dataset, name='test').checkout()
     df1 = df.copy(deep=True)
     df1['A'] = df1['A'] + 1
     db.commit(name='test', df=df1)

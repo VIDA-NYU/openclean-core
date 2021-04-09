@@ -13,6 +13,7 @@ operations that use functions from the command registry.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from histore.archive.base import VolatileArchive
+from histore.archive.reader import SnapshotReader
 from histore.archive.manager.base import ArchiveManager
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -269,6 +270,20 @@ class DatasetHandle(metaclass=ABCMeta):
                 return self.checkout()
         # Raise a KeyError if no log entry with the given identifier was found.
         raise KeyError("unknown snapshot '{}'".format(version))
+
+    def stream(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        histore.archive.reader.SnapshotReader
+        """
+        return self.store.stream(version=version)
 
 
 class FullDataset(DatasetHandle):

@@ -10,8 +10,10 @@ versions of a data frame.
 """
 
 from abc import ABCMeta, abstractmethod
+from histore.archive.reader import SnapshotReader
 from histore.archive.snapshot import Snapshot
 from histore.document.csv.base import CSVFile
+from histore.document.stream import InputStream
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -21,7 +23,7 @@ from openclean.data.metadata.base import MetadataStore
 
 """Type aliases for API methods."""
 # Data sources for loading are either pandas data frames or references to files.
-Datasource = Tuple[pd.DataFrame, CSVFile, str]
+Datasource = Tuple[pd.DataFrame, CSVFile, str, InputStream]
 
 
 class ActionHandle(metaclass=ABCMeta):
@@ -164,5 +166,20 @@ class ArchiveStore(metaclass=ABCMeta):
         Raises
         ------
         ValueError
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def stream(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        histore.archive.reader.SnapshotReader
         """
         raise NotImplementedError()  # pragma: no cover

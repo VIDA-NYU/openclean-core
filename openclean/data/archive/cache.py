@@ -10,6 +10,7 @@ memory.
 """
 
 from dataclasses import dataclass
+from histore.archive.reader import SnapshotReader
 from histore.archive.snapshot import Snapshot
 from typing import List, Optional
 
@@ -17,6 +18,7 @@ import pandas as pd
 
 from openclean.data.archive.base import ActionHandle, ArchiveStore
 from openclean.data.metadata.base import MetadataStore
+from openclean.data.stream.df import DataFrameStream
 
 
 @dataclass
@@ -39,7 +41,7 @@ class CachedDatastore(ArchiveStore):
 
         Parameters
         ----------
-        datastore: openclean.data.archive.base.Datastore
+        datastore: openclean.data.archive.base.ArchiveStore
             Reference to the datastore that persists the datasets.
         """
         self.datastore = datastore
@@ -178,3 +180,25 @@ class CachedDatastore(ArchiveStore):
         ValueError
         """
         return self.datastore.snapshots()
+
+    def stream(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        histore.archive.reader.SnapshotReader
+        """
+        # Get the latest dataset version if the argument is None.
+        if version is None:
+            version = self.datastore.last_version()
+        # If the requested version matches the cached version return a
+        # stream for the cached data frame.
+        if self._cache is not None:
+            if version == self._cache.version:
+                return DataFrameStream(self._cache.df)
+        return self.datastore.stream(version=version)
