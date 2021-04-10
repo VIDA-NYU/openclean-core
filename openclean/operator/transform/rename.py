@@ -127,7 +127,7 @@ class Rename(StreamProcessor, DataFrameTransformer):
             except IndexError as ex:
                 raise ValueError(ex)
             if isinstance(col, Column):
-                col = Column(colid=col.colid, name=self.names[nidx])
+                col = Column(colid=col.colid, name=self.names[nidx], colidx=col.colidx)
             else:
                 col = self.names[nidx]
             renamed_columns[cidx] = col
