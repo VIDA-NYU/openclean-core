@@ -17,7 +17,7 @@ from abc import ABCMeta, abstractmethod
 from collections import Counter
 from typing import Dict, Iterable, List, Optional, Union
 
-from openclean.data.types import Schema, Value
+from openclean.data.types import DatasetSchema, Value
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 
@@ -103,7 +103,7 @@ class Clusterer(StreamProcessor, metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer.
 
         Returns an instance of the stream clusterer that will collect the

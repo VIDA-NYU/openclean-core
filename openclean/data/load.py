@@ -12,12 +12,12 @@ import pandas as pd
 from typing import Optional
 
 from openclean.data.stream.csv import CSVFile
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.profiling.datatype.convert import DatatypeConverter
 
 
 def dataset(
-    filename: str, header: Optional[Schema] = None,
+    filename: str, header: Optional[DatasetSchema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
     typecast: Optional[DatatypeConverter] = None, none_is: Optional[str] = None,
     encoding: Optional[str] = None
@@ -67,7 +67,7 @@ def dataset(
     )
     with file.open() as reader:
         data, index = list(), list()
-        for rowid, row in reader:
+        for _, rowid, row in reader:
             if typecast is not None:
                 row = [typecast.cast(v) for v in row]
             data.append(row)

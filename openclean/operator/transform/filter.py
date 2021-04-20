@@ -12,7 +12,7 @@ from typing import Optional
 import pandas as pd
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.function.eval.base import EvalFunction
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamFunctionHandler
@@ -91,7 +91,7 @@ class Filter(StreamProcessor, DataFrameTransformer):
         self.predicate = predicate
         self.negated = negated
 
-    def open(self, schema: Schema) -> StreamFunctionHandler:
+    def open(self, schema: DatasetSchema) -> StreamFunctionHandler:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that filters rows in a data stream using an stream
         function representing the filter predicate.

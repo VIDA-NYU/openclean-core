@@ -1,7 +1,7 @@
 from typing import Optional
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.function.matching.base import StringMatcher
 from openclean.data.mapping import Mapping
 from openclean.operator.stream.consumer import StreamConsumer
@@ -64,7 +64,7 @@ class BestMatches(StreamConsumer, StreamProcessor):
         if self.include_vocab or val not in self.matcher.vocabulary:
             self.mapping.add(val, self.matcher.find_matches(val))
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         best matches consumer.
 

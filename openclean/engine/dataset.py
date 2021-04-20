@@ -12,14 +12,11 @@ operations that use functions from the command registry.
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from histore.archive.base import VolatileArchive
-from histore.archive.reader import SnapshotReader
-from histore.archive.manager.base import ArchiveManager
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import ArchiveStore
+from openclean.data.archive.base import Archive, ArchiveManager, ArchiveStore, SnapshotReader
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
@@ -281,7 +278,7 @@ class DatasetHandle(metaclass=ABCMeta):
 
         Returns
         -------
-        histore.archive.reader.SnapshotReader
+        openclean.data.archive.base.SnapshotReader
         """
         return self.store.stream(version=version)
 
@@ -353,7 +350,7 @@ class DataSample(DatasetHandle):
         """
         # Create a volatile archive for the dataset sample and commit the
         # given data frame as the first snapshot.
-        archive = VolatileArchive()
+        archive = Archive()
         store = CachedDatastore(datastore=HISTOREDatastore(archive))
         store.commit(df, action=SampleOp(args={'n': n, 'randomState': random_state}))
         super(DataSample, self).__init__(store=store, is_sample=True)

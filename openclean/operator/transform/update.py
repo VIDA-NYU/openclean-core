@@ -15,7 +15,7 @@ import pandas as pd
 
 from openclean.data.stream.base import DataRow
 from openclean.data.schema import select_clause
-from openclean.data.types import ColumnRef, Columns, Scalar, Schema
+from openclean.data.types import ColumnRef, Columns, Scalar, DatasetSchema
 from openclean.function.eval.base import Const, EvalFunction, Eval
 from openclean.function.eval.domain import Lookup
 from openclean.function.value.base import ValueFunction
@@ -126,7 +126,7 @@ class Update(StreamProcessor, DataFrameTransformer):
         self.columns = columns
         self.func = get_update_function(func=func, columns=self.columns)
 
-    def open(self, schema: Schema) -> StreamFunctionHandler:
+    def open(self, schema: DatasetSchema) -> StreamFunctionHandler:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that updates values in a data stream row.
 

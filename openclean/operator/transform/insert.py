@@ -14,7 +14,7 @@ from typing import Callable, List, Optional, Tuple, Union
 import pandas as pd
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Scalar, Schema
+from openclean.data.types import Scalar, DatasetSchema
 from openclean.function.eval.base import Const, EvalFunction
 from openclean.function.eval.base import evaluate, to_const_eval, to_eval
 from openclean.operator.base import DataFrameTransformer
@@ -129,7 +129,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
                 values = [Const(None)]
         self.values = values
 
-    def inspos(self, schema: Schema) -> int:
+    def inspos(self, schema: DatasetSchema) -> int:
         """Get the insert position for the new column.
 
         Raises a ValueError if the position is invalid.
@@ -150,7 +150,7 @@ class InsCol(StreamProcessor, DataFrameTransformer):
         else:
             return len(schema)
 
-    def open(self, schema: Schema) -> StreamFunctionHandler:
+    def open(self, schema: DatasetSchema) -> StreamFunctionHandler:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that re-orders values in a data stream row.
 

@@ -13,7 +13,7 @@ from random import Random
 from typing import Any, Optional
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.operator.stream.consumer import ProducingConsumer, StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 
@@ -35,7 +35,7 @@ class Sample(StreamProcessor):
         self.n = n
         self.random_state = random_state
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         random sample generator in a data pipeline.
 
@@ -73,7 +73,7 @@ class SampleCollector(ProducingConsumer):
     downstream consumer at the end of the stream.
     """
     def __init__(
-        self, columns: Schema, n: int, random_state: Optional[int] = None,
+        self, columns: DatasetSchema, n: int, random_state: Optional[int] = None,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the row schema, sample size and the internal row buffer.

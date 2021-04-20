@@ -14,21 +14,19 @@ with an object registry that maintains user-defined objects such as functions,
 lookup tables, etc..
 """
 
-from histore.archive.manager.base import ArchiveManager
-from histore.archive.manager.mem import VolatileArchiveManager
-from histore.archive.manager.persist import PersistentArchiveManager
-from histore.archive.serialize.base import COMPACT
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 import os
 
-from openclean.data.archive.base import Datasource
+from openclean.data.archive.base import ArchiveManager, Datasource, Descriptor
+from openclean.data.archive.base import PersistentArchiveManager, VolatileArchiveManager
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
+from openclean.data.serialize import COMPACT
 from openclean.engine.action import LoadOp, OpHandle
 from openclean.engine.dataset import DatasetHandle, FullDataset, DataSample
 from openclean.engine.library import ObjectLibrary
@@ -201,14 +199,15 @@ class OpencleanEngine(object):
         # Create a new dataset archive with the associated manager.
         descriptor = self.manager.create(
             name=name,
+            doc=source,
             primary_key=primary_key,
-            serializer=COMPACT
+            serializer=COMPACT,
+            snapshot=Descriptor(action=LoadOp().to_dict())
         )
         archive_id = descriptor.identifier()
         archive = self.manager.get(archive_id)
         # Commit the given dataset to the archive. TODO: We should add a LoadOp
         # class to represent the action.
-        archive.commit(doc=source, action=LoadOp().to_dict())
         # Create a datastore to manage the archive and register that datastore
         # with this engine under the given name.
         if self.basedir is not None:

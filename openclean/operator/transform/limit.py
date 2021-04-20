@@ -16,7 +16,7 @@ from typing import Optional
 import pandas as pd
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamConsumer, ProducingConsumer
 from openclean.operator.stream.processor import StreamProcessor
@@ -63,7 +63,7 @@ class Limit(StreamProcessor, DataFrameTransformer):
         """
         self.rows = rows
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that limits the number of rows that are passed on to a
         downstream consumer.
@@ -101,7 +101,7 @@ class LimitConsumer(ProducingConsumer):
     of rows is reached.
     """
     def __init__(
-        self, columns: Schema, limit: int,
+        self, columns: DatasetSchema, limit: int,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the row limit and the downstream consumer.

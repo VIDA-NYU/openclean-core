@@ -9,21 +9,19 @@
 
 from __future__ import annotations
 from collections import Counter
-from histore.document.stream import DocumentConsumer, InputStream
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
 from openclean.data.mapping import Mapping
 from openclean.data.schema import as_list, select_clause
-from openclean.data.stream.base import DataReader
+from openclean.data.stream.base import Document, InputStream
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import Column, Columns, Scalar, Schema, Value
+from openclean.data.types import Columns, Scalar, DatasetSchema, Value
 from openclean.cluster.base import Cluster, Clusterer
 from openclean.function.eval.base import EvalFunction
 from openclean.function.matching.base import StringMatcher
-from openclean.operator.stream.archive import ArchiveLoader
 from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.matching import BestMatches
@@ -48,8 +46,8 @@ class DataPipeline(InputStream):
     The class implements the context manager interface.
     """
     def __init__(
-        self, reader: DataReader,
-        columns: Optional[Schema] = None,
+        self, reader: Document,
+        columns: Optional[DatasetSchema] = None,
         pipeline: Optional[StreamProcessor] = None
     ):
         """Initialize the data stream reader, schema information for the
@@ -81,7 +79,7 @@ class DataPipeline(InputStream):
         return False
 
     def append(
-        self, op: StreamProcessor, columns: Optional[Schema] = None
+        self, op: StreamProcessor, columns: Optional[DatasetSchema] = None
     ) -> DataPipeline:
         """Return a modified stream processer with the given operator appended
         to the stream pipeline.
@@ -241,7 +239,7 @@ class DataPipeline(InputStream):
                 yield rowid, row
 
     def insert(
-        self, names: Schema, pos: Optional[int] = None,
+        self, names: DatasetSchema, pos: Optional[int] = None,
         values: Optional[Union[Callable, Scalar, EvalFunction, List, Tuple]] = None
     ) -> DataPipeline:
         """Insert one or more columns into the rows in the data stream.
@@ -430,7 +428,7 @@ class DataPipeline(InputStream):
         )
         return self.stream(op)
 
-    def rename(self, columns: Columns, names: Schema) -> DataPipeline:
+    def rename(self, columns: Columns, names: DatasetSchema) -> DataPipeline:
         """Rename selected columns in a the schema data of data stream rows.
 
         Parameters
@@ -471,7 +469,7 @@ class DataPipeline(InputStream):
         # Stream all rows to the pipeline consumer. The returned result is the
         # result that is returned when the consumer is closed by the reader.
         with self.reader.open() as stream:
-            for rowid, row in stream:
+            for _, rowid, row in stream:
                 try:
                     consumer.consume(rowid=rowid, row=row)
                 except StopIteration:
@@ -491,7 +489,7 @@ class DataPipeline(InputStream):
         return self.append(Sample(n=n, random_state=random_state))
 
     def select(
-        self, columns: Optional[Columns] = None, names: Optional[Schema] = None
+        self, columns: Optional[Columns] = None, names: Optional[DatasetSchema] = None
     ) -> DataPipeline:
         """Select a given list of columns from the streamed data frame. Columns
         in the resulting data stream may also be renamed using the optional
@@ -545,24 +543,6 @@ class DataPipeline(InputStream):
         any
         """
         return self.append(op).run()
-
-    def stream_to_archive(self, schema: List[Column], version: int, consumer: DocumentConsumer):
-        """Write rows in a stream to an archive consumer.
-
-        This method is used to create an initial dataset archive snapshot from
-        the results of evaluating the data pipieline.
-
-        Parameters
-        ----------
-        schema: list of openclean.data.types.Column
-            List of columns (with unique identifier). The order of entries in
-            this list corresponds to the order of columns in the stream schema.
-        version: int
-            Unique identifier for the new snapshot version.
-        consumer: histore.document.stream.DocumentConsumer
-            Consumer for rows in the stream.
-        """
-        self.stream(ArchiveLoader(schema=schema, version=version, consumer=consumer))
 
     def to_df(self) -> pd.DataFrame:
         """Collect all rows in the stream that are yielded by the associated
@@ -656,21 +636,23 @@ class DataPipeline(InputStream):
         none_as: string, default=None
             String that is used to encode None values in the output file. If
             given, all cell values that are None are substituted by the string.
+        encoding: string, default=None
+            The csv file encoding e.g. utf-8, utf-16 etc.
         """
         file = CSVFile(
             filename=filename,
             delim=delim,
             compressed=compressed,
-            write=True,
-            encoding=encoding
+            encoding=encoding,
+            none_is=none_as
         )
-        return self.stream(Write(file=file, none_as=none_as))
+        return self.stream(Write(file=file))
 
 
 # -- Open file or data frame as pipeline --------------------------------------
 
 def stream(
-    filename: Union[str, pd.DataFrame], header: Optional[Schema] = None,
+    filename: Union[str, pd.DataFrame], header: Optional[DatasetSchema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
     none_is: Optional[str] = None, encoding: Optional[str] = None
 ) -> DataPipeline:

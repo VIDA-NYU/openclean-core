@@ -10,13 +10,11 @@ memory.
 """
 
 from dataclasses import dataclass
-from histore.archive.reader import SnapshotReader
-from histore.archive.snapshot import Snapshot
 from typing import List, Optional
 
 import pandas as pd
 
-from openclean.data.archive.base import ActionHandle, ArchiveStore
+from openclean.data.archive.base import ActionHandle, ArchiveStore, Snapshot, SnapshotReader
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.stream.df import DataFrameStream
 
@@ -191,7 +189,7 @@ class CachedDatastore(ArchiveStore):
 
         Returns
         -------
-        histore.archive.reader.SnapshotReader
+        openclean.data.archive.base.SnapshotReader
         """
         # Get the latest dataset version if the argument is None.
         if version is None:

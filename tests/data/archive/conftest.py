@@ -10,8 +10,7 @@
 import pandas as pd
 import pytest
 
-from histore import PersistentArchiveManager
-
+from openclean.data.archive.base import PersistentArchiveManager
 from openclean.data.archive.histore import HISTOREDatastore
 
 

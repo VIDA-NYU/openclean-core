@@ -13,7 +13,7 @@ from typing import List, Optional
 import pandas as pd
 
 from openclean.data.stream.base import DataRow, StreamFunction
-from openclean.data.types import Schema, Value
+from openclean.data.types import DatasetSchema, Value
 from openclean.function.eval.base import EvalFunction
 
 
@@ -66,7 +66,7 @@ class Rand(EvalFunction):
         """
         return [self.rand.random() for i in range(df.shape[0])]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """The prepare method returns a callable that returns a random number
         for evary input row.
 

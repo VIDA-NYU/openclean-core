@@ -9,7 +9,7 @@
 openclean.
 """
 
-from openclean.data.types import Column, Columns, Schema
+from openclean.data.types import Column, Columns, DatasetSchema
 from openclean.data.schema import as_list
 from openclean.operator.base import DataFrameTransformer
 from openclean.util.core import scalar_pass_through
@@ -54,7 +54,7 @@ class Rename(StreamProcessor, DataFrameTransformer):
     column list being renamed with the respective value in the given names
     list.
     """
-    def __init__(self, columns: Columns, names: Schema):
+    def __init__(self, columns: Columns, names: DatasetSchema):
         """Initialize the list of columns that are being renames and the list
         new column names. The length of both lists has to be equal. If scalar
         values are provided for either columns or names they are converted into
@@ -78,7 +78,7 @@ class Rename(StreamProcessor, DataFrameTransformer):
         if len(self.columns) != len(self.names):
             raise ValueError('incompatible list for columns and names')
 
-    def open(self, schema: Schema) -> StreamFunctionHandler:
+    def open(self, schema: DatasetSchema) -> StreamFunctionHandler:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that has a schema with renamed columns. The associated
         stream function does not manipulate any of the rows.
@@ -96,7 +96,7 @@ class Rename(StreamProcessor, DataFrameTransformer):
         columns = self.rename(schema)
         return StreamFunctionHandler(columns=columns, func=scalar_pass_through)
 
-    def rename(self, schema: Schema) -> Schema:
+    def rename(self, schema: DatasetSchema) -> DatasetSchema:
         """Create a modified dataset schema with renamed columns.
 
         Parameters

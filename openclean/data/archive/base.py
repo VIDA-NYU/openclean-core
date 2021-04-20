@@ -10,20 +10,29 @@ versions of a data frame.
 """
 
 from abc import ABCMeta, abstractmethod
+from histore.archive.base import Archive  # noqa: F401
+from histore.archive.manager.base import ArchiveManager  # noqa: F401
+from histore.archive.manager.mem import VolatileArchiveManager  # noqa: F401
+from histore.archive.manager.persist import PersistentArchiveManager  # noqa: F401
 from histore.archive.reader import SnapshotReader
-from histore.archive.snapshot import Snapshot
+from histore.archive.snapshot import Snapshot, SnapshotListing  # noqa: F401
+from histore.document.base import Document, InputStream
+from histore.document.base import InputDescriptor as Descriptor  # noqa: F401
+from histore.document.mem import Schema  # noqa: F401
 from histore.document.csv.base import CSVFile
-from histore.document.stream import InputStream
 from typing import Dict, List, Optional, Tuple
 
+import os
 import pandas as pd
 
 from openclean.data.metadata.base import MetadataStore
 
+import openclean.config as config
+
 
 """Type aliases for API methods."""
 # Data sources for loading are either pandas data frames or references to files.
-Datasource = Tuple[pd.DataFrame, CSVFile, str, InputStream]
+Datasource = Tuple[pd.DataFrame, CSVFile, str, InputStream, Document]
 
 
 class ActionHandle(metaclass=ABCMeta):
@@ -180,6 +189,114 @@ class ArchiveStore(metaclass=ABCMeta):
 
         Returns
         -------
-        histore.archive.reader.SnapshotReader
+        openclean.data.archive.base.SnapshotReader
         """
         raise NotImplementedError()  # pragma: no cover
+
+
+# -- Archive Functions --------------------------------------------------------
+
+
+def create(
+    dataset: str, doc: Optional[Datasource], primary_key: Optional[List[str]],
+    replace: Optional[bool] = False
+) -> Archive:
+    """Create a new archive for a dataset with the given identifier. If an
+    archive with the given identifier exists it will be replaced (if the
+    replace flag is True) or an error is raised.
+
+    Parameters
+    ----------
+    dataset: string
+        Unique dataset identifier.
+    doc: openclean.data.archive.base.DataSource, default=None
+        Initial dataset snapshot that is loaded into the created archive,
+    primary_key: list of string
+        List of primary key attributes for merging snapshots into the created
+        archive.
+
+    Returns
+    -------
+    histore.archive.base.Archive
+
+    Raises
+    ------
+    ValueError
+    """
+    archives = manager()
+    # Check if an archive with the given identifier exists.
+    for descriptor in archives.list():
+        if descriptor.name() == dataset:
+            if replace:
+                archives.delete(descriptor.identifier())
+                break
+            raise ValueError("dataset '{}' exists".format(dataset))
+    # Create a new archive ad return the archive handle.
+    descriptor = archives.create(
+        name=dataset,
+        doc=doc,
+        primary_key=primary_key
+    )
+    return archives.get(descriptor.identifier())
+
+
+def delete(dataset: str):
+    """Delete the existing archive for a dataset. Raises a ValueError if the
+    dataset is unknown.
+
+    Parameters
+    ----------
+    dataset: string
+        Unique dataset identifier.
+
+    Raises
+    ------
+    ValueError
+    """
+    # Get the master data manager.
+    archives = manager()
+    # Get the existing archive for the dataset. Raises a ValueError if the
+    # dataset is unknown.
+    for descriptor in archives.list():
+        if descriptor.name() == dataset:
+            archives.delete(descriptor.identifier())
+            return
+    raise ValueError("unknown dataset '{}'".format(dataset))
+
+
+def get(dataset: str) -> Archive:
+    """Get the existing archive for a dataset. Raises a ValueError if the
+    dataset is unknown.
+
+    Parameters
+    ----------
+    dataset: string
+        Unique dataset identifier.
+
+    Returns
+    -------
+    histore.archive.base.Archive
+
+    Raises
+    ------
+    ValueError
+    """
+    # Get the master data manager.
+    archives = manager()
+    # Get the existing archive for the dataset. Raises a ValueError if the
+    # dataset is unknown.
+    for descriptor in archives.list():
+        if descriptor.name() == dataset:
+            return archives.get(descriptor.identifier())
+    raise ValueError("unknown dataset '{}'".format(dataset))
+
+
+def manager() -> PersistentArchiveManager:
+    """Get instance of the archive manager that is used to maintain master
+    datasets.
+
+    Returns
+    -------
+    histore.archive.manager.base.ArchiveManager
+    """
+    return PersistentArchiveManager(basedir=os.path.join(config.DATADIR(), 'archives'))

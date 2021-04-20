@@ -19,7 +19,7 @@ from typing import List, Optional
 import pandas as pd
 
 from openclean.data.schema import as_list, select_clause
-from openclean.data.types import Columns, Schema
+from openclean.data.types import Columns, DatasetSchema
 from openclean.data.stream.csv import CSVFile, CSVWriter
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
@@ -57,7 +57,7 @@ class Collector(StreamConsumer, StreamProcessor):
         """
         self.rows.append((rowid, row))
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer for the row collector.
 
@@ -78,7 +78,7 @@ class DataFrame(StreamConsumer, StreamProcessor):
     data stream. This consumer will not accept a downstream consumer as it
     would never send any rows to such a consumer.
     """
-    def __init__(self, columns: Optional[Schema] = None):
+    def __init__(self, columns: Optional[DatasetSchema] = None):
         """Initialize empty lists for data frame columns, rows and the row
         identifier. These lists will be initialized when the consumer receives
         the open signal.
@@ -122,7 +122,7 @@ class DataFrame(StreamConsumer, StreamProcessor):
         self.data.append(row)
         self.index.append(rowid)
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer for the data frame generator.
 
@@ -179,7 +179,7 @@ class Distinct(StreamConsumer, StreamProcessor):
         else:
             self.counter[tuple([row[i] for i in self.columns])] += 1
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer for the distinct values collector.
 
@@ -226,7 +226,7 @@ class RowCount(StreamConsumer, StreamProcessor):
         """
         self.rows += 1
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer for the row counter.
 
@@ -247,24 +247,17 @@ class Write(StreamConsumer, StreamProcessor):
     reference to a CSV file (if instantiated as a processor) or a reference to
     a CSV writer (if instantiated as a consumer).
     """
-    def __init__(
-        self, file: Optional[CSVFile] = None, none_as: Optional[str] = None,
-        writer: Optional[CSVWriter] = None
-    ):
+    def __init__(self, file: Optional[CSVFile] = None, writer: Optional[CSVWriter] = None):
         """Initialize the CSV file and the CSV writer.
 
         Parameters
         ----------
         file: openclean.data.stream.csv.CSVFile
             Reference to the output CSV file.
-        none_as: string, default=None
-            String that is used to encode None values in the output file. If
-            given, all cell values that are None are substituted by the string.
         writer: openclean.data.stream.csv.CSVWriter
             Writer for the output CSV file.
         """
         self.file = file
-        self.none_as = none_as
         self.writer = writer
 
     def close(self):
@@ -285,7 +278,7 @@ class Write(StreamConsumer, StreamProcessor):
         """
         self.writer.write(row)
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer with an open CSV writer.
 
@@ -298,4 +291,6 @@ class Write(StreamConsumer, StreamProcessor):
         -------
         openclean.operator.stream.consumer.StreamConsumer
         """
-        return Write(writer=self.file.write(header=schema, none_as=self.none_as))
+        f = self.file.writer()
+        f.write(schema)
+        return Write(writer=f)

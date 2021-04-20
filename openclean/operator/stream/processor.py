@@ -14,7 +14,7 @@ pipeline is executed.
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.operator.stream.consumer import StreamConsumer
 
 
@@ -27,7 +27,7 @@ class StreamProcessor(metaclass=ABCMeta):
     processing pipeline to filter, manipulate or profile data stream rows.
     """
     @abstractmethod
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer that corresponds to the action that is defined by the
         stream processor.

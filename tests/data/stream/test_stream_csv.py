@@ -46,9 +46,10 @@ def test_read_file_without_header(compressed, tmpdir):
     header = ['A', 'B', 'C', 'D']
     file = CSVFile(tmpfile, header=header, compressed=compressed)
     write_count = 0
-    with file.write() as writer:
+    with file.writer() as writer:
+        writer.write(header)
         with CSVFile(NYC311_FILE).open() as f:
-            for _, row in f:
+            for _, _, row in f:
                 writer.write(row)
                 write_count += 1
     # -- Read the created CSV file with user-provided header ------------------
@@ -56,7 +57,7 @@ def test_read_file_without_header(compressed, tmpdir):
     assert file.columns == header
     read_count = 0
     with file.open() as f:
-        for rowid, row in f:
+        for _, rowid, row in f:
             assert len(row) == len(header)
             read_count += 1
     assert read_count == write_count
@@ -76,10 +77,12 @@ def test_none_converter(tmpdir):
     # Read the file to ensure that 'n' is replaced by None
     file = CSVFile(tmpfile, none_is='n')
     with file.open() as f:
-        rows = [r for _, r in f]
+        rows = [r for _, _, r in f]
     assert rows == [['1', None], [None, '1'], [None, None]]
     # Write the file and replace None with '-'
-    with file.write(header=['A', 'B'], none_as='-') as f:
+    file = CSVFile(tmpfile, none_is='-')
+    with file.writer() as f:
+        f.write(['A', 'B'])
         for row in rows:
             f.write(row)
     with open(tmpfile, 'r') as f:

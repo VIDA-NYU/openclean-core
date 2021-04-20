@@ -11,14 +11,10 @@ storage of dataset metadata.
 """
 
 from typing import List, Optional
-from histore.archive.reader import SnapshotReader
-from histore.archive.snapshot import Snapshot
 
 import pandas as pd
 
-from histore.archive.base import Archive
-
-from openclean.data.archive.base import ActionHandle, ArchiveStore
+from openclean.data.archive.base import Archive, ActionHandle, ArchiveStore, Descriptor, Snapshot, SnapshotReader
 from openclean.data.metadata.base import MetadataStore, MetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 
@@ -93,7 +89,7 @@ class HISTOREDatastore(ArchiveStore):
         """
         self._last_snapshot = self.archive.commit(
             doc=df,
-            action=action.to_dict() if action is not None else None
+            descriptor=Descriptor(action=action.to_dict() if action is not None else None)
         )
         return self.archive.checkout(version=self._last_snapshot.version) if checkout else df
 
@@ -169,6 +165,6 @@ class HISTOREDatastore(ArchiveStore):
 
         Returns
         -------
-        histore.archive.reader.SnapshotReader
+        openclean.data.archive.base.SnapshotReader
         """
         return self.archive.stream(version=version)
