@@ -26,8 +26,8 @@ def test_archive_manager(tmpdir):
     # -- Setup ----------------------------------------------------------------
     os.environ[config.ENV_DATA_DIR] = str(tmpdir)
     # Create two new archive for a given dataset.
-    masterdata.create('First', doc=Schema(['A', 'B']), primary_key=['A'])
-    masterdata.create('Second', doc=Schema(['A', 'B']), primary_key=['A'])
+    masterdata.create('First', source=Schema(['A', 'B']), primary_key=['A'])
+    masterdata.create('Second', source=Schema(['A', 'B']), primary_key=['A'])
     archive = masterdata.get('First')
     archive.commit(DF_1)
     archive = masterdata.get('First')
@@ -37,10 +37,10 @@ def test_archive_manager(tmpdir):
     # -- Re-create archive ----------------------------------------------------
     # Error when providing an existing name without replace.
     with pytest.raises(ValueError):
-        masterdata.create('First', doc=Schema(['A', 'B']), primary_key=['A'])
+        masterdata.create('First', source=Schema(['A', 'B']), primary_key=['A'])
     with pytest.raises(ValueError):
-        masterdata.create('Second', doc=Schema(['A', 'B']), primary_key=['A'])
-    archive = masterdata.create('First', doc=Schema(['A', 'B']), primary_key=['A'], replace=True)
+        masterdata.create('Second', source=Schema(['A', 'B']), primary_key=['A'])
+    archive = masterdata.create('First', source=Schema(['A', 'B']), primary_key=['A'], replace=True)
     archive.commit(DF_1)
     # -- Delete archive -------------------------------------------------------
     with pytest.raises(ValueError):

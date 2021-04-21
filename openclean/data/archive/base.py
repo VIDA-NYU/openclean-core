@@ -16,23 +16,17 @@ from histore.archive.manager.mem import VolatileArchiveManager  # noqa: F401
 from histore.archive.manager.persist import PersistentArchiveManager  # noqa: F401
 from histore.archive.reader import SnapshotReader
 from histore.archive.snapshot import Snapshot, SnapshotListing  # noqa: F401
-from histore.document.base import Document, InputStream
 from histore.document.base import InputDescriptor as Descriptor  # noqa: F401
 from histore.document.mem import Schema  # noqa: F401
-from histore.document.csv.base import CSVFile
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import os
 import pandas as pd
 
 from openclean.data.metadata.base import MetadataStore
+from openclean.data.stream.base import Datasource
 
 import openclean.config as config
-
-
-"""Type aliases for API methods."""
-# Data sources for loading are either pandas data frames or references to files.
-Datasource = Tuple[pd.DataFrame, CSVFile, str, InputStream, Document]
 
 
 class ActionHandle(metaclass=ABCMeta):
@@ -146,6 +140,21 @@ class ArchiveStore(metaclass=ABCMeta):
         raise NotImplementedError()  # pragma: no cover
 
     @abstractmethod
+    def open(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.data.archive.base.SnapshotReader
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
     def rollback(self, version: int) -> pd.DataFrame:
         """Rollback the archive history to the snapshot with the given version
         identifier.
@@ -178,27 +187,12 @@ class ArchiveStore(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    @abstractmethod
-    def stream(self, version: Optional[int] = None) -> SnapshotReader:
-        """Get a stream reader for a dataset snapshot.
-
-        Parameters
-        ----------
-        version: int, default=None
-            Unique version identifier. By default the last version is used.
-
-        Returns
-        -------
-        openclean.data.archive.base.SnapshotReader
-        """
-        raise NotImplementedError()  # pragma: no cover
-
 
 # -- Archive Functions --------------------------------------------------------
 
 
 def create(
-    dataset: str, doc: Optional[Datasource], primary_key: Optional[List[str]],
+    dataset: str, source: Optional[Datasource], primary_key: Optional[List[str]],
     replace: Optional[bool] = False
 ) -> Archive:
     """Create a new archive for a dataset with the given identifier. If an
@@ -209,11 +203,13 @@ def create(
     ----------
     dataset: string
         Unique dataset identifier.
-    doc: openclean.data.archive.base.DataSource, default=None
-        Initial dataset snapshot that is loaded into the created archive,
+    source: openclean.data.archive.base.Datasource, default=None
+        Initial dataset snapshot that is loaded into the created archive.
     primary_key: list of string
         List of primary key attributes for merging snapshots into the created
         archive.
+    replace: bool, default=False
+        Replace an existing archive with the same name if it exists.
 
     Returns
     -------
@@ -234,7 +230,7 @@ def create(
     # Create a new archive ad return the archive handle.
     descriptor = archives.create(
         name=dataset,
-        doc=doc,
+        doc=source,
         primary_key=primary_key
     )
     return archives.get(descriptor.identifier())

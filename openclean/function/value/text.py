@@ -69,7 +69,10 @@ def to_lower(value: Any) -> str:
     -------
     string
     """
-    return str(value).lower()
+    try:
+        return str.lower(value)
+    except TypeError:
+        return value
 
 
 def to_upper(value: Any) -> str:
@@ -85,7 +88,10 @@ def to_upper(value: Any) -> str:
     -------
     string
     """
-    return str(value).upper()
+    try:
+        return str.upper(value)
+    except TypeError:
+        return value
 
 
 def to_title(value: Any) -> str:
@@ -101,4 +107,7 @@ def to_title(value: Any) -> str:
     -------
     string
     """
-    return str(value).title()
+    try:
+        return str.title(value)
+    except TypeError:
+        return value

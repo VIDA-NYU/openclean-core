@@ -176,6 +176,20 @@ class DatasetHandle(metaclass=ABCMeta):
         """
         return self.store.metadata(version=version)
 
+    def open(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.data.archive.base.SnapshotReader
+        """
+        return self.store.open(version=version)
+
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
         sources: Optional[Columns] = None
@@ -267,20 +281,6 @@ class DatasetHandle(metaclass=ABCMeta):
                 return self.checkout()
         # Raise a KeyError if no log entry with the given identifier was found.
         raise KeyError("unknown snapshot '{}'".format(version))
-
-    def stream(self, version: Optional[int] = None) -> SnapshotReader:
-        """Get a stream reader for a dataset snapshot.
-
-        Parameters
-        ----------
-        version: int, default=None
-            Unique version identifier. By default the last version is used.
-
-        Returns
-        -------
-        openclean.data.archive.base.SnapshotReader
-        """
-        return self.store.stream(version=version)
 
 
 class FullDataset(DatasetHandle):

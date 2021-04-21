@@ -392,8 +392,7 @@ class OpencleanEngine(object):
         # dataset snapshot.
         handle = self.dataset(name)
         # Create a random sample from the dataset.
-        reader = handle.stream()
-        df = DataPipeline(reader=reader)\
+        df = DataPipeline(source=handle.open())\
             .sample(n=n, random_state=random_state)\
             .to_df()
         # Register the generated sample as a new dataset with a reference to
@@ -402,6 +401,24 @@ class OpencleanEngine(object):
         ds = DataSample(df=df, original=handle, n=n, random_state=random_state)
         self._datasets[name] = ds
         return df
+
+    def stream(self, name: str, version: Optional[int] = None) -> DataPipeline:
+        """Get a data pipeline for a dataset snapshot.
+
+        Parameters
+        ----------
+        name: string
+            Unique dataset name.
+        version: int, default=None
+                Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        handle = self.dataset(name)
+        # Create a random sample from the dataset.
+        return DataPipeline(source=handle.open(version=version))
 
 
 # -- Engine factory -----------------------------------------------------------

@@ -126,6 +126,20 @@ class HISTOREDatastore(ArchiveStore):
             version = self.last_version()
         return self.metastore.get_store(version=version)
 
+    def open(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.data.archive.base.SnapshotReader
+        """
+        return self.archive.open(version=version)
+
     def rollback(self, version: int) -> pd.DataFrame:
         """Rollback the archive history to the snapshot with the given version
         identifier.
@@ -154,17 +168,3 @@ class HISTOREDatastore(ArchiveStore):
         list of histore.archive.snapshot.Snapshot
         """
         return list(self.archive.snapshots())
-
-    def stream(self, version: Optional[int] = None) -> SnapshotReader:
-        """Get a stream reader for a dataset snapshot.
-
-        Parameters
-        ----------
-        version: int, default=None
-            Unique version identifier. By default the last version is used.
-
-        Returns
-        -------
-        openclean.data.archive.base.SnapshotReader
-        """
-        return self.archive.stream(version=version)

@@ -10,7 +10,9 @@
 from __future__ import annotations
 from typing import Callable, List
 
-from histore.document.base import Document, DocumentIterator, InputStream  # noqa: F401
+from histore.archive.base import InputDocument as Datasource  # noqa: F401
+from histore.archive.base import to_document  # noqa: F401
+from histore.document.base import DefaultDocument, Document, DocumentIterator  # noqa: F401
 
 from openclean.data.types import Scalar, Value
 

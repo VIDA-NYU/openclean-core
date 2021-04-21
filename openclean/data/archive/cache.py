@@ -148,6 +148,28 @@ class CachedDatastore(ArchiveStore):
         """
         return self.datastore.metadata(version=version)
 
+    def open(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.data.archive.base.SnapshotReader
+        """
+        # Get the latest dataset version if the argument is None.
+        if version is None:
+            version = self.datastore.last_version()
+        # If the requested version matches the cached version return a
+        # stream for the cached data frame.
+        if self._cache is not None:
+            if version == self._cache.version:
+                return DataFrameStream(self._cache.df)
+        return self.datastore.open(version=version)
+
     def rollback(self, version: int) -> pd.DataFrame:
         """Rollback the archive history to the snapshot with the given version
         identifier.
@@ -178,25 +200,3 @@ class CachedDatastore(ArchiveStore):
         ValueError
         """
         return self.datastore.snapshots()
-
-    def stream(self, version: Optional[int] = None) -> SnapshotReader:
-        """Get a stream reader for a dataset snapshot.
-
-        Parameters
-        ----------
-        version: int, default=None
-            Unique version identifier. By default the last version is used.
-
-        Returns
-        -------
-        openclean.data.archive.base.SnapshotReader
-        """
-        # Get the latest dataset version if the argument is None.
-        if version is None:
-            version = self.datastore.last_version()
-        # If the requested version matches the cached version return a
-        # stream for the cached data frame.
-        if self._cache is not None:
-            if version == self._cache.version:
-                return DataFrameStream(self._cache.df)
-        return self.datastore.stream(version=version)

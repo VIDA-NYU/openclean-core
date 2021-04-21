@@ -31,6 +31,15 @@ def test_recreate_engine(cached, dataset, tmpdir):
     assert df.shape == (1, 3)
 
 
+def test_dataset_stream(dataset, tmpdir):
+    """Test stream operations on a dataset snapshot."""
+    engine = DB(basedir=str(tmpdir), create=True)
+    # Create two datasets with a single snapshot.
+    engine.create(source=dataset, name='My Data').checkout()
+    df = engine.stream('My Data').to_df()
+    assert df.shape == (2, 3)
+
+
 def test_full_df_checkout(dataset, tmpdir):
     """Test if a full dataset checkout is possible"""
     db = DB(basedir=str(tmpdir), create=True)
