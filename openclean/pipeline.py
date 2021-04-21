@@ -15,7 +15,7 @@ import pandas as pd
 
 from openclean.data.mapping import Mapping
 from openclean.data.schema import as_list, select_clause
-from openclean.data.stream.base import Datasource, DefaultDocument, to_document
+from openclean.data.stream.base import DataRow, Datasource, DefaultDocument, DocumentIterator, RowIndex, to_document
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
 from openclean.data.types import Columns, Scalar, DatasetSchema, Value
@@ -343,7 +343,12 @@ class DataPipeline(DefaultDocument):
         -------
         openclean.pipeline.DataPipeline
         """
-        return self
+        # Create the consumer if the pipeline has at least one operator.
+        consumer = None
+        if self.pipeline:
+            consumer = self._open_pipeline()
+        # Stream all rows to the pipeline consumer.
+        return PipelineIterator(stream=self.source.open(), consumer=consumer)
 
     def _open_pipeline(self) -> StreamConsumer:
         """Create stream consumer for all pipeline operators.
@@ -652,6 +657,94 @@ class DataPipeline(DefaultDocument):
             none_is=none_as
         )
         return self.stream(Write(file=file))
+
+
+class PipelineIterator(DocumentIterator):
+    """Iterator over rows in a data processing pipeline. Iterates over the rows
+    in an input stream. Each row is processed by a stream consumer. If the
+    consumer returns a value this value is returned as the next row. For
+    consumers that only return a result at the end of the stream this iterator
+    iterates over the rows that are returned when the consumer is closed.
+    """
+    def __init__(self, stream: DocumentIterator, consumer: Optional[StreamConsumer] = None):
+        """Initialize the source stream and the data processor.
+
+        Keeps an internal list of rows that may be returned by the stream
+        consumer when it is closed.
+
+        If the consumer is None the rows of the input stream will be returned
+        by this iterator.
+
+        Parameters
+        ----------
+        stream: openclean.data.stream.base.DocumentIterator
+            Iterator over the rows in the input document.
+        consumer: openclean.operator.stream.consumer.StreamConsumer, default=None
+            Processor for stream rows.
+        """
+        self.stream = stream
+        self.consumer = consumer
+        # Maintain reader for rows that may be returned by the consumer when
+        # it is closed.
+        self._rows = None
+        self._readindex = None
+        # Counter for returned rows.
+        self._rowcount = 0
+
+    def close(self):
+        """Release all resources that are held by the associated input stream
+        and output consumer.
+        """
+        self.stream.close()
+
+    def next(self) -> Tuple[int, RowIndex, DataRow]:
+        """Read the next row in the pipeline.
+
+        The row is processed by the associated consumer. If the consumer returns
+        an non-None result this row is returned as the next row. If the consumer
+        returns None the next input row is processed. If the consumer returns a
+        non-empty result when it is closed we assume that this is a list of rows
+        and iterate over them as well.
+
+        Returns
+        -------
+        tuple of int, histore.document.base.RowIndex, histore.document.base.DataRow
+        """
+        # If the row-buffer is not None return rows from the buffer.
+        if self._rows is not None:
+            if self._readindex < len(self._rows):
+                pos = self._rowcount
+                self._rowcount += 1
+                rowidx, row = self._rows[self._readindex]
+                self._readindex += 1
+                return pos, rowidx, row
+            raise StopIteration()
+        # Process rows in the input stream. Returns at the first row that is
+        # processed by the consumer with a non-None result. The stream reader
+        # will raise StopIteration when the end of the stream is reached. At
+        # that point the loop will terminate.
+        while True:
+            try:
+                pos, rowid, row = self.stream.next()
+                if self.consumer is not None:
+                    row = self.consumer.consume(rowid=rowid, row=row)
+                if row is not None:
+                    self._rowcount += 1
+                    return pos, rowid, row
+            except StopIteration:
+                break
+        # Close the consumer. If it returns a non-None result we assume that
+        # it is a list of rows (rowid, values) and continue to iterate over
+        # them.
+        if self.consumer is not None:
+            self._rows = self.consumer.close()
+            if self._rows is not None:
+                pos = self._rowcount
+                self._rowcount += 1
+                self._readindex = 1
+                rowidx, row = self._rows[0]
+                return pos, rowidx, row
+        raise StopIteration()
 
 
 # -- Open file or data frame as pipeline --------------------------------------

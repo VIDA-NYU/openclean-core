@@ -131,6 +131,10 @@ class ProducingConsumer(StreamConsumer):
             Unique row identifier
         row: list
             List of values in the row.
+
+        Returns
+        -------
+        list
         """
         values = self.handle(rowid=rowid, row=row)
         if values is not None:

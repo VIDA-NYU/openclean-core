@@ -106,14 +106,26 @@ class SampleCollector(ProducingConsumer):
         """Pass the selected sample to the connected downstream consumer.
         Returns the consumer result.
 
+        Collect a modified list of rows. Returns the result of the downstream
+        consumer or the collected results (if the consumer result is None).
+
         Returns
         -------
         any
         """
         if self.consumer is not None:
+            result = list()
             for rowid, row in self.rows:
-                self.consumer.consume(rowid=rowid, row=row)
-            return self.consumer.close()
+                try:
+                    row = self.consumer.consume(rowid=rowid, row=row)
+                    if row is not None:
+                        result.append((rowid, row))
+                except StopIteration:
+                    break
+            consumer_result = self.consumer.close()
+            return result if consumer_result is None else consumer_result
+        else:
+            return self.rows
 
     def consume(self, rowid: int, row: DataRow):
         """Randomly add the given (rowid, row)-pair to the internal buffer.
