@@ -119,12 +119,8 @@ class FunctionHandle(ObjectHandle):
         """Make the function handle callable so that it can be used as a
         substitute for the registered function.
         """
-        try:
-            return self.func(*args, **kwargs)
-        except TypeError:
-            print(args)
-            print(kwargs)
-            
+        return self.func(*args, **kwargs)
+
 
 class FunctionFactory(ObjectFactory):
     """Factory for function objects. Uses dill to serialize functions."""
