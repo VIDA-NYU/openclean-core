@@ -16,17 +16,22 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import Archive, ArchiveManager, ArchiveStore, SnapshotReader
+from openclean.data.archive.base import Archive, ArchiveManager, ArchiveStore, Snapshot, SnapshotReader
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.stream.base import Datasource
 from openclean.data.types import Columns, Scalar
 from openclean.engine.action import CommitOp, InsertOp, OpHandle, SampleOp, UpdateOp
-from openclean.engine.object.function import FunctionHandle
 from openclean.engine.log import LogEntry, OperationLog
+from openclean.engine.object.function import FunctionHandle
+from openclean.engine.operator import StreamOp, StreamOperator
+from openclean.operator.stream.processor import StreamProcessor
 from openclean.operator.transform.insert import inscol
 from openclean.operator.transform.update import update
+
+
+StreamOpPipeline = Union[StreamProcessor, StreamOp, List[Union[StreamProcessor, StreamOp]]]
 
 
 class DatasetHandle(metaclass=ABCMeta):
@@ -315,6 +320,52 @@ class FullDataset(DatasetHandle):
         self.manager = manager
         self.identifier = identifier
         self.pk = pk
+
+    def apply(
+        self, operations: StreamOpPipeline, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on a snapshot in
+        the archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        operations: openclean.engine.base.StreamOpPipeline
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        # Get the schema for the current snapshot.
+        origin = self.store.last_version()
+        schema = self.store.schema().at_version(version=origin)
+        # Instantiate the stream operators.
+        operators = list()
+        for sop in operations if isinstance(operations, list) else [operations]:
+            if isinstance(sop, StreamProcessor):
+                op = StreamOperator(func=sop.open(schema=schema))
+            elif isinstance(sop, StreamOp):
+                op = sop.open(schema=schema)
+            else:
+                raise ValueError("invalid stream operator '{}'".format(sop))
+            schema = op.columns
+            operators.append(op)
+        # Apply operators on the archive and return the snapshot handles.
+        return self.store.apply(operators=operators, validate=validate)
 
     def drop(self):
         """Delete all resources that are associated with the dataset history."""

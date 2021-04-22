@@ -13,7 +13,12 @@ import pytest
 from openclean.data.archive.base import VolatileArchiveManager
 from openclean.engine.base import OpencleanEngine
 from openclean.engine.library import ObjectLibrary
+from openclean.engine.operator import StreamOp
+from openclean.operator.stream.consumer import StreamFunctionHandler
+from openclean.operator.stream.processor import StreamProcessor
 
+
+# -- Fixtures -----------------------------------------------------------------
 
 @pytest.fixture
 def engine():
@@ -35,6 +40,56 @@ def engine():
     engine.register.eval()(str.lower)
     engine.register.eval()(str.upper)
     return engine
+
+
+# -- Stream operators ---------------------------------------------------------
+
+class FuncProcessor(StreamProcessor):
+    def __init__(self, func):
+        self.func = func
+
+    def open(self, schema):
+        return StreamFunctionHandler(columns=schema, func=self.func)
+
+
+def fname_to_upper(row):
+    row[1] = row[1].upper()
+    return row
+
+
+def id_to_string(row):
+    row[0] = 'ONE' if row[0] == 1 else 'TWO'
+    return row
+
+
+def lname_to_lower(row):
+    row[2] = row[2].lower()
+    return row
+
+
+# -- Unit tests ---------------------------------------------------------------
+
+def test_apply_pipeline(engine):
+    """Test applying dataset operations directly on an archive snapshot."""
+    # -- Empty pipeline -------------------------------------------------------
+    operations = []
+    snapshots = engine.apply('DS', operations=operations, validate=True)
+    assert snapshots == []
+    # -- Single operation -----------------------------------------------------
+    operations = StreamOp(FuncProcessor(id_to_string), description='to_string')
+    snapshots = engine.apply('DS', operations=operations, validate=True)
+    assert len(snapshots) == 1
+    assert snapshots[0].description == 'to_string'
+    # -- List of operators ----------------------------------------------------
+    operations = [StreamOp(FuncProcessor(fname_to_upper)), FuncProcessor(lname_to_lower)]
+    snapshots = engine.apply('DS', operations=operations, validate=True)
+    assert len(snapshots) == 2
+    df = engine.checkout('DS')
+    expected_result = pd.DataFrame(
+        data=[['ONE', 'ALICE', 'jones'], ['TWO', 'BOB', 'peters']],
+        columns=['ID', 'FNAME', 'LNAME']
+    )
+    pd.testing.assert_frame_equal(df, expected_result)
 
 
 def test_full_dataset_operations(engine):

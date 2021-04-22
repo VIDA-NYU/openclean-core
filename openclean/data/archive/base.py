@@ -15,10 +15,12 @@ from histore.archive.manager.base import ArchiveManager  # noqa: F401
 from histore.archive.manager.mem import VolatileArchiveManager  # noqa: F401
 from histore.archive.manager.persist import PersistentArchiveManager  # noqa: F401
 from histore.archive.reader import SnapshotReader
+from histore.archive.schema import ArchiveSchema
 from histore.archive.snapshot import Snapshot, SnapshotListing  # noqa: F401
 from histore.document.base import InputDescriptor as Descriptor  # noqa: F401
 from histore.document.mem import Schema  # noqa: F401
-from typing import Dict, List, Optional
+from histore.document.operator import DatasetOperator
+from typing import Dict, List, Optional, Union
 
 import os
 import pandas as pd
@@ -50,6 +52,43 @@ class ArchiveStore(metaclass=ABCMeta):
     versions of a dataset that a user creates using the openclean (Jupyter)
     API.
     """
+    @abstractmethod
+    def apply(
+        self, operators: Union[DatasetOperator, List[DatasetOperator]],
+        origin: Optional[int] = None, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on a snapshot in
+        the archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        operators: histore.document.operator.DatasetOperator or
+                list of histore.document.stream.DatasetOperator
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        origin: int, default=None
+            Unique version identifier for the original snapshot that is being
+            updated. By default the last version is updated.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        raise NotImplementedError()  # pragma: no cover
+
     @abstractmethod
     def checkout(self, version: Optional[int] = None) -> pd.DataFrame:
         """Get a specific version of the dataset. The dataset snapshot is
@@ -171,6 +210,16 @@ class ArchiveStore(metaclass=ABCMeta):
         Returns
         -------
         pd.DataFrame
+        """
+        raise NotImplementedError()  # pragma: no cover
+
+    @abstractmethod
+    def schema(self) -> ArchiveSchema:
+        """Get the schema history for the archived dataset.
+
+        Returns
+        -------
+        openclean.data.archive.base.ArchiveSchema
         """
         raise NotImplementedError()  # pragma: no cover
 

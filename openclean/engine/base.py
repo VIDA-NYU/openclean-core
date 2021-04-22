@@ -19,7 +19,7 @@ from typing import List, Optional, Tuple, Union
 import pandas as pd
 import os
 
-from openclean.data.archive.base import ArchiveManager, Datasource, Descriptor
+from openclean.data.archive.base import ArchiveManager, Datasource, Descriptor, Snapshot
 from openclean.data.archive.base import PersistentArchiveManager, VolatileArchiveManager
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
@@ -28,7 +28,7 @@ from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 from openclean.data.serialize import COMPACT
 from openclean.engine.action import LoadOp, OpHandle
-from openclean.engine.dataset import DatasetHandle, FullDataset, DataSample
+from openclean.engine.dataset import DatasetHandle, DataSample, FullDataset, StreamOpPipeline
 from openclean.engine.library import ObjectLibrary
 from openclean.engine.registry import registry
 from openclean.pipeline import DataPipeline
@@ -99,6 +99,39 @@ class OpencleanEngine(object):
                 identifier=archive_id,
                 pk=descriptor.primary_key()
             )
+
+    def apply(
+        self, name: str, operations: StreamOpPipeline, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on the specified
+        archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        name: string
+            Unique dataset name.
+        operations: openclean.engine.dataset.StreamOpPipeline
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        return self.dataset(name).apply(operations=operations, validate=validate)
 
     def checkout(self, name: str, commit: Optional[bool] = False) -> pd.DataFrame:
         """Checkout the latest version of a dataset. The dataset is identified

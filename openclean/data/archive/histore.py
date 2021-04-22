@@ -10,11 +10,14 @@ a new HISTORE archive will be maintained. This archive is augmented with
 storage of dataset metadata.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import Archive, ActionHandle, ArchiveStore, Descriptor, Snapshot, SnapshotReader
+from openclean.data.archive.base import (
+    Archive, ActionHandle, ArchiveSchema, ArchiveStore, DatasetOperator,
+    Descriptor, Snapshot, SnapshotReader
+)
 from openclean.data.metadata.base import MetadataStore, MetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
 from openclean.data.stream.base import Datasource
@@ -39,6 +42,46 @@ class HISTOREDatastore(ArchiveStore):
         self.metastore = metastore if metastore is not None else VolatileMetadataStoreFactory()
         # Maintain a reference to the snapshot for the last version
         self._last_snapshot = archive.snapshots().last_snapshot()
+
+    def apply(
+        self, operators: Union[DatasetOperator, List[DatasetOperator]],
+        origin: Optional[int] = None, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on a snapshot in
+        the archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        operators: histore.document.operator.DatasetOperator or
+                list of histore.document.stream.DatasetOperator
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        origin: int, default=None
+            Unique version identifier for the original snapshot that is being
+            updated. By default the last version is updated.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        snapshots = self.archive.apply(operators=operators, origin=origin, validate=validate)
+        # Make sure to update the reference to the last snapshot.
+        if snapshots:
+            self._last_snapshot = snapshots[-1]
+        return snapshots
 
     def checkout(self, version: Optional[int] = None) -> pd.DataFrame:
         """Get a specific dataset snapshot. The snapshot is identified by
@@ -161,6 +204,15 @@ class HISTOREDatastore(ArchiveStore):
         self.archive.rollback(version=version)
         self.metastore.rollback(version=version)
         self._last_snapshot = self.archive.snapshots().last_snapshot()
+
+    def schema(self) -> ArchiveSchema:
+        """Get the schema history for the archived dataset.
+
+        Returns
+        -------
+        openclean.data.archive.base.ArchiveSchema
+        """
+        return self.archive.schema()
 
     def snapshots(self) -> List[Snapshot]:
         """Get list of handles for all versions of a given dataset.

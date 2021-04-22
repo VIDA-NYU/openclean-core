@@ -10,11 +10,14 @@ memory.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import ActionHandle, ArchiveStore, Snapshot, SnapshotReader
+from openclean.data.archive.base import (
+    ActionHandle, ArchiveStore, ArchiveSchema, DatasetOperator, Snapshot,
+    SnapshotReader
+)
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.stream.base import Datasource
 from openclean.data.stream.df import DataFrameStream
@@ -45,6 +48,45 @@ class CachedDatastore(ArchiveStore):
         """
         self.datastore = datastore
         self._cache = None
+
+    def apply(
+        self, operators: Union[DatasetOperator, List[DatasetOperator]],
+        origin: Optional[int] = None, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on a snapshot in
+        the archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        operators: histore.document.operator.DatasetOperator or
+                list of histore.document.stream.DatasetOperator
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        origin: int, default=None
+            Unique version identifier for the original snapshot that is being
+            updated. By default the last version is updated.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        # Invalidate the cache.
+        self._cache = None
+        # Apply operations to the wrapped datastore archive.
+        return self.datastore.apply(operators=operators, origin=origin, validate=validate)
 
     def checkout(
         self, version: Optional[int] = None, no_cache: Optional[bool] = False
@@ -190,6 +232,15 @@ class CachedDatastore(ArchiveStore):
         pd.DataFrame
         """
         return self.datastore.rollback(version=version)
+
+    def schema(self) -> ArchiveSchema:
+        """Get the schema history for the archived dataset.
+
+        Returns
+        -------
+        openclean.data.archive.base.ArchiveSchema
+        """
+        return self.datastore.schema()
 
     def snapshots(self) -> List[Snapshot]:
         """Get list of handles for all versions of a given dataset.

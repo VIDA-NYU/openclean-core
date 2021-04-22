@@ -68,3 +68,9 @@ def test_cache_store_rollback(dataset, store):
     cached_store.rollback(0)
     df = cached_store.checkout(version=0)
     assert df.shape == (2, 3)
+
+
+def test_dataset_schema(store, dataset):
+    """Test getting the snapshot schema from archive store."""
+    store.commit(source=dataset)
+    assert store.schema().at_version(store.last_version()) == list(dataset.columns)

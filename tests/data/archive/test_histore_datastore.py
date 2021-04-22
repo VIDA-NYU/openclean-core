@@ -66,6 +66,12 @@ def test_dataset_metadata(store, dataset):
     assert annos.get_annotation(column_id=1, key='type') == 'str'
 
 
+def test_dataset_schema(store, dataset):
+    """Test getting the snapshot schema from archive store."""
+    store.commit(source=dataset)
+    assert store.schema().at_version(store.last_version()) == list(dataset.columns)
+
+
 def test_last_dataset_version(store, dataset):
     """Test getting the version identifier for the last snapshot of a dataset."""
     store.commit(source=dataset)
