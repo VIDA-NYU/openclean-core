@@ -7,6 +7,8 @@
 
 """Unit test for the data frame grouping class."""
 
+from collections import Counter
+
 import pandas as pd
 import pytest
 
@@ -40,15 +42,19 @@ def test_add_and_get_groups(grouping):
         grouping.add('B', [1])
     # Group: A
     df = pd.DataFrame(data=[R2, R3], index=[2, 1], columns=COLS)
+    assert grouping.rows('A') == [2, 1]
     assert grouping.get('A').equals(df)
     # Group: B
     df = pd.DataFrame(data=[R1, R4], index=[3, -1], columns=COLS)
+    assert grouping.rows('B') == [3, 0]
     assert grouping.get('B').equals(df)
     # Group: C
     df = pd.DataFrame(data=[R2, R3, R4], index=[2, 1, -1], columns=COLS)
+    assert grouping.rows('C') == [2, 1, 3]
     assert grouping.get('C').equals(df)
     # Non-existing key
     assert grouping.get('D') is None
+    assert grouping.rows('D') is None
 
 
 def test_group_keys(grouping):
@@ -60,6 +66,14 @@ def test_group_keys(grouping):
         grouping.add(('B', 'C'), [1])
     assert grouping.keys() == set({'A', ('B', 'C'), 'C'})
     assert list(grouping) == ['A', ('B', 'C'), 'C']
+
+
+def test_group_values(grouping):
+    """Test values() method of the data frame grouping."""
+    grouping.add('A', [1, 2]).add(('B', 'C'), [0, 3]).add('C', [1, 2, 3])
+    assert grouping.values('A', columns='B') == Counter({4: 1, 6: 1})
+    grouping.values(('B', 'C'), columns=['A', 'B']) == Counter({(1, 2): 1, (9, 10): 1})
+    assert grouping.values('D', columns=['A']) is None
 
 
 def test_iterate_over_groups(grouping):
