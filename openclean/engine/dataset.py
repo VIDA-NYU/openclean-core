@@ -20,6 +20,7 @@ from openclean.data.archive.base import Archive, ArchiveManager, ArchiveStore, S
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
+from openclean.data.stream.base import Datasource
 from openclean.data.types import Columns, Scalar
 from openclean.engine.action import CommitOp, InsertOp, OpHandle, SampleOp, UpdateOp
 from openclean.engine.object.function import FunctionHandle
@@ -71,7 +72,7 @@ class DatasetHandle(metaclass=ABCMeta):
                 return self.store.checkout(version=op.version)
         raise KeyError("unknown log entry '{}'".format(version))
 
-    def commit(self, df: pd.DataFrame, action: Optional[OpHandle] = None) -> pd.DataFrame:
+    def commit(self, source: Datasource, action: Optional[OpHandle] = None) -> Datasource:
         """Add a new snapshot to the history of the dataset.
 
         If no action is provided a user commit action operator is used as the
@@ -79,20 +80,21 @@ class DatasetHandle(metaclass=ABCMeta):
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Data frame for the new dataset snapshot.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.engine.action.OpHandle, default=None
             Operator that created the dataset snapshot.
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
         """
         action = action if action is not None else CommitOp()
-        df = self.store.commit(df=df, action=action)
+        source = self.store.commit(source=source, action=action)
         # Add the operator to the internal log.
         self._log.add(version=self.store.last_version(), action=action)
-        return df
+        return source
 
     @abstractmethod
     def drop(self):
@@ -150,7 +152,7 @@ class DatasetHandle(metaclass=ABCMeta):
         )
         # Run the insert operation and commit the new dataset version.
         df = inscol(df=df, names=names, pos=pos, values=action.to_eval())
-        return self.commit(df=df, action=action)
+        return self.commit(source=df, action=action)
 
     def log(self) -> List[LogEntry]:
         """Get the list of log entries for all dataset snapshots.
@@ -236,7 +238,7 @@ class DatasetHandle(metaclass=ABCMeta):
         )
         # Run the update operation and commit the new dataset version.
         df = update(df=df, columns=columns, func=action.to_eval())
-        return self.commit(df=df, action=action)
+        return self.commit(source=df, action=action)
 
     def version(self) -> int:
         """Get version identifier for the last snapshot of the dataset.

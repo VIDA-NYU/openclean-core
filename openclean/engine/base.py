@@ -134,8 +134,8 @@ class OpencleanEngine(object):
         return self.dataset(name=name).checkout()
 
     def commit(
-        self, name: str, df: pd.DataFrame, action: Optional[OpHandle] = None
-    ) -> pd.DataFrame:
+        self, name: str, source: Datasource, action: Optional[OpHandle] = None
+    ) -> Datasource:
         """Commit a modified data frame to the dataset archive.
 
         The dataset is identified by its unique name. Raises a KeyError if the
@@ -145,20 +145,21 @@ class OpencleanEngine(object):
         ----------
         name: string
             Unique dataset name.
-        df: pd.DataFrame
-            Data frame for the new dataset snapshot.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.engine.action.OpHandle, default=None
             Operator that created the dataset snapshot.
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
 
         Raises
         ------
         KeyError
         """
-        return self.dataset(name=name).commit(df=df, action=action)
+        return self.dataset(name=name).commit(source=source, action=action)
 
     def create(
         self, source: Datasource, name: str,

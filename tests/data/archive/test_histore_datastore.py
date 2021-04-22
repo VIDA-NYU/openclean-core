@@ -14,7 +14,7 @@ from openclean.operator.transform.update import update
 
 def test_create_dataset(store, dataset):
     """Test creating a dataset from a given data frame."""
-    df_1 = store.commit(df=dataset)
+    df_1 = store.commit(source=dataset)
     assert df_1.shape == (2, 3)
     df_1 = store.checkout()
     assert df_1.shape == (2, 3)
@@ -22,9 +22,9 @@ def test_create_dataset(store, dataset):
 
 def test_dataset_history(store, dataset):
     """Test updates to a given dataset and retrieving all dataset versions."""
-    df = store.commit(df=dataset)
-    df = store.commit(df=update(df=df, columns='B', func=1))
-    df = store.commit(df=update(df=df, columns='C', func=2))
+    df = store.commit(source=dataset)
+    df = store.commit(source=update(df=df, columns='B', func=1))
+    df = store.commit(source=update(df=df, columns='C', func=2))
     snapshots = store.snapshots()
     assert len(snapshots) == 3
     # Version 1
@@ -50,11 +50,11 @@ def test_dataset_metadata(store, dataset):
     """
     # Create two snapshots for a dataset and annotate one column for each with
     # a different data type string.
-    df = store.commit(df=dataset)
+    df = store.commit(source=dataset)
     store.metadata()\
         .set_annotation(column_id=1, key='type', value='int')
     df = store\
-        .commit(df=update(df=df, columns='B', func=1))
+        .commit(source=update(df=df, columns='B', func=1))
     store.metadata()\
         .set_annotation(column_id=1, key='type', value='str')
     # Assert that the different snapshots have different type annotations for
@@ -68,11 +68,11 @@ def test_dataset_metadata(store, dataset):
 
 def test_last_dataset_version(store, dataset):
     """Test getting the version identifier for the last snapshot of a dataset."""
-    store.commit(df=dataset)
+    store.commit(source=dataset)
     assert store.last_version() == 0
     store.checkout()
     assert store.last_version() == 0
-    store.commit(df=dataset)
+    store.commit(source=dataset)
     assert store.last_version() == 1
     store.checkout()
     assert store.last_version() == 1
@@ -82,9 +82,9 @@ def test_last_dataset_version(store, dataset):
 
 def test_histore_rollback(store, dataset):
     """Test updates to a given dataset and retrieving all dataset versions."""
-    df = store.commit(df=dataset)
-    df = store.commit(df=update(df=df, columns='B', func=1))
-    df = store.commit(df=update(df=df, columns='C', func=2))
+    df = store.commit(source=dataset)
+    df = store.commit(source=update(df=df, columns='B', func=1))
+    df = store.commit(source=update(df=df, columns='C', func=2))
     store.rollback(1)
     # Snapshot 1
     df = store.checkout(version=1)

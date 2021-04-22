@@ -76,17 +76,18 @@ class ArchiveStore(metaclass=ABCMeta):
 
     @abstractmethod
     def commit(
-        self, df: pd.DataFrame, action: Optional[ActionHandle] = None,
+        self, source: Datasource, action: Optional[ActionHandle] = None,
         checkout: Optional[bool] = False
-    ) -> pd.DataFrame:
+    ) -> Datasource:
         """Insert a new dataset snapshot.
 
         Returns the inserted data frame with potentially modified row indexes.
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Data frame containing the new dataset version that is being stored.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.data.archive.base.ActionHandle, default=None
             Optional handle of the action that created the new dataset version.
         checkout: bool, default=False
@@ -98,7 +99,7 @@ class ArchiveStore(metaclass=ABCMeta):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
         """
         raise NotImplementedError()  # pragma: no cover
 

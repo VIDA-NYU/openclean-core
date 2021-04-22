@@ -16,6 +16,7 @@ import pandas as pd
 
 from openclean.data.archive.base import ActionHandle, ArchiveStore, Snapshot, SnapshotReader
 from openclean.data.metadata.base import MetadataStore
+from openclean.data.stream.base import Datasource
 from openclean.data.stream.df import DataFrameStream
 
 
@@ -85,17 +86,18 @@ class CachedDatastore(ArchiveStore):
         return df
 
     def commit(
-        self, df: pd.DataFrame, action: Optional[ActionHandle] = None,
+        self, source: Datasource, action: Optional[ActionHandle] = None,
         checkout: Optional[bool] = False
-    ) -> pd.DataFrame:
+    ) -> Datasource:
         """Insert a new version for a dataset.
 
         Returns the inserted data frame with potentially modified row indexes.
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Data frame containing the new dataset version that is being stored.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.data.archive.base.ActionHandle, default=None
             Optional handle of the action that created the new dataset version.
         checkout: bool, default=False
@@ -107,11 +109,12 @@ class CachedDatastore(ArchiveStore):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
         """
-        df = self.datastore.commit(df=df, action=action)
-        self._cache = CacheEntry(df=df, version=self.datastore.last_version())
-        return df
+        source = self.datastore.commit(source=source, action=action, checkout=checkout)
+        if isinstance(source, pd.DataFrame):
+            self._cache = CacheEntry(df=source, version=self.datastore.last_version())
+        return source
 
     def last_version(self) -> int:
         """Get a identifier for the last version of the dataset.

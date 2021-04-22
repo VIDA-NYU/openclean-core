@@ -49,7 +49,7 @@ def test_full_df_checkout(dataset, tmpdir):
 
     df1 = df.copy(deep=True)
     df1['A'] = df1['A'] + 1
-    db.commit(name='test', df=df1)
+    db.commit(name='test', source=df1)
     snapshots = db.dataset('test').log()
 
     df = db.dataset('test').checkout(version=snapshots[1].version)
@@ -66,7 +66,7 @@ def test_full_df_rollback(dataset, tmpdir):
     df = db.create(source=dataset, name='test').checkout()
     df1 = df.copy(deep=True)
     df1['A'] = df1['A'] + 1
-    db.commit(name='test', df=df1)
+    db.commit(name='test', source=df1)
     snapshots = db.dataset('test').log()
     df = db.dataset('test').checkout(version=snapshots[1].version)
     assert list(df['A']) == list(df1['A'])

@@ -17,6 +17,7 @@ import pandas as pd
 from openclean.data.archive.base import Archive, ActionHandle, ArchiveStore, Descriptor, Snapshot, SnapshotReader
 from openclean.data.metadata.base import MetadataStore, MetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
+from openclean.data.stream.base import Datasource
 
 
 class HISTOREDatastore(ArchiveStore):
@@ -61,9 +62,9 @@ class HISTOREDatastore(ArchiveStore):
         return self.archive.checkout(version=version)
 
     def commit(
-        self, df: pd.DataFrame, action: Optional[ActionHandle] = None,
+        self, source: Datasource, action: Optional[ActionHandle] = None,
         checkout: Optional[bool] = False
-    ) -> pd.DataFrame:
+    ) -> Datasource:
         """Insert a new version for a dataset.
 
         Returns the inserted data frame. If the ``checkout`` flag is True the
@@ -72,8 +73,9 @@ class HISTOREDatastore(ArchiveStore):
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Data frame containing the new dataset version that is being stored.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.data.archive.base.ActionHandle, default=None
             Optional handle of the action that created the new dataset version.
         checkout: bool, default=False
@@ -85,13 +87,13 @@ class HISTOREDatastore(ArchiveStore):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
         """
         self._last_snapshot = self.archive.commit(
-            doc=df,
+            doc=source,
             descriptor=Descriptor(action=action.to_dict() if action is not None else None)
         )
-        return self.archive.checkout(version=self._last_snapshot.version) if checkout else df
+        return self.archive.checkout(version=self._last_snapshot.version) if checkout else source
 
     def last_version(self) -> int:
         """Get a identifier for the last version of a dataset.

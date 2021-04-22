@@ -13,7 +13,7 @@ from openclean.data.archive.cache import CachedDatastore
 def test_cache_metadata(dataset, store):
     """Test accessing metadata for a dataset in a cached datastore."""
     cached_store = CachedDatastore(datastore=store)
-    cached_store.commit(df=dataset)
+    cached_store.commit(source=dataset)
     cached_store.metadata()\
         .set_annotation(column_id=1, key='type', value='int')
     annos = cached_store.metadata(version=0)
@@ -24,7 +24,7 @@ def test_cache_dataframe(dataset, store):
     """Test maintaining the last dataset in the cache."""
     cached_store = CachedDatastore(datastore=store)
     # -- First snapshot -------------------------------------------------------
-    df_1 = cached_store.commit(df=dataset)
+    df_1 = cached_store.commit(source=dataset)
     assert df_1.shape == (2, 3)
     assert cached_store._cache is not None
     assert cached_store._cache.df.shape == (2, 3)
@@ -34,7 +34,7 @@ def test_cache_dataframe(dataset, store):
     assert df_1.shape == (2, 3)
     df_2 = df_1[df_1['A'] == 1]
     # -- Second snapshot ------------------------------------------------------
-    df_2 = cached_store.commit(df=df_2)
+    df_2 = cached_store.commit(source=df_2)
     assert df_2.shape == (1, 3)
     assert cached_store._cache.df.shape == (1, 3)
     assert cached_store._cache.version == 1
@@ -56,11 +56,11 @@ def test_cache_store_rollback(dataset, store):
     """Test rollback for the cached archive store."""
     cached_store = CachedDatastore(datastore=store)
     # -- Add two snapshots -------------------------------------------------------
-    df = cached_store.commit(df=dataset)
+    df = cached_store.commit(source=dataset)
     df = cached_store.checkout()
     assert df.shape == (2, 3)
     df = df[df['A'] == 1]
-    df = cached_store.commit(df=df)
+    df = cached_store.commit(source=df)
     # -- Checkout second snapshot ----------------------------------------------
     df = cached_store.checkout(version=1)
     assert df.shape == (1, 3)
