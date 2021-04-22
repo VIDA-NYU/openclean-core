@@ -242,6 +242,20 @@ class ConflictSummary(defaultdict):
                 if c_val != val:
                     value_conflicts.values[c_val] += 1
 
+    def most_common(self, n: Optional[int] = 10) -> List[Tuple[Value, int]]:
+        """Ranking of the n most common values in conflicts.
+
+        Parameters
+        ----------
+        n: int, default=10
+            Number of values to include in the ranking.
+
+        Returns
+        -------
+        list of value and count pairs
+        """
+        return Counter({key: val.count for key, val in self.items()}).most_common(n)
+
 
 class DataFrameViolation(DataFrameGrouping):
     """Subclass of DataFrame Grouping which maintains extra meta value

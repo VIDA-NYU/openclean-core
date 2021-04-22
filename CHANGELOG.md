@@ -46,3 +46,4 @@
 * Use compact serialization for HISTORE archives.
 * Load and sample datasets from a data stream in `openclean.engine.base.OpencleanEngine`.
 * Support stream operators on dataset snapshots in  `openclean.engine.base.OpencleanEngine`.
+* Add summary for data frame conflict groups.
