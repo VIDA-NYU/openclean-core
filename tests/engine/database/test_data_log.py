@@ -7,11 +7,9 @@
 
 """Unit tests for the dataset log."""
 
-import pytest
-
-from histore.archive.snapshot import SnapshotListing
+from openclean.data.archive.base import Descriptor, SnapshotListing
 from openclean.engine.action import InsertOp, OP_INSCOL
-from openclean.engine.log import LogEntry, OperationLog
+from openclean.engine.log import OperationLog
 
 
 def test_log_rollback():
@@ -31,7 +29,7 @@ def test_log_rollback():
 def test_operation_log_auto_commit():
     """Test functions of the operations log with auto_commit set to True."""
     snapshots = SnapshotListing()
-    snapshots = snapshots.append(version=0, action={'action': 0})
+    snapshots = snapshots.append(version=0, descriptor=Descriptor(action={'action': 0}))
     log = OperationLog(snapshots=snapshots)
     assert len(log) == 1
     log.add(version=1, action=InsertOp(schema=[], names=['A', 'B'], pos=1))
@@ -44,7 +42,7 @@ def test_operation_log_auto_commit():
 def test_operation_log_uncommitted():
     """Test functions of the operations log with auto_commit set to False."""
     snapshots = SnapshotListing()
-    snapshots = snapshots.append(version=0, action={'action': 0})
+    snapshots = snapshots.append(version=0, descriptor=Descriptor(action={'action': 0}))
     log = OperationLog(snapshots=snapshots)
     assert len(log) == 1
     log.add(version=1, action=InsertOp(schema=[], names=['A', 'B'], pos=1))

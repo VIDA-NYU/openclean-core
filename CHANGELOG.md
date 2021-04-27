@@ -39,3 +39,11 @@
 
 * Make checking out a committed dataset in the `openclean.data.archive.base.ArchiveStore` optional.
 * Enable cache refresh for cached datasets in `openclean.data.archive.cache.CachedDatastore`.
+
+
+### 0.4.0 - TBD
+
+* Use compact serialization for HISTORE archives.
+* Load and sample datasets from a data stream in `openclean.engine.base.OpencleanEngine`.
+* Support stream operators on dataset snapshots in  `openclean.engine.base.OpencleanEngine`.
+* Add summary for data frame conflict groups.

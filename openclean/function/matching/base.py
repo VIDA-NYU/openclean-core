@@ -135,7 +135,7 @@ class StringMatcher(metaclass=ABCMeta):
         self.vocabulary = terms
 
     @abstractmethod
-    def find_matches(self, query: str) -> List[StringMatch]:  # pragma: no cover
+    def find_matches(self, query: str) -> List[StringMatch]:
         """Find matches for a given query string in the associated vocabulary.
         Depending on the implementation the result may contain more than one
         matched string from the vocabulary. Each match is a pair of matched
@@ -153,7 +153,7 @@ class StringMatcher(metaclass=ABCMeta):
         -------
         list of (string, float) pairs
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def matched_values(self, query: str) -> List[str]:
         """Get only a list of matched values for a given query string. Excludes

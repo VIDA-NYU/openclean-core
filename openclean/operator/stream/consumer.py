@@ -20,8 +20,8 @@ from __future__ import annotations
 from typing import Any, Optional
 from abc import ABCMeta, abstractmethod
 
-from openclean.data.stream.base import DataRow, DataReader, StreamFunction
-from openclean.data.types import Schema
+from openclean.data.stream.base import DataRow, Document, StreamFunction
+from openclean.data.types import DatasetSchema
 
 
 class StreamConsumer(metaclass=ABCMeta):
@@ -35,7 +35,7 @@ class StreamConsumer(metaclass=ABCMeta):
     Consumers that are not connected to a downstream consumer are called
     collectors. There are separate modules for each type of consumers.
     """
-    def __init__(self, columns: Schema):
+    def __init__(self, columns: DatasetSchema):
         """Initialize the schema for rows that this consumer will receive.
 
         Parameters
@@ -72,12 +72,12 @@ class StreamConsumer(metaclass=ABCMeta):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def process(self, ds: DataReader) -> Any:
+    def process(self, ds: Document) -> Any:
         """Consume a given data stream and return the computed result.
 
         Parameters
         ----------
-        ds: from openclean.data.stream.base.DataReader
+        ds: openclean.data.stream.base.Document
             Iterable stream of dataset rows.
 
         Returns
@@ -93,7 +93,7 @@ class ProducingConsumer(StreamConsumer):
     """A producing consumer passes the processed row on to a downstream
     consumer. This consumer therefore acts as a consumer and a producer.
     """
-    def __init__(self, columns: Schema, consumer: Optional[StreamConsumer]):
+    def __init__(self, columns: DatasetSchema, consumer: Optional[StreamConsumer]):
         """Initialize the row schema and the optional downstream consumer. Note
         that the consumer is optional for cases where we want to iterate over
         the rows in a stream pipeline.
@@ -131,6 +131,10 @@ class ProducingConsumer(StreamConsumer):
             Unique row identifier
         row: list
             List of values in the row.
+
+        Returns
+        -------
+        list
         """
         values = self.handle(rowid=rowid, row=row)
         if values is not None:
@@ -180,7 +184,7 @@ class StreamFunctionHandler(ProducingConsumer):
     consumer. If None is returned, the row will be ignored.
     """
     def __init__(
-        self, columns: Schema, func: StreamFunction,
+        self, columns: DatasetSchema, func: StreamFunction,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the consumer schema and the stream function that is used

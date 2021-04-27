@@ -17,9 +17,8 @@ import json
 import os
 import shutil
 
-from histore.archive.store.fs.reader import default_decoder
-from histore.archive.store.fs.writer import DefaultEncoder
 from openclean.data.metadata.base import MetadataStore, MetadataStoreFactory
+from openclean.data.serialize import default_decoder, DefaultEncoder
 
 import histore.util as util
 

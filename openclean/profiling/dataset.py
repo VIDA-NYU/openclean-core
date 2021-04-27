@@ -17,7 +17,7 @@ import pandas as pd
 
 from openclean.data.schema import select_clause
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import Columns, ColumnRef, Schema
+from openclean.data.types import Columns, ColumnRef, DatasetSchema
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 from openclean.profiling.base import DataProfiler
@@ -326,7 +326,7 @@ class ProfileOperator(StreamProcessor):
             default_profiler = DefaultStreamProfiler
         self.default_profiler = default_profiler
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream profiling consumers. Creates an instance
         of a stream profiler for each column that was selected for profiling.
         If no profilers were specified at object instantiation all columns will

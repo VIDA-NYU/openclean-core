@@ -11,7 +11,9 @@ import os
 import pandas as pd
 import pytest
 
-import openclean.data.archive as masterdata
+from openclean.data.archive.base import Schema
+
+import openclean.data.archive.base as masterdata
 import openclean.config as config
 
 
@@ -24,21 +26,21 @@ def test_archive_manager(tmpdir):
     # -- Setup ----------------------------------------------------------------
     os.environ[config.ENV_DATA_DIR] = str(tmpdir)
     # Create two new archive for a given dataset.
-    masterdata.create('First', primary_key=['A'])
-    masterdata.create('Second', primary_key=['A'])
+    masterdata.create('First', source=Schema(['A', 'B']), primary_key=['A'])
+    masterdata.create('Second', source=Schema(['A', 'B']), primary_key=['A'])
     archive = masterdata.get('First')
     archive.commit(DF_1)
     archive = masterdata.get('First')
     archive.commit(DF_2)
     archive = masterdata.get('First')
-    assert len(archive.snapshots()) == 2
+    assert len(archive.snapshots()) == 3
     # -- Re-create archive ----------------------------------------------------
     # Error when providing an existing name without replace.
     with pytest.raises(ValueError):
-        masterdata.create('First', primary_key=['A'])
+        masterdata.create('First', source=Schema(['A', 'B']), primary_key=['A'])
     with pytest.raises(ValueError):
-        masterdata.create('Second', primary_key=['A'])
-    archive = masterdata.create('First', primary_key=['A'], replace=True)
+        masterdata.create('Second', source=Schema(['A', 'B']), primary_key=['A'])
+    archive = masterdata.create('First', source=Schema(['A', 'B']), primary_key=['A'], replace=True)
     archive.commit(DF_1)
     # -- Delete archive -------------------------------------------------------
     with pytest.raises(ValueError):

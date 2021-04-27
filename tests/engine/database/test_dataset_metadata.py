@@ -12,8 +12,8 @@ the openclean engine.
 import pandas as pd
 import pytest
 
-from histore.archive.manager.mem import VolatileArchiveManager
 
+from openclean.data.archive.base import VolatileArchiveManager
 from openclean.engine.base import OpencleanEngine
 from openclean.engine.library import ObjectLibrary
 

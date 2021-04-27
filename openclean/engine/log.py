@@ -8,9 +8,9 @@
 """Log of actions that defines the history of a dataset."""
 
 from dataclasses import dataclass
-from histore.archive.snapshot import Snapshot
 from typing import Dict, List, Optional
 
+from openclean.data.archive.base import Snapshot
 from openclean.engine.action import OpHandle
 
 

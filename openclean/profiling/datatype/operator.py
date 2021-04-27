@@ -9,7 +9,7 @@
 
 from typing import Optional
 
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.data.stream.base import DataRow
 from openclean.operator.stream.consumer import ProducingConsumer, StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
@@ -22,7 +22,7 @@ class Typecast(ProducingConsumer, StreamProcessor):
     """
     def __init__(
         self, converter: Optional[DatatypeConverter] = None,
-        columns: Optional[Schema] = None,
+        columns: Optional[DatasetSchema] = None,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the datatype converter.
@@ -60,7 +60,7 @@ class Typecast(ProducingConsumer, StreamProcessor):
         """
         return [self.converter.cast(value) for value in row]
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         stream consumer that does the type casting for all data frame rows.
 

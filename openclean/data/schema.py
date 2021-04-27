@@ -13,4 +13,4 @@
 # column_ref(schema: Schema, column: ColumnRef) -> Tuple[str, int]
 # select_clause(schema: Schema, columns: Columns) -> Tuple[List[str], List[int]]
 
-from histore.document.schema import as_list, column_ref, select_clause  # noqa: F401
+from histore.document.schema import as_list, column_ref, select_clause, to_schema  # noqa: F401

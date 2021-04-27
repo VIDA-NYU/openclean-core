@@ -14,24 +14,24 @@ with an object registry that maintains user-defined objects such as functions,
 lookup tables, etc..
 """
 
-from histore.archive.manager.base import ArchiveManager
-from histore.archive.manager.mem import VolatileArchiveManager
-from histore.archive.manager.persist import PersistentArchiveManager
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
 import os
 
-from openclean.data.archive.base import Datasource
+from openclean.data.archive.base import ArchiveManager, Datasource, Descriptor, Snapshot
+from openclean.data.archive.base import PersistentArchiveManager, VolatileArchiveManager
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
 from openclean.data.metadata.fs import FileSystemMetadataStoreFactory
 from openclean.data.metadata.mem import VolatileMetadataStoreFactory
+from openclean.data.serialize import COMPACT
 from openclean.engine.action import LoadOp, OpHandle
-from openclean.engine.dataset import DatasetHandle, FullDataset, DataSample
+from openclean.engine.dataset import DatasetHandle, DataSample, FullDataset, StreamOpPipeline
 from openclean.engine.library import ObjectLibrary
 from openclean.engine.registry import registry
+from openclean.pipeline import DataPipeline
 
 import openclean.util.core as util
 
@@ -100,6 +100,39 @@ class OpencleanEngine(object):
                 pk=descriptor.primary_key()
             )
 
+    def apply(
+        self, name: str, operations: StreamOpPipeline, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on the specified
+        archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        name: string
+            Unique dataset name.
+        operations: openclean.engine.dataset.StreamOpPipeline
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        return self.dataset(name).apply(operations=operations, validate=validate)
+
     def checkout(self, name: str, commit: Optional[bool] = False) -> pd.DataFrame:
         """Checkout the latest version of a dataset. The dataset is identified
         by the unique name. If the dataset that is currently associated with
@@ -134,8 +167,8 @@ class OpencleanEngine(object):
         return self.dataset(name=name).checkout()
 
     def commit(
-        self, name: str, df: pd.DataFrame, action: Optional[OpHandle] = None
-    ) -> pd.DataFrame:
+        self, name: str, source: Datasource, action: Optional[OpHandle] = None
+    ) -> Datasource:
         """Commit a modified data frame to the dataset archive.
 
         The dataset is identified by its unique name. Raises a KeyError if the
@@ -145,26 +178,27 @@ class OpencleanEngine(object):
         ----------
         name: string
             Unique dataset name.
-        df: pd.DataFrame
-            Data frame for the new dataset snapshot.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.engine.action.OpHandle, default=None
             Operator that created the dataset snapshot.
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
 
         Raises
         ------
         KeyError
         """
-        return self.dataset(name=name).commit(df=df, action=action)
+        return self.dataset(name=name).commit(source=source, action=action)
 
     def create(
         self, source: Datasource, name: str,
         primary_key: Optional[Union[List[str], str]] = None,
         cached: Optional[bool] = True
-    ) -> pd.DataFrame:
+    ) -> DatasetHandle:
         """Create an initial dataset archive that is idetified by the given
         name. The given data represents the first snapshot in the created
         archive.
@@ -187,7 +221,7 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.engine.dataset.DatasetHandle
 
         Raises
         ------
@@ -197,12 +231,17 @@ class OpencleanEngine(object):
         if name in self._datasets:
             raise ValueError("dataset '{}' exists".format(name))
         # Create a new dataset archive with the associated manager.
-        descriptor = self.manager.create(name=name, primary_key=primary_key)
+        descriptor = self.manager.create(
+            name=name,
+            doc=source,
+            primary_key=primary_key,
+            serializer=COMPACT,
+            snapshot=Descriptor(action=LoadOp().to_dict())
+        )
         archive_id = descriptor.identifier()
         archive = self.manager.get(archive_id)
         # Commit the given dataset to the archive. TODO: We should add a LoadOp
         # class to represent the action.
-        archive.commit(doc=source, action=LoadOp().to_dict())
         # Create a datastore to manage the archive and register that datastore
         # with this engine under the given name.
         if self.basedir is not None:
@@ -220,8 +259,8 @@ class OpencleanEngine(object):
             identifier=archive_id,
             pk=primary_key
         )
-        # Checkout and return the data frame for the loaded datasets snapshot.
-        return datastore.checkout()
+        # Return handle for the created dataset.
+        return self._datasets[name]
 
     def dataset(self, name: str) -> DatasetHandle:
         """Get handle for a dataset. Depending on the type of the dataset this
@@ -260,7 +299,7 @@ class OpencleanEngine(object):
         self, source: Datasource, name: str,
         primary_key: Optional[Union[List[str], str]] = None,
         cached: Optional[bool] = True
-    ) -> pd.DataFrame:
+    ) -> DatasetHandle:
         """Create an initial dataset archive that is idetified by the given
         name. The given data frame represents the first snapshot in the created
         archive.
@@ -285,7 +324,7 @@ class OpencleanEngine(object):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.engine.dataset.DatasetHandle
 
         Raises
         ------
@@ -386,17 +425,34 @@ class OpencleanEngine(object):
         # Get the handle for the referenced dataset and checkout the latest
         # dataset snapshot.
         handle = self.dataset(name)
-        df = self.checkout(name=name)
-        # Create a random sample from the dataset. This is only necessary if
-        # the dataset contains more rows than the sample size.
-        if n < df.shape[0]:
-            df = df.sample(n=n, random_state=random_state)
+        # Create a random sample from the dataset.
+        df = DataPipeline(source=handle.open())\
+            .sample(n=n, random_state=random_state)\
+            .to_df()
         # Register the generated sample as a new dataset with a reference to
         # the original dataset to maintain the link to the source of a sampled
         # dataset.
         ds = DataSample(df=df, original=handle, n=n, random_state=random_state)
         self._datasets[name] = ds
         return df
+
+    def stream(self, name: str, version: Optional[int] = None) -> DataPipeline:
+        """Get a data pipeline for a dataset snapshot.
+
+        Parameters
+        ----------
+        name: string
+            Unique dataset name.
+        version: int, default=None
+                Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.pipeline.DataPipeline
+        """
+        handle = self.dataset(name)
+        # Create a random sample from the dataset.
+        return DataPipeline(source=handle.open(version=version))
 
 
 # -- Engine factory -----------------------------------------------------------

@@ -12,22 +12,26 @@ operations that use functions from the command registry.
 
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
-from histore.archive.base import VolatileArchive
-from histore.archive.manager.base import ArchiveManager
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import ArchiveStore
+from openclean.data.archive.base import Archive, ArchiveManager, ArchiveStore, Snapshot, SnapshotReader
 from openclean.data.archive.cache import CachedDatastore
 from openclean.data.archive.histore import HISTOREDatastore
 from openclean.data.metadata.base import MetadataStore
+from openclean.data.stream.base import Datasource
 from openclean.data.types import Columns, Scalar
 from openclean.engine.action import CommitOp, InsertOp, OpHandle, SampleOp, UpdateOp
-from openclean.engine.object.function import FunctionHandle
 from openclean.engine.log import LogEntry, OperationLog
+from openclean.engine.object.function import FunctionHandle
+from openclean.engine.operator import StreamOp, StreamOperator
+from openclean.operator.stream.processor import StreamProcessor
 from openclean.operator.transform.insert import inscol
 from openclean.operator.transform.update import update
+
+
+StreamOpPipeline = Union[StreamProcessor, StreamOp, List[Union[StreamProcessor, StreamOp]]]
 
 
 class DatasetHandle(metaclass=ABCMeta):
@@ -73,7 +77,7 @@ class DatasetHandle(metaclass=ABCMeta):
                 return self.store.checkout(version=op.version)
         raise KeyError("unknown log entry '{}'".format(version))
 
-    def commit(self, df: pd.DataFrame, action: Optional[OpHandle] = None) -> pd.DataFrame:
+    def commit(self, source: Datasource, action: Optional[OpHandle] = None) -> Datasource:
         """Add a new snapshot to the history of the dataset.
 
         If no action is provided a user commit action operator is used as the
@@ -81,20 +85,21 @@ class DatasetHandle(metaclass=ABCMeta):
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Data frame for the new dataset snapshot.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.engine.action.OpHandle, default=None
             Operator that created the dataset snapshot.
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
         """
         action = action if action is not None else CommitOp()
-        df = self.store.commit(df=df, action=action)
+        source = self.store.commit(source=source, action=action)
         # Add the operator to the internal log.
         self._log.add(version=self.store.last_version(), action=action)
-        return df
+        return source
 
     @abstractmethod
     def drop(self):
@@ -152,7 +157,7 @@ class DatasetHandle(metaclass=ABCMeta):
         )
         # Run the insert operation and commit the new dataset version.
         df = inscol(df=df, names=names, pos=pos, values=action.to_eval())
-        return self.commit(df=df, action=action)
+        return self.commit(source=df, action=action)
 
     def log(self) -> List[LogEntry]:
         """Get the list of log entries for all dataset snapshots.
@@ -177,6 +182,20 @@ class DatasetHandle(metaclass=ABCMeta):
         openclean.data.metadata.base.MetadataStore
         """
         return self.store.metadata(version=version)
+
+    def open(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.data.archive.base.SnapshotReader
+        """
+        return self.store.open(version=version)
 
     def update(
         self, columns: Columns, func: FunctionHandle, args: Optional[Dict] = None,
@@ -224,7 +243,7 @@ class DatasetHandle(metaclass=ABCMeta):
         )
         # Run the update operation and commit the new dataset version.
         df = update(df=df, columns=columns, func=action.to_eval())
-        return self.commit(df=df, action=action)
+        return self.commit(source=df, action=action)
 
     def version(self) -> int:
         """Get version identifier for the last snapshot of the dataset.
@@ -302,6 +321,52 @@ class FullDataset(DatasetHandle):
         self.identifier = identifier
         self.pk = pk
 
+    def apply(
+        self, operations: StreamOpPipeline, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on a snapshot in
+        the archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        operations: openclean.engine.base.StreamOpPipeline
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        # Get the schema for the current snapshot.
+        origin = self.store.last_version()
+        schema = self.store.schema().at_version(version=origin)
+        # Instantiate the stream operators.
+        operators = list()
+        for sop in operations if isinstance(operations, list) else [operations]:
+            if isinstance(sop, StreamProcessor):
+                op = StreamOperator(func=sop.open(schema=schema))
+            elif isinstance(sop, StreamOp):
+                op = sop.open(schema=schema)
+            else:
+                raise ValueError("invalid stream operator '{}'".format(sop))
+            schema = op.columns
+            operators.append(op)
+        # Apply operators on the archive and return the snapshot handles.
+        return self.store.apply(operators=operators, validate=validate)
+
     def drop(self):
         """Delete all resources that are associated with the dataset history."""
         self.manager.delete(self.identifier)
@@ -338,7 +403,7 @@ class DataSample(DatasetHandle):
         """
         # Create a volatile archive for the dataset sample and commit the
         # given data frame as the first snapshot.
-        archive = VolatileArchive()
+        archive = Archive()
         store = CachedDatastore(datastore=HISTOREDatastore(archive))
         store.commit(df, action=SampleOp(args={'n': n, 'randomState': random_state}))
         super(DataSample, self).__init__(store=store, is_sample=True)

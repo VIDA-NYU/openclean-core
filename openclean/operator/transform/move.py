@@ -13,7 +13,7 @@ import pandas as pd
 
 from openclean.data.schema import as_list, select_clause
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Columns, Schema
+from openclean.data.types import Columns, DatasetSchema
 from openclean.operator.base import DataFrameTransformer
 from openclean.operator.stream.consumer import StreamFunctionHandler
 from openclean.operator.stream.processor import StreamProcessor
@@ -85,7 +85,7 @@ class MoveCols(StreamProcessor, DataFrameTransformer):
         self.columns = as_list(columns)
         self.pos = pos
 
-    def open(self, schema: Schema) -> StreamFunctionHandler:
+    def open(self, schema: DatasetSchema) -> StreamFunctionHandler:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that re-orders values in a data stream row.
 
@@ -108,7 +108,7 @@ class MoveCols(StreamProcessor, DataFrameTransformer):
 
         return StreamFunctionHandler(columns=colnames, func=streamfunc)
 
-    def reorder(self, schema: Schema) -> List[int]:
+    def reorder(self, schema: DatasetSchema) -> List[int]:
         """Get a the order of columns in the modified data schema. The new
         column order is represented as a list where over the original column
         index positions.

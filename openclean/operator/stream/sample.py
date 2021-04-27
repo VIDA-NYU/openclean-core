@@ -13,7 +13,7 @@ from random import Random
 from typing import Any, Optional
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Schema
+from openclean.data.types import DatasetSchema
 from openclean.operator.stream.consumer import ProducingConsumer, StreamConsumer
 from openclean.operator.stream.processor import StreamProcessor
 
@@ -35,7 +35,7 @@ class Sample(StreamProcessor):
         self.n = n
         self.random_state = random_state
 
-    def open(self, schema: Schema) -> StreamConsumer:
+    def open(self, schema: DatasetSchema) -> StreamConsumer:
         """Factory pattern for stream consumer. Returns an instance of the
         random sample generator in a data pipeline.
 
@@ -73,7 +73,7 @@ class SampleCollector(ProducingConsumer):
     downstream consumer at the end of the stream.
     """
     def __init__(
-        self, columns: Schema, n: int, random_state: Optional[int] = None,
+        self, columns: DatasetSchema, n: int, random_state: Optional[int] = None,
         consumer: Optional[StreamConsumer] = None
     ):
         """Initialize the row schema, sample size and the internal row buffer.
@@ -106,14 +106,26 @@ class SampleCollector(ProducingConsumer):
         """Pass the selected sample to the connected downstream consumer.
         Returns the consumer result.
 
+        Collect a modified list of rows. Returns the result of the downstream
+        consumer or the collected results (if the consumer result is None).
+
         Returns
         -------
         any
         """
         if self.consumer is not None:
+            result = list()
             for rowid, row in self.rows:
-                self.consumer.consume(rowid=rowid, row=row)
-            return self.consumer.close()
+                try:
+                    row = self.consumer.consume(rowid=rowid, row=row)
+                    if row is not None:
+                        result.append((rowid, row))
+                except StopIteration:
+                    break
+            consumer_result = self.consumer.close()
+            return result if consumer_result is None else consumer_result
+        else:
+            return self.rows
 
     def consume(self, rowid: int, row: DataRow):
         """Randomly add the given (rowid, row)-pair to the internal buffer.

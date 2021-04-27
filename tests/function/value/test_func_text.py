@@ -38,11 +38,11 @@ def test_alphanumeric_predicate(value, result):
         ('abc', to_len, 3),
         (42, to_len, 2),
         ('ABC', to_lower, 'abc'),
-        (42, to_lower, '42'),
+        (42, to_lower, 42),
         ('abc', to_title, 'Abc'),
-        (42, to_title, '42'),
+        (42, to_title, 42),
         ('abc', to_upper, 'ABC'),
-        (42, to_upper, '42')
+        (42, to_upper, 42)
     ]
 )
 def test_string_function(value, func, result):

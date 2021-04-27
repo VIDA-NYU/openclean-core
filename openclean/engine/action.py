@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Union
 
 from openclean.data.archive.base import ActionHandle
 from openclean.data.schema import select_clause
-from openclean.data.types import Columns, Scalar, Schema
+from openclean.data.types import Columns, Scalar, DatasetSchema
 from openclean.function.eval.base import Eval, EvalFunction, to_const_eval
 from openclean.engine.object.function import FunctionHandle
 
@@ -37,7 +37,7 @@ class OpHandle(ActionHandle):
     the operator metadata.
     """
     def __init__(
-        self, optype: str, schema: Optional[Schema] = None,
+        self, optype: str, schema: Optional[DatasetSchema] = None,
         columns: Optional[Columns] = None,
         func: Optional[Union[Scalar, FunctionHandle]] = None,
         args: Optional[Dict] = None, sources: Optional[Columns] = None
@@ -151,7 +151,7 @@ class CommitOp(OpHandle):
 class InsertOp(OpHandle):
     """Handle for an insert operation."""
     def __init__(
-        self, schema: Schema, names: Union[str, List[str]], pos: Optional[int] = None,
+        self, schema: DatasetSchema, names: Union[str, List[str]], pos: Optional[int] = None,
         values: Optional[Union[Scalar, FunctionHandle]] = None,
         args: Optional[Dict] = None, sources: Optional[Columns] = None
     ):
@@ -278,7 +278,7 @@ class SampleOp(OpHandle):
 class UpdateOp(OpHandle):
     """Handle for an update operation."""
     def __init__(
-        self, schema: Schema, columns: Columns, func: FunctionHandle,
+        self, schema: DatasetSchema, columns: Columns, func: FunctionHandle,
         args: Optional[Dict] = None, sources: Optional[Columns] = None
     ):
         """Initialize the metadata for an update operator.

@@ -14,7 +14,7 @@ import pandas as pd
 from openclean.data.groupby import DataFrameGrouping
 from openclean.data.schema import column_ref
 from openclean.data.stream.base import StreamFunction
-from openclean.data.types import Schema, Value
+from openclean.data.types import DatasetSchema, Value
 from openclean.function.eval.base import EvalFunction, EvalResult
 from openclean.function.value.base import ValueFunction
 from openclean.operator.base import DataGroupReducer
@@ -199,7 +199,7 @@ class ValueExtractor(EvalFunction):
         # modified.
         return list(zip(*data)) if len(data) > 1 else data[0]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """The function mapping already contains references to columns by their
         index position. There is nothing to prepare. We raise an error because
         the ValueExtractor is not intended to be used as a stream function at

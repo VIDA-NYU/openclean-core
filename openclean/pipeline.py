@@ -15,14 +15,14 @@ import pandas as pd
 
 from openclean.data.mapping import Mapping
 from openclean.data.schema import as_list, select_clause
-from openclean.data.stream.base import DataReader
+from openclean.data.stream.base import DataRow, Datasource, DefaultDocument, DocumentIterator, RowIndex, to_document
 from openclean.data.stream.csv import CSVFile
 from openclean.data.stream.df import DataFrameStream
-from openclean.data.types import Columns, Scalar, Schema, Value
+from openclean.data.types import Columns, Scalar, DatasetSchema, Value
 from openclean.cluster.base import Cluster, Clusterer
 from openclean.function.eval.base import EvalFunction
 from openclean.function.matching.base import StringMatcher
-from openclean.operator.stream.collector import Distinct, DataFrame, RowCount, Write
+from openclean.operator.stream.collector import DataFrame, Distinct, RowCount, Write
 from openclean.operator.stream.consumer import StreamConsumer
 from openclean.operator.stream.matching import BestMatches
 from openclean.operator.stream.processor import StreamProcessor
@@ -39,15 +39,14 @@ from openclean.profiling.datatype.convert import DatatypeConverter
 from openclean.profiling.datatype.operator import Typecast
 
 
-class DataPipeline(object):
+class DataPipeline(DefaultDocument):
     """The data pipeline allows to iterate over the rows that are the result of
     streaming an input data set through a pipeline of stream operators.
 
     The class implements the context manager interface.
     """
     def __init__(
-        self, reader: DataReader,
-        columns: Optional[Schema] = None,
+        self, source: Datasource, columns: Optional[DatasetSchema] = None,
         pipeline: Optional[StreamProcessor] = None
     ):
         """Initialize the data stream reader, schema information for the
@@ -55,7 +54,7 @@ class DataPipeline(object):
 
         Parameters
         ----------
-        reader: openclean.data.stream.base.DatasetReader
+        source: openclean.data.stream.base.Datasource
             Reader for the data stream.
         columns: list of string, default=None
             List of column names in the schema of the pipeline result.
@@ -64,8 +63,12 @@ class DataPipeline(object):
             List of operators in the pipeline fpr this stream processor.
 
         """
-        self.reader = reader
-        self.columns = columns if columns is not None else reader.columns
+        # Ensure that the source document is an instance of the class
+        # histore.document.base.Document.
+        self.source = to_document(source)
+        super(DataPipeline, self).__init__(
+            columns=columns if columns is not None else source.columns
+        )
         self.pipeline = pipeline if pipeline is not None else list()
 
     def __enter__(self):
@@ -73,11 +76,12 @@ class DataPipeline(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        """Close the associated file handle when the context manager exits."""
+        """Close the associated document when the context manager exits."""
+        self.close()
         return False
 
     def append(
-        self, op: StreamProcessor, columns: Optional[Schema] = None
+        self, op: StreamProcessor, columns: Optional[DatasetSchema] = None
     ) -> DataPipeline:
         """Return a modified stream processer with the given operator appended
         to the stream pipeline.
@@ -96,10 +100,14 @@ class DataPipeline(object):
         openclean.pipeline.DataPipeline
         """
         return DataPipeline(
-            reader=self.reader,
+            source=self.source,
             columns=columns if columns is not None else self.columns,
             pipeline=self.pipeline + [op]
         )
+
+    def close(self):
+        """Close the associated document."""
+        self.source.close()
 
     def cluster(self, clusterer: Clusterer) -> List[Cluster]:
         """Cluster values in a data stream.
@@ -224,7 +232,7 @@ class DataPipeline(object):
         """
         if self.pipeline:
             consumer = self._open_pipeline()
-            for rowid, row in self.reader.iterrows():
+            for rowid, row in self.source.iterrows():
                 try:
                     row = consumer.consume(rowid, row)
                     if row is not None:
@@ -233,11 +241,11 @@ class DataPipeline(object):
                     break
             consumer.close()
         else:
-            for rowid, row in self.reader.iterrows():
+            for rowid, row in self.source.iterrows():
                 yield rowid, row
 
     def insert(
-        self, names: Schema, pos: Optional[int] = None,
+        self, names: DatasetSchema, pos: Optional[int] = None,
         values: Optional[Union[Callable, Scalar, EvalFunction, List, Tuple]] = None
     ) -> DataPipeline:
         """Insert one or more columns into the rows in the data stream.
@@ -335,11 +343,18 @@ class DataPipeline(object):
         -------
         openclean.pipeline.DataPipeline
         """
-        return self
+        # Create the consumer if the pipeline has at least one operator.
+        consumer = None
+        if self.pipeline:
+            consumer = self._open_pipeline()
+        # Stream all rows to the pipeline consumer.
+        return PipelineIterator(stream=self.source.open(), consumer=consumer)
 
     def _open_pipeline(self) -> StreamConsumer:
-        """Create stream consumer for all pipeline operators. Connect them an
-        return a reference to the consumer for the first operator.
+        """Create stream consumer for all pipeline operators.
+
+        Connect the created operators to ensure that rows are passed through the
+        pipeline. Returns a reference to the consumer for the first operator.
 
         Returns
         -------
@@ -347,7 +362,7 @@ class DataPipeline(object):
         """
         # Create a stream consumer for the first operator in the pipeline. This
         # consumer is the one that will receive all dataset rows first.
-        pipeline = self.pipeline[0].open(schema=self.reader.columns)
+        pipeline = self.pipeline[0].open(schema=self.source.columns)
         # Create consumer for downstream operators and connect the consumer
         # with each other. This assumes that all operaotrs (except the last
         # one) yield consumer that are also producer.
@@ -424,7 +439,7 @@ class DataPipeline(object):
         )
         return self.stream(op)
 
-    def rename(self, columns: Columns, names: Schema) -> DataPipeline:
+    def rename(self, columns: Columns, names: DatasetSchema) -> DataPipeline:
         """Rename selected columns in a the schema data of data stream rows.
 
         Parameters
@@ -462,10 +477,10 @@ class DataPipeline(object):
         # Create a stream consumer for the first operator in the pipeline. This
         # consumer is the one that will receive all dataset rows first.
         consumer = self._open_pipeline()
-        # Stream all rows to the pipeline consumer. THe returned result is the
+        # Stream all rows to the pipeline consumer. The returned result is the
         # result that is returned when the consumer is closed by the reader.
-        with self.reader.open() as stream:
-            for rowid, row in stream:
+        with self.source.open() as stream:
+            for _, rowid, row in stream:
                 try:
                     consumer.consume(rowid=rowid, row=row)
                 except StopIteration:
@@ -485,7 +500,7 @@ class DataPipeline(object):
         return self.append(Sample(n=n, random_state=random_state))
 
     def select(
-        self, columns: Optional[Columns] = None, names: Optional[Schema] = None
+        self, columns: Optional[Columns] = None, names: Optional[DatasetSchema] = None
     ) -> DataPipeline:
         """Select a given list of columns from the streamed data frame. Columns
         in the resulting data stream may also be renamed using the optional
@@ -543,7 +558,6 @@ class DataPipeline(object):
     def to_df(self) -> pd.DataFrame:
         """Collect all rows in the stream that are yielded by the associated
         consumer into a pandas data frame.
-
         Returns
         -------
         pd.DataFrame
@@ -632,21 +646,111 @@ class DataPipeline(object):
         none_as: string, default=None
             String that is used to encode None values in the output file. If
             given, all cell values that are None are substituted by the string.
+        encoding: string, default=None
+            The csv file encoding e.g. utf-8, utf-16 etc.
         """
         file = CSVFile(
             filename=filename,
             delim=delim,
             compressed=compressed,
-            write=True,
-            encoding=encoding
+            encoding=encoding,
+            none_is=none_as
         )
-        return self.stream(Write(file=file, none_as=none_as))
+        return self.stream(Write(file=file))
+
+
+class PipelineIterator(DocumentIterator):
+    """Iterator over rows in a data processing pipeline. Iterates over the rows
+    in an input stream. Each row is processed by a stream consumer. If the
+    consumer returns a value this value is returned as the next row. For
+    consumers that only return a result at the end of the stream this iterator
+    iterates over the rows that are returned when the consumer is closed.
+    """
+    def __init__(self, stream: DocumentIterator, consumer: Optional[StreamConsumer] = None):
+        """Initialize the source stream and the data processor.
+
+        Keeps an internal list of rows that may be returned by the stream
+        consumer when it is closed.
+
+        If the consumer is None the rows of the input stream will be returned
+        by this iterator.
+
+        Parameters
+        ----------
+        stream: openclean.data.stream.base.DocumentIterator
+            Iterator over the rows in the input document.
+        consumer: openclean.operator.stream.consumer.StreamConsumer, default=None
+            Processor for stream rows.
+        """
+        self.stream = stream
+        self.consumer = consumer
+        # Maintain reader for rows that may be returned by the consumer when
+        # it is closed.
+        self._rows = None
+        self._readindex = None
+        # Counter for returned rows.
+        self._rowcount = 0
+
+    def close(self):
+        """Release all resources that are held by the associated input stream
+        and output consumer.
+        """
+        self.stream.close()
+
+    def next(self) -> Tuple[int, RowIndex, DataRow]:
+        """Read the next row in the pipeline.
+
+        The row is processed by the associated consumer. If the consumer returns
+        an non-None result this row is returned as the next row. If the consumer
+        returns None the next input row is processed. If the consumer returns a
+        non-empty result when it is closed we assume that this is a list of rows
+        and iterate over them as well.
+
+        Returns
+        -------
+        tuple of int, histore.document.base.RowIndex, histore.document.base.DataRow
+        """
+        # If the row-buffer is not None return rows from the buffer.
+        if self._rows is not None:
+            if self._readindex < len(self._rows):
+                pos = self._rowcount
+                self._rowcount += 1
+                rowidx, row = self._rows[self._readindex]
+                self._readindex += 1
+                return pos, rowidx, row
+            raise StopIteration()
+        # Process rows in the input stream. Returns at the first row that is
+        # processed by the consumer with a non-None result. The stream reader
+        # will raise StopIteration when the end of the stream is reached. At
+        # that point the loop will terminate.
+        while True:
+            try:
+                pos, rowid, row = self.stream.next()
+                if self.consumer is not None:
+                    row = self.consumer.consume(rowid=rowid, row=row)
+                if row is not None:
+                    self._rowcount += 1
+                    return pos, rowid, row
+            except StopIteration:
+                break
+        # Close the consumer. If it returns a non-None result we assume that
+        # it is a list of rows (rowid, values) and continue to iterate over
+        # them.
+        if self.consumer is not None:
+            self._rows = self.consumer.close()
+            if self._rows is not None:
+                pos = self._rowcount
+                self._rowcount += 1
+                self._readindex = 1
+                rowidx, row = self._rows[0]
+                return pos, rowidx, row
+        raise StopIteration()
 
 
 # -- Open file or data frame as pipeline --------------------------------------
 
 def stream(
-    filename: Union[str, pd.DataFrame], header: Optional[Schema] = None,
+    filename: Union[str, pd.DataFrame], header: Optional[DatasetSchema] = None,
     delim: Optional[str] = None, compressed: Optional[bool] = None,
     none_is: Optional[str] = None, encoding: Optional[str] = None
 ) -> DataPipeline:
@@ -687,4 +791,4 @@ def stream(
             none_is=none_is,
             encoding=encoding
         )
-    return DataPipeline(reader=file)
+    return DataPipeline(source=file)

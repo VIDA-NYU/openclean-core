@@ -14,7 +14,7 @@ from typing import Optional
 import pandas as pd
 
 from openclean.data.stream.base import DataRow
-from openclean.data.types import Column, Schema
+from openclean.data.types import Column, DatasetSchema
 from openclean.data.schema import as_list, select_clause
 from openclean.operator.base import Columns, DataFrameTransformer, Names
 from openclean.operator.stream.consumer import StreamFunctionHandler
@@ -86,7 +86,7 @@ class Select(StreamProcessor, DataFrameTransformer):
         else:
             self.names = None
 
-    def open(self, schema: Schema) -> StreamFunctionHandler:
+    def open(self, schema: DatasetSchema) -> StreamFunctionHandler:
         """Factory pattern for stream consumer. Returns an instance of a
         stream consumer that filters columns from data frame rows using the
         associated list of columns (i.e., the select clause).

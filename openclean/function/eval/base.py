@@ -19,7 +19,7 @@ import pandas as pd
 
 from openclean.data.stream.base import DataRow, StreamFunction
 from openclean.data.schema import column_ref, select_clause
-from openclean.data.types import Column, Columns, Scalar, Schema, Value
+from openclean.data.types import Column, Columns, Scalar, DatasetSchema, Value
 from openclean.function.value.base import ValueFunction
 from openclean.util.core import scalar_pass_through, tenary_pass_through
 
@@ -251,7 +251,7 @@ class EvalFunction(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """Prepare the evaluation function to be able to process rows in a data
         stream. This method is called before streaming starts to inform the
         function about the schema of the rows in the data stream.
@@ -588,7 +588,7 @@ class Eval(EvalFunction):
             else:
                 return [func(*t) for t in zip(*data)]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """Create a stream function that applies the consumer on the results
         from one or more stream functions for the producers.
 
@@ -674,7 +674,7 @@ class Const(EvalFunction):
         """
         return [self.value] * df.shape[0]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """The prepare method returns a callable that returns the constant
         value for evary input row.
 
@@ -750,7 +750,7 @@ class Col(EvalFunction):
         _, colidx = column_ref(schema=df.columns, column=self.column)
         return df.iloc[:, colidx]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """Return a Col function that is prepared, i.e., that has the column
         index for the column that it operates on initialized.
 
@@ -829,7 +829,7 @@ class Cols(EvalFunction):
             data = df.iloc[:, colidxs]
             return [tuple(r) for r in data.itertuples(index=False, name=None)]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """Return a Cols function that is prepared, i.e., that has the column
         indexes for the columns that it operates on initialized.
 
@@ -898,7 +898,7 @@ class BinaryOperator(EvalFunction):
             # comparison operator to each pair of values.
             return [self.op(v1, v2) for v1, v2 in zip(lhs_data, rhs_data)]
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """Prepare both evaluation functions (lhs and rhs) and return a
         binary operator stream function.
 

@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 
 from openclean.data.stream.base import DataRow, StreamFunction
-from openclean.data.types import Schema, Value
+from openclean.data.types import DatasetSchema, Value
 from openclean.data.util import to_set
 from openclean.function.eval.base import InputColumn, Eval, EvalFunction, EvalResult
 from openclean.function.eval.base import evaluate, to_eval
@@ -157,7 +157,7 @@ class Lookup(EvalFunction):
             data.append(self.mapping.get(value, defaults[len(data)]))
         return data
 
-    def prepare(self, columns: Schema) -> StreamFunction:
+    def prepare(self, columns: DatasetSchema) -> StreamFunction:
         """Prepare the evaluation function to be able to process rows in a data
         stream. This method is called before streaming starts to inform the
         function about the schema of the rows in the data stream.

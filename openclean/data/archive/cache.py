@@ -10,13 +10,17 @@ memory.
 """
 
 from dataclasses import dataclass
-from histore.archive.snapshot import Snapshot
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 
-from openclean.data.archive.base import ActionHandle, ArchiveStore
+from openclean.data.archive.base import (
+    ActionHandle, ArchiveStore, ArchiveSchema, DatasetOperator, Snapshot,
+    SnapshotReader
+)
 from openclean.data.metadata.base import MetadataStore
+from openclean.data.stream.base import Datasource
+from openclean.data.stream.df import DataFrameStream
 
 
 @dataclass
@@ -39,11 +43,50 @@ class CachedDatastore(ArchiveStore):
 
         Parameters
         ----------
-        datastore: openclean.data.archive.base.Datastore
+        datastore: openclean.data.archive.base.ArchiveStore
             Reference to the datastore that persists the datasets.
         """
         self.datastore = datastore
         self._cache = None
+
+    def apply(
+        self, operators: Union[DatasetOperator, List[DatasetOperator]],
+        origin: Optional[int] = None, validate: Optional[bool] = None
+    ) -> List[Snapshot]:
+        """Apply a given operator or a sequence of operators on a snapshot in
+        the archive.
+
+        The resulting snapshot(s) will directly be merged into the archive. This
+        method allows to update data in an archive directly without the need
+        to checkout the snapshot first and then commit the modified version(s).
+
+        Returns list of handles for the created snapshots.
+
+        Note that there are some limitations for this method. Most importantly,
+        the order of rows cannot be modified and neither can it insert new rows
+        at this point. Columns can be added, moved, renamed, and deleted.
+
+        Parameters
+        ----------
+        operators: histore.document.operator.DatasetOperator or
+                list of histore.document.stream.DatasetOperator
+            Operator(s) that is/are used to update the rows in a dataset
+            snapshot to create new snapshot(s) in this archive.
+        origin: int, default=None
+            Unique version identifier for the original snapshot that is being
+            updated. By default the last version is updated.
+        validate: bool, default=False
+            Validate that the resulting archive is in proper order before
+            committing the action.
+
+        Returns
+        -------
+        histore.archive.snapshot.Snapshot
+        """
+        # Invalidate the cache.
+        self._cache = None
+        # Apply operations to the wrapped datastore archive.
+        return self.datastore.apply(operators=operators, origin=origin, validate=validate)
 
     def checkout(
         self, version: Optional[int] = None, no_cache: Optional[bool] = False
@@ -85,17 +128,18 @@ class CachedDatastore(ArchiveStore):
         return df
 
     def commit(
-        self, df: pd.DataFrame, action: Optional[ActionHandle] = None,
+        self, source: Datasource, action: Optional[ActionHandle] = None,
         checkout: Optional[bool] = False
-    ) -> pd.DataFrame:
+    ) -> Datasource:
         """Insert a new version for a dataset.
 
         Returns the inserted data frame with potentially modified row indexes.
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Data frame containing the new dataset version that is being stored.
+        source: openclean.data.stream.base.Datasource
+            Input data frame or stream containing the new dataset version that
+            is being stored.
         action: openclean.data.archive.base.ActionHandle, default=None
             Optional handle of the action that created the new dataset version.
         checkout: bool, default=False
@@ -107,11 +151,12 @@ class CachedDatastore(ArchiveStore):
 
         Returns
         -------
-        pd.DataFrame
+        openclean.data.stream.base.Datasource
         """
-        df = self.datastore.commit(df=df, action=action)
-        self._cache = CacheEntry(df=df, version=self.datastore.last_version())
-        return df
+        source = self.datastore.commit(source=source, action=action, checkout=checkout)
+        if isinstance(source, pd.DataFrame):
+            self._cache = CacheEntry(df=source, version=self.datastore.last_version())
+        return source
 
     def last_version(self) -> int:
         """Get a identifier for the last version of the dataset.
@@ -148,6 +193,28 @@ class CachedDatastore(ArchiveStore):
         """
         return self.datastore.metadata(version=version)
 
+    def open(self, version: Optional[int] = None) -> SnapshotReader:
+        """Get a stream reader for a dataset snapshot.
+
+        Parameters
+        ----------
+        version: int, default=None
+            Unique version identifier. By default the last version is used.
+
+        Returns
+        -------
+        openclean.data.archive.base.SnapshotReader
+        """
+        # Get the latest dataset version if the argument is None.
+        if version is None:
+            version = self.datastore.last_version()
+        # If the requested version matches the cached version return a
+        # stream for the cached data frame.
+        if self._cache is not None:
+            if version == self._cache.version:
+                return DataFrameStream(self._cache.df)
+        return self.datastore.open(version=version)
+
     def rollback(self, version: int) -> pd.DataFrame:
         """Rollback the archive history to the snapshot with the given version
         identifier.
@@ -165,6 +232,15 @@ class CachedDatastore(ArchiveStore):
         pd.DataFrame
         """
         return self.datastore.rollback(version=version)
+
+    def schema(self) -> ArchiveSchema:
+        """Get the schema history for the archived dataset.
+
+        Returns
+        -------
+        openclean.data.archive.base.ArchiveSchema
+        """
+        return self.datastore.schema()
 
     def snapshots(self) -> List[Snapshot]:
         """Get list of handles for all versions of a given dataset.

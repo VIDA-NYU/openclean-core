@@ -9,13 +9,12 @@
 serialized Json documents in files on the file system.
 """
 
-from histore.archive.store.fs.reader import default_decoder
-from histore.archive.store.fs.writer import DefaultEncoder
 from typing import Any, Callable, Optional
 
 import json
 import os
 
+from openclean.data.serialize import default_decoder, DefaultEncoder
 from openclean.data.store.base import DataStore
 
 import openclean.util.core as util

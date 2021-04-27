@@ -18,8 +18,8 @@ from typing import Tuple, Union
 
 # Openclean makes use of the identifiable column name that is also defined in
 # HISTORE.
-from histore.document.schema import Column, Columns, ColumnRef, Schema  # noqa: F401
-
+from histore.document.schema import Column, Columns, ColumnRef  # noqa: F401
+from histore.document.schema import DocumentSchema as DatasetSchema  # noqa: F401
 
 # Scalar values.
 Scalar = Union[int, float, str, datetime]
