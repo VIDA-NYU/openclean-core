@@ -31,7 +31,7 @@ def test_lookup_eval(dataset):
     """Test the lookup evaluation function."""
     table = {'R&D': 'Research', 'Accnt': 'Accounting'}
     func = Lookup(columns='Department', mapping=table)
-    assert func.eval(dataset) == ['Research', 'Accounting', 'Research', None]
+    assert func.eval(dataset) == ['Research', 'Accounting', 'Research', 'Service']
 
 
 def test_standardize_eval(dataset):
