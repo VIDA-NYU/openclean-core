@@ -62,7 +62,7 @@ def mapping(df: pd.DataFrame, columns: Columns, func: Union[Callable, ValueFunct
 def replace(predicate: Callable, value: Value) -> ConditionalStatement:
     """Return an instance of the Replace class for the given arguments.
 
-    Paramaters
+    Parameters
     ----------
     predicate: callable
         Predicate that is evalauated on input values.

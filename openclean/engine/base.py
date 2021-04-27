@@ -55,7 +55,7 @@ class OpencleanEngine(object):
         """Initialize the engine identifier and the manager for created dataset
         archives.
 
-        Paramaters
+        Parameters
         ----------
         identifier: string
             Unique identifier for the engine instance.
