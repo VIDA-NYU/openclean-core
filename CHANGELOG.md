@@ -41,7 +41,7 @@
 * Enable cache refresh for cached datasets in `openclean.data.archive.cache.CachedDatastore`.
 
 
-### 0.4.0 - TBD
+### 0.4.0 - 2021-04-27
 
 * Use compact serialization for HISTORE archives.
 * Load and sample datasets from a data stream in `openclean.engine.base.OpencleanEngine`.
