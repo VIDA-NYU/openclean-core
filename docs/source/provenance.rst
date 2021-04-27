@@ -40,9 +40,8 @@ The user can then register their dataset with the initialized openclean engine.
 
 .. jupyter-execute::
 
-    df = db.create(ds, name='jobs', primary_key='Job #')
+    df = db.create(source=ds, name='jobs', primary_key='Job #')
 
-    df.head()
 
 The create method returns a pandas dataframe object which we shall apply some transformations on.
 
@@ -55,6 +54,8 @@ Let's create a new version of the dataset by performing lowercasing the Borough 
 
     from openclean.operator.transform.update import update
 
+    df = db.checkout('jobs') # get the dataset
+
     lower_cased = update(df, columns='Borough', func=str.lower)
 
     lower_cased
@@ -64,7 +65,7 @@ The new dataset version can then be committed in the engine using the commit met
 
 .. jupyter-execute::
 
-    db.commit(name='jobs', df=lower_cased)
+    db.commit(name='jobs', source=lower_cased)
 
 To see the different versions of each dataset, we can simply request a log from the engine:
 
