@@ -197,7 +197,7 @@ class TokenTransformer(metaclass=ABCMeta):
         """Transform a list of string tokens. Returns a modified copy of the
         input list of tokens.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -314,7 +314,7 @@ class ReverseTokens(TokenTransformer):
     def transform(self, tokens: List[Token]) -> List[Token]:
         """Return a reversed copy of the token list.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -345,7 +345,7 @@ class SortTokens(TokenTransformer):
     def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns a sorted copy of the tken list.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -378,7 +378,7 @@ class TokenPrefix(TokenTransformer):
         input list does not have more than N elements the input is returned as
         it is.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -410,7 +410,7 @@ class TokenTransformerPipeline(TokenTransformer):
         pipeline sequentially on the output of the respective successor in the
         pipeline.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of string
             List of string openclean.function.token.base.Token.
@@ -429,7 +429,7 @@ class UniqueTokens(TokenTransformer):
     def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns a list of unique tokens from the input list.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -458,7 +458,7 @@ class UpdateTokens(TokenTransformer):
         """Returns the list of tokens that results from applying the associated
         value function of each of the tokens in the input list.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.

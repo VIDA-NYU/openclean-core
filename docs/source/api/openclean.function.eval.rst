@@ -18,6 +18,7 @@ Submodules
    openclean.function.eval.domain
    openclean.function.eval.list
    openclean.function.eval.logic
+   openclean.function.eval.mapping
    openclean.function.eval.normalize
    openclean.function.eval.null
    openclean.function.eval.random

@@ -1,7 +1,7 @@
-openclean.data.masterdata module
+openclean.engine.operator module
 ================================
 
-.. automodule:: openclean.data.masterdata
+.. automodule:: openclean.engine.operator
    :members:
    :undoc-members:
    :show-inheritance:

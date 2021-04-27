@@ -13,6 +13,7 @@ Submodules
    :maxdepth: 3
 
    openclean.function.token.base
+   openclean.function.token.convert
    openclean.function.token.filter
    openclean.function.token.ngram
    openclean.function.token.split

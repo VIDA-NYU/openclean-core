@@ -1,7 +1,7 @@
-openclean.data.source.britannica module
+openclean.function.token.convert module
 =======================================
 
-.. automodule:: openclean.data.source.britannica
+.. automodule:: openclean.function.token.convert
    :members:
    :undoc-members:
    :show-inheritance:

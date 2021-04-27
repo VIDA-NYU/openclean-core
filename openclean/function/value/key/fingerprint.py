@@ -50,7 +50,7 @@ class Fingerprint(PreparedFunction):
         is because the Fingerprint is a prepared value function and therefore
         could not prepare another value function.
 
-        Patameters
+        Parameters
         ----------
         tokenizer: openclean.function.token.base.Tokenizer, default=None
             Tokenizer that is used during fingerprint generation.
@@ -96,7 +96,7 @@ class NGramFingerprint(Fingerprint):
         n-gram tokenizer instead of the default tokenizer. Provides the option
         to set the n-gram tokenizer parameters.
 
-        Patameters
+        Parameters
         ----------
         n: int
             Length of generated n-grams.

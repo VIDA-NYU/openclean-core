@@ -26,5 +26,6 @@ Submodules
    openclean.engine.dataset
    openclean.engine.library
    openclean.engine.log
+   openclean.engine.operator
    openclean.engine.parallel
    openclean.engine.registry

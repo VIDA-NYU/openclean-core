@@ -23,7 +23,7 @@ class FirstLastFilter(TokenTransformer):
         """Return a list that contains the first and last element from the input
         list. If the input is empty the result is empty as well.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -52,7 +52,7 @@ class RepeatedTokenFilter(TokenTransformer):
     def transform(self, tokens: List[Token]) -> List[Token]:
         """Returns a list where no two consecutive tokens are identical.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -90,7 +90,7 @@ class TokenFilter(TokenTransformer):
         """Returns a list that contains only those tokens that satisfy the
         filter condition defined by the associated predicate.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -133,7 +133,7 @@ class TokenTypeFilter(TokenTransformer):
         """Returns a list that contains only those tokens that satisfy the
         filter condition defined by the associated predicate.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.

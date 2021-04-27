@@ -30,5 +30,6 @@ Submodules
    openclean.data.refdata
    openclean.data.schema
    openclean.data.sequence
+   openclean.data.serialize
    openclean.data.types
    openclean.data.util

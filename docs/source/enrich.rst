@@ -3,7 +3,7 @@
 Data Enrichment
 ===============
 
-Master data using Socrates
+Master data using Socrata
 -------------------------
 Master data can be downloaded into openclean to enrich datasets and support the data cleaning process. In this quick example,
 we download the `ITU ICT Development Index (IDI) <https://www.opendatanetwork.com/dataset/idp.nz/3bxy-wfk9>`_  from `Socrata <https://dev.socrata.com/data/>`_ to demonstrate this.
@@ -17,7 +17,7 @@ we download the `ITU ICT Development Index (IDI) <https://www.opendatanetwork.co
     print(idi.head())
 
 Master data using Reference Data Repository
-------------------------------------------
+-------------------------------------------
 openclean integrates the refdata package to provides easy access to several different reference datasets that are
 available online for download. Reference datasets are for example a great source for lookup tables and mappings that
 are used in data cleaning for outlier detection and data standardization.

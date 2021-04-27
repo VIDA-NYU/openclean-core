@@ -63,7 +63,7 @@ class TokenConverter(TokenTransformer, metaclass=ABCMeta):
         is transformed. Otherwise, the original token is added to the resulting
         token list.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
@@ -107,7 +107,7 @@ class TokenListConverter(TokenTransformer):
         convert it. If no converter accepts the token it is added to the result
         without changes.
 
-        Patameters
+        Parameters
         ----------
         tokens: list of openclean.function.token.base.Token
             List of string tokens.
