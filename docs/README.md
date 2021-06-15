@@ -10,7 +10,7 @@ This documentation uses the following extra Sphinx packages:
  * sphinx
  * sphinx_rtd_theme
  * sphinxcontrib.apidoc
- * jupyter_sphinx.execute
+ * jupyter_sphinx
  * nbsphinx
  * nbsphinx-link
 
@@ -44,5 +44,5 @@ the documentation can be found at: ``_build/html/index.html``.
 To detect spelling errors, run the spell checker by adding `spelling` as the builder argument to `sphinx-build` instead of `html`.
 
     sphinx-build -b spelling . build/
-         
+
 The misspellings will be printed to the console and written to `build/` as ``*.spelling`` files. More information on running the spell checker is available at ```sphinxcortrib.spelling```'s [documentation](<https://sphinxcontrib-spelling.readthedocs.io/en/latest/index.html>).
