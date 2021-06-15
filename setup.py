@@ -46,7 +46,7 @@ extras_require = {
         'sphinx-rtd-theme',
         'sphinxcontrib-apidoc',
         'jupyter-sphinx',
-        'nbshpinx',
+        'nbsphinx',
         'nbsphinx-link'
     ],
     'tests': tests_require,
