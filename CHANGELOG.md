@@ -49,6 +49,6 @@
 * Add summary for data frame conflict groups.
 
 
-### 0.4.1 - 2021-06-14
+### 0.4.1 - 2021-06-15
 
 * Remove environment variable *OPENCLEAN_WORKERS*.
