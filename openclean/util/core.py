@@ -27,43 +27,6 @@ def always_false(*args):
     return False
 
 
-def always_true(*args):
-    """Predicate that always evaluates to True.
-
-    Parameters
-    ----------
-    args: any
-        Variable list of arguments.
-
-    Returns
-    -------
-    bool
-    """
-    return True
-
-
-def ensure_callable(func):
-    """Helper method to test whether a given argument is a callable function
-    or not. Raises a ValueError if the argument is not a callable.
-
-    Parameters
-    ----------
-    func: any
-        Object that is tested for being a callable.
-
-    Returns
-    -------
-    callable
-
-    Raises
-    ------
-    ValueError
-    """
-    if not callable(func):
-        raise ValueError("'{}' not a callable".format(func))
-    return func
-
-
 class eval_all(object):
     """Logic operator that evaluates a list of predicates and returns True only
     if all predicates return a defined result value.
@@ -99,41 +62,6 @@ class eval_all(object):
             if f.eval(value) != self.truth_value:
                 return False
         return True
-
-
-def funcname(f):
-    """Get the name of a function or class object.
-
-    Parameters
-    ----------
-    f: callable
-        Function or class object
-
-    Returns
-    -------
-    string
-    """
-    try:
-        return f.__name__
-    except AttributeError:
-        return f.__class__.__name__
-
-
-def get_indexes(x, items):
-    """Searches a list for items and returns the indices
-
-    Parameters
-    ----------
-    x : str or int
-        value to search
-    items : list
-
-
-    Returns
-    -------
-    list
-    """
-    return [i for (y, i) in zip(items, range(len(items))) if x == y]
 
 
 def is_list_or_tuple(value):

@@ -12,7 +12,7 @@ from abc import ABCMeta, abstractmethod
 from openclean.profiling.base import DistinctSetProfiler
 
 
-class Pattern(metaclass=ABCMeta):
+class Pattern(metaclass=ABCMeta):  # pragma: no cover
     """Interface for objects representing patterns, e.g., a regular expression,
     that was discovered by a pattern finder. Implementations maintain a
     representation of the pattern itself as well as any additional metadata
@@ -46,7 +46,7 @@ class Pattern(metaclass=ABCMeta):
         -------
         openclean.function.value.base.ValueFunction
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     @abstractmethod
     def metadata(self):
@@ -64,7 +64,7 @@ class Pattern(metaclass=ABCMeta):
         -------
         dict
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     @abstractmethod
     def pattern(self):
@@ -74,7 +74,7 @@ class Pattern(metaclass=ABCMeta):
         -------
         string
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     @abstractmethod
     def to_dict(self):
@@ -86,10 +86,10 @@ class Pattern(metaclass=ABCMeta):
         -------
         dict
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
 
-class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
+class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):  # pragma: no cover
     """Interface for generic regular expression discovery. Each implementation
     should take an interable of (distinct) values (e.g., from a column in a
     data frame) as their input. The result is a (list of) string(s) that each
@@ -129,4 +129,4 @@ class PatternFinder(DistinctSetProfiler, metaclass=ABCMeta):
         -------
         list(openclean.profiling.pattern.base.Pattern)
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
