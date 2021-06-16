@@ -48,6 +48,7 @@ class MockResponse:
         data files.
         """
         self._fh = None
+        self.headers = dict()
 
     def __enter__(self):
         self._fh = BytesIO(b'C1,C2\nv1,v2')
