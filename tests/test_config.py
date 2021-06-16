@@ -12,11 +12,6 @@ import pytest
 
 import openclean.config as config
 
-DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.files')
-CONFIG_DIR = os.path.join(DIR, 'config')
-DEFAULT_WORKERS = os.path.join(CONFIG_DIR, 'default.yaml')
-PACKAGE_WORKERS = os.path.join(CONFIG_DIR, 'pckg.json')
-
 
 def test_config_datadir():
     """Test getting the default data directory from the configuration settings
@@ -38,28 +33,3 @@ def test_config_threads(value, result):
     os.environ[config.ENV_THREADS] = value
     assert config.THREADS() == result
     del os.environ[config.ENV_THREADS]
-
-
-def test_config_workers():
-    """Test getting the flowServ worker factory from files referenced by
-    ennvironment variables.
-    """
-    # Get the default configuration.
-    os.environ[config.ENV_WORKERS] = DEFAULT_WORKERS
-    factory = config.WORKERS()
-    assert factory.config['test1']['worker'] == 'docker'
-    assert factory.config['test2']['worker'] == 'subprocess'
-    # Overwrite configuration with package specific settings.
-    os.environ['OPENCLEAN_WORKERS_TEST'] = PACKAGE_WORKERS
-    factory = config.WORKERS(var='OPENCLEAN_WORKERS_TEST')
-    assert factory.config['test1']['worker'] == 'docker'
-    assert factory.config['test2']['worker'] == 'docker'
-    # By default the factory configuration is empty.
-    env = dict(os.environ)
-    del os.environ[config.ENV_WORKERS]
-    del os.environ['OPENCLEAN_WORKERS_TEST']
-    factory = config.WORKERS(var='OPENCLEAN_WORKERS_TEST', env=env)
-    assert factory.config['test1']['worker'] == 'docker'
-    assert factory.config['test2']['worker'] == 'docker'
-    factory = config.WORKERS()
-    assert factory.config == dict()

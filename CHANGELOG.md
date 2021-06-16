@@ -47,3 +47,8 @@
 * Load and sample datasets from a data stream in `openclean.engine.base.OpencleanEngine`.
 * Support stream operators on dataset snapshots in  `openclean.engine.base.OpencleanEngine`.
 * Add summary for data frame conflict groups.
+
+
+### 0.4.1 - 2021-06-15
+
+* Remove environment variable *OPENCLEAN_WORKERS*.

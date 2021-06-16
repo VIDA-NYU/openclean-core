@@ -60,7 +60,7 @@ class DivideByTotal(Normalize):
             Value (or function) that is used (evaluated) as substitute for
             non-numeric values if no error is raised. By default, a value is
             returned as is.
-        sum: float or int, defualt=None
+        sum: float or int, default=None
             Pre-computed sum of values. If not set this should be computed by
             the prepare function.
         """
@@ -94,7 +94,7 @@ class MaxAbsScale(Normalize):
             Value (or function) that is used (evaluated) as substitute for
             non-numeric values if no error is raised. By default, a value is
             returned as is.
-        maximum: float or int, defualt=None
+        maximum: float or int, default=None
             Pre-computed maximum of values. If not set this should be computed
             by the prepare function.
         """
@@ -128,10 +128,10 @@ class MinMaxScale(Normalize):
             Value (or function) that is used (evaluated) as substitute for
             non-numeric values if no error is raised. By default, a value is
             returned as is.
-        minumum: float or int, defualt=None
+        minumum: float or int, default=None
             Pre-computed minimum of values. If not set this should be computed
             by the prepare function.
-        maximum: float or int, defualt=None
+        maximum: float or int, default=None
             Pre-computed maximum of values. If not set this should be computed
             by the prepare function.
         """
