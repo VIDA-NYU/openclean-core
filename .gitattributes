@@ -1,1 +1,1 @@
-examples/notebooks/NYCRestaurantInspections/data/43nn-pn8j.tsv.gz filter=lfs diff=lfs merge=lfs -text lockable
+examples/notebooks/nyc-restaurant-inspections/data/43nn-pn8j.tsv.gz filter=lfs diff=lfs merge=lfs -text lockable
