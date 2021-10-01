@@ -41,13 +41,13 @@ to see a feature implemented.
 It is recommended to check that your issue complies with the following rules before submitting:
 
 * Verify that your issue is not being currently addressed by other issues or pull requests.
-* If you are submitting a bug report, we strongly encourage you to follow the guidelines in `How to make a good bug report <https://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports>`_ with a `reproducible example <https://stackoverflow.com/help/minimal-reproducible-example>`_ (if applicable). The ideal bug report contains a short reproducible code snippet, this way anyone can try to reproduce the bug easily and provide good feedback. If your snippet is longer than around 50 lines, please link to a gist or a github repo. If not feasible to include a reproducible snippet, please be specific about what operations and/or functions are involved and the shape of the data.
-* If an exception is raised, please provide the full traceback. Please include your operating system type and version number, as well as your Python, and openclean versions and any other information you deem useful.
+* If you are submitting a bug report, we strongly encourage you to follow the guidelines in `How to make a good bug report <https://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports>`_ with a `reproducible example <https://stackoverflow.com/help/minimal-reproducible-example>`_ (if applicable). The ideal bug report contains a short reproducible code snippet, this way anyone can try to reproduce the bug easily and provide good feedback. If your snippet is longer than around 50 lines, please link to a gist or a GitHub repo. If not feasible to include a reproducible snippet, please be specific about what operations and/or functions are involved and the shape of the data.
+* If an exception is raised, please provide the full traceback. Please include your operating system type and version number, as well as your Python and openclean versions and any other information you deem useful.
 
 
 Documentation
 -------------
-As developers we understand that sometimes, there are sections of documentations that are worse off explaining stuff
+As developers, we understand that sometimes, there are sections of documentations that are worse off explaining stuff
 to users because they've been written by experts. Therefore, we encourage you to help us improve the documentation
 If something in the docs doesn’t make sense to you, updating the relevant section after you figure it out is a great
 way to ensure it will help others.

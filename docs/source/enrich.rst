@@ -22,7 +22,7 @@ openclean integrates the refdata package to provides easy access to several diff
 available online for download. Reference datasets are for example a great source for lookup tables and mappings that
 are used in data cleaning for outlier detection and data standardization.
 
-There are a couple of examples in the `Master data guide <examples.html#examples>`_ which show how refdata package
+There are a couple of examples in the `Master data guide <examples.html#examples>`_ that show how refdata package
 can be used to get master data for cleaning operations.
 
-For more information, `visit the official repo <https://www.github.com/VIDA-NYU/reference-data-repository/>`_
+For more information, `visit the official repo <https://github.com/VIDA-NYU/reference-data-repository/>`_.

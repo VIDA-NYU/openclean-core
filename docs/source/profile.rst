@@ -4,8 +4,8 @@ Data Profiling
 ==============
 
 openclean comes with pre-configured tools to profile datasets that help to report some actionable metrics. It
-also provides a fairly easy to implement interface for users to create/attach their own data profilers. A user can select the default
-profiler to get basic statistics (min/max, entropy, distinct values, datatypes etc) or plug in their own profilers for advanced computations.
+also provides a fairly easy-to-implement interface for users to create/attach their own data profilers. A user can select the default
+profiler to get basic statistics (min/max, entropy, distinct values, datatypes, etc) or plug in their own profilers for advanced computations.
 
 We use a sample of NYC open data with completed job codes at various locations in New York City to demonstrate some examples.
 
@@ -59,7 +59,7 @@ Visualizing profiled results
 ----------------------------
 
 The :ref:`notebook-extension` allows profiled results to be visually seen in the notebook. The following
-screen grab demonstrates this using the `Auctus profiler <https://pypi.org/project/datamart-profiler/>`_ with the :ref:`notebook-extension` spreadsheet UI:
+screengrab demonstrates this using the `Auctus profiler <https://pypi.org/project/datamart-profiler/>`_ with the :ref:`notebook-extension` spreadsheet UI:
 
 .. only:: html
 

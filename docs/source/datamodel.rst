@@ -8,7 +8,7 @@ illustrate different operations, we use a sample of NYC open data with completed
 
 Datasets and Streams
 --------------------
-openclean uses a dataset (a wrapped pandas dataframe) as it's primary data storage object.
+openclean uses a dataset (a wrapped pandas dataframe) as its primary data storage object.
 It can be created from any source data type accepted by pandas. Compressed Gzip files (.gz) are also accepted.
 
 .. jupyter-execute::
@@ -34,7 +34,7 @@ For larger datasets, instead of loading the entire dataset into memory as above,
 
     print(sm)
 
-A dataset stream can directly have operators applied to it and the resulting dataset can computed lazily. We provide
+A dataset stream can directly have operators applied to it and the resulting dataset can be computed lazily. We provide
 a `jupyter notebook <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/city-names/DOB%20Job%20Application%20Filings%20-%20Brooklyn%20Spellings.ipynb>`_ to demonstrate the streaming functionality further.
 
 Eval Functions
@@ -97,7 +97,7 @@ Col is an Evaluation function that returns the value from a single column in a d
 
 Cols
 ^^^^
-Cols is an Evaluation function that returns the values from a multiple columns in a data frame row. Let's try
+Cols is an Evaluation function that returns the values from multiple columns in a data frame row. Let's try
 to get values from 2 columns together. Multiple columns are returned as a list of tuples:
 
 .. jupyter-execute::

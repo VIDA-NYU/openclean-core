@@ -46,7 +46,7 @@ one of the repair strategies available to us:
 
     from openclean.operator.collector.repair import Shortest, Vote, conflict_repair
 
-    # Define the conflict resolution strategy. We use majority vote for both RHS attributes.
+    # Define the conflict resolution strategy. We use a majority vote for both RHS attributes.
     strategy = {'Borough': Vote()}
 
     # resolve the conflicts
@@ -77,7 +77,7 @@ transformation (new values). They are both explained in :ref:`transform-ref`. We
     misspelled_data['Borough'].value_counts()
 
 
-We see there are empty values in this column. First let's update them using a lambda function that uses the is_empty value function.
+We see there are empty values in this column. First, let's update them using a lambda function that uses the is_empty value function.
 
 .. jupyter-execute::
 
@@ -121,9 +121,9 @@ detect anomalous values using:
     * Metaphone
 
 * Fuzzy Matching
-    Implementation of fuzzy string matching using n-gram overlaps and levenshtein or cosine distance.
+    Implementation of fuzzy string matching using n-gram overlaps and Levenshtein or cosine distance.
 
-StringMatcher objects ingest a vocabulary, and a matching algorithm that is used to identify dataset values that are misspelled. These can optionally be stored into
+StringMatcher objects ingest a vocabulary and a matching algorithm that is used to identify dataset values that are misspelled. These can optionally be stored into
 an openclean mapping to be reused later with other datasets as translation tables.
 
 .. jupyter-execute::
@@ -162,12 +162,12 @@ Fixing is easy, we can use the update operation with the Lookup eval function (t
     print(fixed['Borough'].unique())
 
 * KNN Clustering
-    openclean lets users use KNN clustering to identify values in a dataset that are potential variations of one another, and suggests a replacement for each. For e.g. those with missing or extra punctuation. A well-put example demonstrating this can be found `here <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/nyc-restaurant-inspections/NYC%20Restaurant%20Inspections%20-%20kNN%20Clusters%20for%20Business%20Name.ipynb>`_.
+    openclean lets users use KNN clustering to identify values in a dataset that are potential variations of one another and suggests a replacement for each. For e.g. those with missing or extra punctuation. A well-put example demonstrating this can be found `here <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/nyc-restaurant-inspections/NYC%20Restaurant%20Inspections%20-%20kNN%20Clusters%20for%20Business%20Name.ipynb>`_.
 
 
 Data Standardization
 --------------------
-Many a times, users will be faced with situations where the dataset contains variations of spellings (with extra / missing punctuations) for example, a Business or a street name. openclean provides multiple ways to enforce consistency across datasets:
+Many a time, users will be faced with situations where the dataset contains variations of spellings (with extra/missing punctuations) for example, a Business or a street name. openclean provides multiple ways to enforce consistency across datasets:
 
 * Token Signature Outliers
     When values in the dataset are expected to have a signature token present, this functionality helps identify anomalies. For e.g. an address column often requires values to contain `street suffixes <https://pe.usps.com/text/pub28/28apc_002.htm>`_. The Token Signature class will ensure any values that don't have one are highlighted. `Here <https://github.com/VIDA-NYU/openclean-core/blob/master/examples/notebooks/parking-violations/Parking%20Violations%20-%20Token%20Signature%20Outliers%20for%20Street%20Names.ipynb>`_ is a notebook demonstrating this.
@@ -239,7 +239,7 @@ Custom functions
 ----------------
 A user can create their own data cleaning operators, apply them and reuse them as per their requirements.
 With :ref:`notebook-extension`, these eval functions or callables can further be registered on a UI and applied to
-datasets visually. The following screen grab shows how custom functions together with
+datasets visually. The following screengrab shows how custom functions together with
 openclean-notebook enhance a user's data munging experience:
 
 .. only:: html
