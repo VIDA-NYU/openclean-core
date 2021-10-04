@@ -2,7 +2,7 @@
 
 Data Provenance
 ===============
-openclean provides users the ability to maintain provenance of the operations performed on a dataset. Just like
+openclean provides users the ability to maintain the provenance of the operations performed on a dataset. Just like
 a version control system, it has methods to load, commit, and checkout versions of the dataset. Here we talk about
 the methods available to achieve this.
 
@@ -98,7 +98,7 @@ If the user is not happy with the changes, they can be rolled back to get the pr
 Register
 --------
 Additionally, the functionality is complemented by a GUI provided by :ref:`notebook-extension` that allows users to register
-custom functions and apply it across datasets and versions seemlessly. A visual example of what this looks like
+custom functions and apply them across datasets and versions seamlessly. A visual example of what this looks like
 is present in the :ref:`custom-func-ref` section.
 
 

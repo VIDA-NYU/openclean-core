@@ -3,15 +3,15 @@
 Getting Started
 ===============
 
-openclean provides useful functionality to identify bugs and anomalous values, make fixes and wrangle datasets. Here, we walkthrough
+openclean provides useful functionality to identify bugs and anomalous values, make fixes and wrangle datasets. Here, we walk through
 a simple example to get you acquainted with openclean in 10 minutes! Our `misspellings dataset <https://github.com/VIDA-NYU/openclean-core/blob/documentation/docs/source/data/misspellings.csv>`_
-contains Street, Neighborhood and Borough names for New York City with a bunch of spelling mistakes. The goal of this exercise
+contains Street, Neighborhood, and Borough names for New York City with a bunch of spelling mistakes. The goal of this exercise
 is to fix those errors using some tools we have at our disposal.
 
 
 Loading Data
 ------------
-openclean uses a dataset (a wrapped pandas dataframe) as it's primary data storage object.
+openclean uses a dataset (a wrapped pandas dataframe) as its primary data storage object.
 It can be created from any source data type accepted by pandas. Compressed Gzip files (.gz) are also accepted.
 For large datasets, it might be desirable to perform lazy evaluation on the data instead of loading it all to memory.
 To allow this, openclean lets users stream their datasets. More information on Datasets and Streams is provided in the
@@ -57,7 +57,7 @@ a bunch of them are empty/missing values.
     ds['Borough'].value_counts()
 
 
-Going into further depth, we see realize there are a few variations for `Brooklyn`, `Queens`, `Bronx` and `Manhattan`.
+Going into further depth, we see realize there are a few variations for `Brooklyn`, `Queens`, `Bronx`, and `Manhattan`.
 
 
 Selecting Columns
@@ -174,8 +174,8 @@ We fixed it! One can also observe the decrease in uniqueness and entropy.
     dataset_profile(misspelled_data).stats()
 
 
-As we saw in this tiny real world example, openclean makes it straightforward to
-not only load and stream datasets, but also to profile them to identify bugs and provide masterdata alongside providing
+As we saw in this tiny real-world example, openclean makes it straightforward to
+not only load and stream datasets, but also to profile them to identify bugs and provide master data alongside providing
 a toolkit to identify and make fixes.
 
 

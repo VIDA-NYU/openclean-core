@@ -2,7 +2,7 @@
 
 Data Transformation
 ===================
-openclean provides it's own set of operations to transform datasets whilst keeping row indices intact.
+openclean provides its own set of operations to transform datasets whilst keeping row indices intact.
 
 We use a sample of NYC open data with completed job codes at various locations in New York City to demonstrate some examples.
 
@@ -62,7 +62,7 @@ Updating
 --------
 Updating a preexisting column is straightforward. The update operator takes the column name and a func argument
 which can be a callable or an Eval function. The following snippet updates the 'Borough' column to Title case. The
-func can be a dictionary, a scalar or a function.
+func can be a dictionary, a scalar, or a function.
 
 .. jupyter-execute::
 
@@ -101,7 +101,7 @@ Changing the column order is efficiently straight forward too. Let's move Job # 
 
     moved_col.head()
 
-To move the an existing row to a different position, use the moverows operation. Here is an example:
+To move an existing row to a different position, use the moverows operation. Here is an example:
 
 .. jupyter-execute::
 
