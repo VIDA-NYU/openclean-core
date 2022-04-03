@@ -108,7 +108,7 @@ and `Value package of the API Reference <api/openclean.function.value.html>`_ re
 
 Misspellings and Data Entry Bugs
 --------------------------------
-openclean can help identify misspellings and data entry bugs using it's powerful string matcher class. It helps
+openclean can help identify misspellings and data entry bugs using its powerful string matcher class. It helps
 detect anomalous values using:
 
 * Phonetic Matching
